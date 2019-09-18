@@ -1,0 +1,39 @@
+Intializing Cool Logo.... [OK]
+      ___       ___           ___           ___                       ___           ___     
+     /\__\     /\  \         /\  \         /\  \          ___        /\__\         /\  \    
+    /:/  /    /::\  \       /::\  \       /::\  \        /\  \      /::|  |       /::\  \   
+   /:/  /    /:/\:\  \     /:/\:\  \     /:/\:\  \       \:\  \    /:|:|  |      /:/\:\  \  
+  /:/  /    /:/  \:\  \   /::\~\:\  \   /:/  \:\__\      /::\__\  /:/|:|  |__   /:/  \:\  \ 
+ /:/__/    /:/__/ \:\__\ /:/\:\ \:\__\ /:/__/ \:|__|  __/:/\/__/ /:/ |:| /\__\ /:/__/_\:\__\
+ \:\  \    \:\  \ /:/  / \/__\:\/:/  / \:\  \ /:/  / /\/:/  /    \/__|:|/:/  / \:\  /\ \/__/
+  \:\  \    \:\  /:/  /       \::/  /   \:\  /:/  /  \::/__/         |:/:/  /   \:\ \:\__\  
+   \:\  \    \:\/:/  /        /:/  /     \:\/:/  /    \:\__\         |::/  /     \:\/:/  /  
+    \:\__\    \::/  /        /:/  /       \::/__/      \/__/         /:/  /       \::/  /   
+     \/__/     \/__/         \/__/         ~~                        \/__/         \/__/   
+														 
+Waiting for the system admin to hit enter...
+Paging for the system admin...
+Warming up the processors...
+Reconfiguring the office coffee machine...
+RE-calibrating the internet...
+Reticulating Splines...
+Reconfoobling energymotron...
+
+Testing RAM..............[OK]
+Testing CPU..............[OK]
+Testing Primary Disk.....[OK]
+Testing Patience.........[FAIL]
+
+Proceeding anyway....
+
+Booting Up...............[OK]
+
+Completing Boot Sequence....[Success]
+
+ ___           __        ___  __  
+|__  | |\ | | /__` |__| |__  |  \ 
+|    | | \| | .__/ |  | |___ |__/ 
+                                  
+								 
+Connecting to Discord....
+Running Post-Boot scripts....
