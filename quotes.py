@@ -127,5 +127,12 @@ errors = (
     "Speak English you fool --- there are no subtitles in this scene.",
     "My pet ferret can type better than you!",
     "Maybe if you used more than just two fingers...",
-    "I've seen penguins that can type better than that."
+    "I've seen penguins that can type better than that.",
+    "Security Alert – Moving cursor is not as safe as you thought.",
+    "Out of memory: Kill process, score, or sacrifice child.",
+    "Keyboard not found. Press a button on the non-existent keyboard to fix it.",
+    "Something happened, but I'm not telling you what.",
+    "Error displaying the error message you're looking at right now.",
+    "Error: Beats the hell out of me. ",
+    "Can't save X for reason Y."
 )

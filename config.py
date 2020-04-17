@@ -1,12 +1,10 @@
-botname = "BOT name here"
-prefix = ["! "]
-desc = "bot description goes here"
+botname = "K-BOT"
+prefix = ["b!", "B!"]
+desc = "A simple bot made by KamFretoZ#8080"
 
-
-# Cog list goes here
 extensions = [
     "cogs.fun",
-    "cogs.utility",
+    "cogs.utilities",
     "cogs.info",
-    "cogs.Moderator",
+    "cogs.mod",
 ]
