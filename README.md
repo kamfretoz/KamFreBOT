@@ -14,4 +14,4 @@
 * Discord.py [https://github.com/Rapptz/discord.py]
 * Libneko    [https://gitlab.com/koyagami/libneko/tree/master/]
 
-[![Built with libneko](https://img.shields.io/badge/built%20with-libneko-ff69b4.svg)](https://gitlab.com/koyagami/libneko)]
+[![Built with libneko](https://img.shields.io/badge/built%20with-libneko-ff69b4.svg)](https://gitlab.com/koyagami/libneko)
