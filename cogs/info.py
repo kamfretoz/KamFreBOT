@@ -282,7 +282,7 @@ class Information(commands.Cog):
         members = 0
         total = 0
         for x in ctx.guild.members:
-            if x.bot == True:
+            if x.bot is True:
                 bots += 1
                 total += 1
             else:
@@ -355,7 +355,7 @@ class Information(commands.Cog):
             if i > 30:
                 break
 
-        if str(role.colour) == "#000000":
+        if str(role.colour) is "#000000":
             colour = "default"
             color = "#%06x" % random.randint(0, 0xFFFFFF)
             color = int(colour[1:], 16)
@@ -425,7 +425,7 @@ class Information(commands.Cog):
     async def serverinfo_admins(self, ctx):
         admin = discord.Embed(description=f"Admins on {ctx.guild.name}", color=0x00FF00)
         for x in ctx.guild.members:
-            if x.bot == False:
+            if x.bot is False:
                 if x.guild_permissions.administrator:
                     admin.add_field(
                         name=f"{x.name}",
@@ -538,7 +538,7 @@ class Information(commands.Cog):
     ):
         """Show a user profile picture.\nYou can either use Discord ID or ping them"""
         try:
-            if user == None:  # This will be executed when no argument is provided
+            if user is None:  # This will be executed when no argument is provided
                 pfp = discord.Embed(
                     description=f"{ctx.message.author.name}'s profile picture",
                     title="Avatar Viewer",
@@ -565,7 +565,7 @@ class Information(commands.Cog):
         self, ctx, *, user: libneko.converters.MemberConverter = None
     ):
         """Ping the user to get their ID, you can also type their username instead."""
-        if user == None:
+        if user is None:
             user = ctx.message.author
         await ctx.send(
             embed=discord.Embed(
@@ -574,14 +574,15 @@ class Information(commands.Cog):
         )
 
 
-# gonna be added later when i have the motivation
-#    @commands.guild_only()
-#    @userinfo.command(brief="Show the Spotify playback status of a user", name="spotify")
-#    async def(self, ctx, *, user: libneko.converters.MemberConverter = None):
-#        if user == None:
+##    [ WORKS IN PROGRESS ]
+#    @userinfo.command(brief="Allows you to check Spotify playback status of other member", name = "spotify")
+#    async def userinfo_spotify(self, ctx, *user: libneko.converters.MemberConverter):
+#        if user is None:
 #            user = ctx.message.author
-
-
+#        spt = discord.Embed(title="Spotify Playback Viewer",description=f"{user} is listening to...", color=0x1DB954)
+#        spt.add_field(name="Title", value=user.Spotify.title)
+#
+    
 def setup(bot):
     bot.add_cog(Information(bot))
     print("Information Module has been loaded.")

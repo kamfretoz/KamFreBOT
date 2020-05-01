@@ -60,6 +60,7 @@ class Mod(commands.Cog):
 
         return emb
 
+    @commands.has_permissions(kick_members=True)
     @commands.command()
     async def kick(
         self, ctx, member: discord.Member, *, reason = "Please write a reason!"
@@ -93,6 +94,7 @@ class Mod(commands.Cog):
 
         await ctx.send(embed = emb)
 
+    @commands.has_permissions(ban_members=True)
     @commands.command()
     async def unban(self, ctx, userid: discord.User, *, reason = None):
         """Unban someone from the server."""
@@ -109,6 +111,7 @@ class Mod(commands.Cog):
 
         await ctx.send(embed = emb)
 
+    @commands.has_permissions(manage_messages=True)
     @commands.command(aliases = ["del", "p", "prune"])
     async def purge(self, ctx, limit: int, member: discord.Member = None):
         """Clean a number of messages"""

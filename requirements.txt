@@ -1,0 +1,9 @@
+git+https://github.com/Rapptz/discord.py#egg=discord.py[voice]
+libneko
+psutil
+bs4
+lxml
+pytz
+datetime
+safygiphy
+youtube-dl

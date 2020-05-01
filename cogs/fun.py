@@ -140,7 +140,7 @@ class Fun(commands.Cog):
         await ctx.send(random.choice(choices))
 
     # 8Ball Command
-    @commands.command(name="8ball", aliases=["ball"])
+    @commands.command(name="8ball", aliases=["ball","8b"])
     async def ball(self, ctx, *, question: str):
         """Ask a question to the 8Ball!"""
         ps = {
@@ -196,11 +196,11 @@ class Fun(commands.Cog):
     @commands.command(aliases=["rr"], brief="Never gonna give you up...")
     async def rickroll(self, ctx):
         rick = discord.Embed()
-        rick.set_image(url="https://media.giphy.com/media/kFgzrTt798d2w/giphy.gif")
+        rick.set_image(url="https://tenor.com/view/rick-roll-deal-with-it-rick-astley-never-gonna-give-you-up-gif-14204545")
         await ctx.send(embed=rick)
 
     @commands.command(
-        aliases=["bg"], disabled=True, brief="Make your text 🇧🇮🇬"
+        aliases=["bg"], disabled=True, brief="Make your text 🇧 🇮 🇬"
     )
     async def bigtext(self, ctx, *, text: str):
         s = ""

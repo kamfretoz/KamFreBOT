@@ -134,5 +134,6 @@ errors = (
     "Something happened, but I'm not telling you what.",
     "Error displaying the error message you're looking at right now.",
     "Error: Beats the hell out of me. ",
-    "Can't save X for reason Y."
+    "Can't save X for reason Y.",
+    "Some unexplained things are happening right now."
 )

@@ -86,8 +86,8 @@ class Utilities(commands.Cog):
         except:
             await ctx.send("No source was found...")
 
-    @commands.command()
-    async def uni(self, ctx, *, msg: str):
+    @commands.command(aliases=["uni"])
+    async def unicodeinfo(self, ctx, *, msg: str):
         """Convert to unicode emoji if possible. Ex: [p]uni :eyes:"""
         await ctx.send("`" + msg.replace("`", "") + "`")
 
@@ -104,11 +104,11 @@ class Utilities(commands.Cog):
         await ctx.send("http://www.youtube.com/watch?v=" + search_results[0])
 
     # pingstorm command
-    @commands.cooldown(rate=1, per=1800.0)
+    @commands.cooldown(rate=3, per=1800.0)
     @commands.command(hidden=True, aliases=["pingmachine", "pingspam"], enabled=True)
     @commands.guild_only()
     async def pingstorm(self, ctx, user: discord.Member, amount: int = 5):
-        """Ping specified user number of times, 5 if no amount specified, Maximum amount is 999. (Cooldown: 1 use per 60 mins, Use wisely.)"""
+        """Ping specified user number of times, 5 if no amount specified, Maximum amount is 200. (Cooldown: 1 use per 60 mins, Use wisely.)"""
         if not self.lock.locked():
             async with self.lock:
                 loading = await ctx.send("Ping Machine Initializing in 3 seconds!")
@@ -120,9 +120,9 @@ class Utilities(commands.Cog):
                 async def ping_task(self):
                     ping = 0
                     while ping < int(amount):
-                        if amount > 999:
+                        if amount > 200:
                             await ctx.send(
-                                "**WARNING:** **Maximum allowed amount is 999.**"
+                                "**WARNING:** **Maximum allowed amount is 200.**"
                             )
                             await ctx.message.add_reaction("❌")
                             break
@@ -184,12 +184,12 @@ class Utilities(commands.Cog):
                 date = now.strftime(date_fmt)
     
                 clock = discord.Embed(color=0xC0C0C0)
-                clock.add_field(name=":clock3: Current Time:", value=time, inline=False)
+                clock.add_field(name="🕓 Current Time", value=time, inline=False)
                 clock.add_field(name="📆 Current Date", value=date, inline=False)
-                clock.set_footer(text=f"Showing the timezone for {loc}\nfor timezone list see: http://tiny.cc/on60iz")
-                await ctx.send(embed=clock, content=f":alarm_clock: Tick.. Tock..")
+                clock.add_field(name="🌐 Timezone", value=loc, inline=False)
+                await ctx.send(embed=clock, content=f"⏰ Tick.. Tock..")
             except:
-                await ctx.send(":warning: **Warning!** Please provide the correct timezone value. (See the list of Valid Timezone: http://tiny.cc/on60iz)")
+                await ctx.send(":warning: **Warning!** An Error Occured.")
 
 def setup(bot):
     bot.add_cog(Utilities(bot))
