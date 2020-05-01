@@ -230,133 +230,133 @@ async def on_command_error(ctx, error):
 # DEBUGGING and SYSTEM UTILITIES #
 #################################
 
-    @bot.command(brief="Fully restarts the bot", hidden=True, aliases=["reboot"])
-    @commands.is_owner()
-    async def restart(ctx):
-        """Restarts the bot for updates"""
-        await ctx.send("Restarting!")
-        os.startfile("main.py")
-        await ctx.bot.logout()
-        sys.exit()
+@bot.command(brief="Fully restarts the bot", hidden=True, aliases=["reboot"])
+@commands.is_owner()
+async def restart(ctx):
+    """Restarts the bot for updates"""
+    await ctx.send("Restarting!")
+    os.startfile("main.py")
+    await ctx.bot.logout()
+    sys.exit()
 
-    @bot.command(hidden=True, aliases=["poweroff", "shutdown"])
-    @commands.is_owner()
-    async def poweroof(ctx):
-        """Turn the bot Off"""
-        await ctx.send("Goodbye Cruel World...")
-        await ctx.bot.logout()
-        exit(0)
-
-
-    @bot.command(hidden=True)
-    @commands.is_owner()
-    async def runningcog(ctx):
-        """See what cogs are currently running"""
-        cogslist = bot.cogs
-        for cogs in cogslist:
-            print(cogs)
-
-        await ctx.send(bot.cogs)
+@bot.command(hidden=True, aliases=["poweroff", "shutdown"])
+@commands.is_owner()
+async def poweroof(ctx):
+    """Turn the bot Off"""
+    await ctx.send("Goodbye Cruel World...")
+    await ctx.bot.logout()
+    exit(0)
 
 
-    # This one is for testing error messages only
-    @bot.command(hidden=True, aliases=["dummy"])
-    @commands.is_owner()
-    async def crash(ctx):
-        """Use to generate an error message for debugging purpose"""
-        await ctx.send("Generating an Error Message..")
-        raise ValueError('This is an Exception that are manually generated.')
+@bot.command(hidden=True)
+@commands.is_owner()
+async def runningcog(ctx):
+    """See what cogs are currently running"""
+    cogslist = bot.cogs
+    for cogs in cogslist:
+        print(cogs)
+
+    await ctx.send(bot.cogs)
+
+
+# This one is for testing error messages only
+@bot.command(hidden=True, aliases=["dummy"])
+@commands.is_owner()
+async def crash(self, ctx):
+    """Use to generate an error message for debugging purpose"""
+    await ctx.send("Generating an Error Message..")
+    raise ValueError('This is an Exception that are manually generated.')
 
 
 
-    # Bot and System control command
-    @bot.command(hidden=True, aliases=["load"])
-    @commands.is_owner()
-    async def loadcog(ctx, name):
-        async with ctx.typing():
-            try:
-                bot.load_extension(f"cogs.{name}")
-            except Exception as e:
-                await ctx.send(f"```py\n{traceback.format_exc()}\n```")
-            else:
-                await ctx.send(f":gear: Successfully Loaded {name} Module!")
+# Bot and System control command
+@bot.command(hidden=True, aliases=["load"])
+@commands.is_owner()
+async def loadcog(ctx, name):
+    async with ctx.typing():
+        try:
+            bot.load_extension(f"cogs.{name}")
+        except Exception as e:
+            await ctx.send(f"```py\n{traceback.format_exc()}\n```")
+        else:
+            await ctx.send(f":gear: Successfully Loaded {name} Module!")
 
 
-    @bot.command(hidden=True, aliases=["unload"])
-    @commands.is_owner()
-    async def unloadcog(ctx, name):
-        async with ctx.typing():
-            try:
-                bot.unload_extension(f"cogs.{name}")
-            except Exception as ex:
-                await ctx.send(f"```py\n{traceback.format_exc()}\n```")
-            else:
-                await ctx.send(f":gear: Successfully Unloaded **{name}** Module!")
+@bot.command(hidden=True, aliases=["unload"])
+@commands.is_owner()
+async def unloadcog(ctx, name):
+    async with ctx.typing():
+        try:
+            bot.unload_extension(f"cogs.{name}")
+        except Exception as ex:
+            await ctx.send(f"```py\n{traceback.format_exc()}\n```")
+        else:
+            await ctx.send(f":gear: Successfully Unloaded **{name}** Module!")
 
 
-    @bot.command(hidden=True, aliases=["reload"])
-    @commands.is_owner()
-    async def reloadcog(ctx, name):
-        async with ctx.typing():
-            try:
-                bot.unload_extension(f"cogs.{name}")
-                bot.load_extension(f"cogs.{name}")
-            except Exception as e:
-                await ctx.send(f"```py\n{traceback.format_exc()}\n```")
-            else:
-                await ctx.send(f":gear: Successfully Reloaded the **{name}** module!")
+@bot.command(hidden=True, aliases=["reload"])
+@commands.is_owner()
+async def reloadcog(ctx, name):
+    async with ctx.typing():
+        try:
+            bot.unload_extension(f"cogs.{name}")
+            bot.load_extension(f"cogs.{name}")
+        except Exception as e:
+            await ctx.send(f"```py\n{traceback.format_exc()}\n```")
+        else:
+            await ctx.send(f":gear: Successfully Reloaded the **{name}** module!")
 
 
-    @bot.command(hidden=True, aliases=["reloadall"])
-    @commands.is_owner()
-    async def reloadallcogs(ctx):
-        async with ctx.typing():
-            await ctx.send(":gear: Reloading all Cogs!")
-            try:
-                for extension in config.extensions:
-                    await ctx.send(f":gear: Unloading {extension} Module!", delete_after=5)
-                    bot.unload_extension(extension)
-                    await ctx.send(f":gear: Reloading {extension} Module!", delete_after=5)
-                    bot.load_extension(extension)
-                    await ctx.send(f":gear: Successfully Reloaded **{extension}** Module!")
-            except Exception as e:
-                await ctx.send(f"```py\n{traceback.format_exc()}\n```")
-            else:
-                await ctx.send(":gear: Successfully Reloaded all cogs!")
+@bot.command(hidden=True, aliases=["reloadall"])
+@commands.is_owner()
+async def reloadallcogs(ctx):
+    async with ctx.typing():
+        await ctx.send(":gear: Reloading all Cogs!")
+        try:
+            for extension in config.extensions:
+                await ctx.send(f":gear: Unloading {extension} Module!", delete_after=5)
+                bot.unload_extension(extension)
+                await ctx.send(f":gear: Reloading {extension} Module!", delete_after=5)
+                bot.load_extension(extension)
+                await ctx.send(f":gear: Successfully Reloaded **{extension}** Module!")
+        except Exception as e:
+            await ctx.send(f"```py\n{traceback.format_exc()}\n```")
+        else:
+            await ctx.send(":gear: Successfully Reloaded all cogs!")
 
 
-    @bot.command(hidden=True, aliases=["loadall"])
-    @commands.is_owner()
-    async def loadallcogs(ctx):
-        async with ctx.typing():
-            await ctx.send(":gear: Loading all Cogs!")
-            try:
-                for extension in config.extensions:
-                    bot.load_extension(extension)
-                    await ctx.send(
-                        f":gear: Successfully Loaded {extension} Module!", delete_after=5
-                    )
-            except Exception as e:
-                await ctx.send(f"```py\n{traceback.format_exc()}\n```")
-            else:
-                await ctx.send(":gear: Successfully Loaded all cogs!")
+@bot.command(hidden=True, aliases=["loadall"])
+@commands.is_owner()
+async def loadallcogs(ctx):
+    async with ctx.typing():
+        await ctx.send(":gear: Loading all Cogs!")
+        try:
+            for extension in config.extensions:
+                bot.load_extension(extension)
+                await ctx.send(
+                    f":gear: Successfully Loaded {extension} Module!", delete_after=5
+                )
+        except Exception as e:
+            await ctx.send(f"```py\n{traceback.format_exc()}\n```")
+        else:
+            await ctx.send(":gear: Successfully Loaded all cogs!")
 
 
-    @bot.command(hidden=True, aliases=["unloadall"])
-    @commands.is_owner()
-    async def unloadallcogs(ctx):
-        async with ctx.typing():
-            await ctx.send(":gear: Unloading all Cogs!")
-            try:
-                for extension in config.extensions:
-                    bot.unload_extension(extension)
-                    await ctx.send(
-                        f":gear: Successfully Unloaded {extension}", delete_after=5
-                    )
-            except Exception as e:
-                await ctx.send(f"```py\n{traceback.format_exc()}\n```")
-            else:
-                await ctx.send(":gear: Successfully Unloaded all cogs!")
+@bot.command(hidden=True, aliases=["unloadall"])
+@commands.is_owner()
+async def unloadallcogs(self, ctx):
+    async with ctx.typing():
+        await ctx.send(":gear: Unloading all Cogs!")
+        try:
+            for extension in config.extensions:
+                bot.unload_extension(extension)
+                await ctx.send(
+                    f":gear: Successfully Unloaded {extension}", delete_after=5
+                )
+        except Exception as e:
+            await ctx.send(f"```py\n{traceback.format_exc()}\n```")
+        else:
+            await ctx.send(":gear: Successfully Unloaded all cogs!")
 
 bot.run(TOKEN)
 
