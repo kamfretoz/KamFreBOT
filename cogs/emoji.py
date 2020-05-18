@@ -89,7 +89,7 @@ class Emoji(commands.Cog):
         name = "emoji.png"
         return name, url, "N/A", "Official"
 
-    @commands.group(pass_context=True, aliases=["emote"], invoke_without_command=True)
+    @commands.group(aliases=["emote","em"], invoke_without_command=True)
     async def emoji(self, ctx, *, msg):
         """
         View, copy, add or remove emoji.
@@ -99,7 +99,6 @@ class Emoji(commands.Cog):
         3) [p]emoji add <url> - Add a new emoji to the current server if you have the permissions.
         4) [p]emoji remove <emoji> - Remove an emoji from the current server if you have the permissions
         """
-        await ctx.message.delete()
         emojis = msg.split()
         if msg.startswith("s "):
             emojis = emojis[1:]
@@ -151,7 +150,7 @@ class Emoji(commands.Cog):
                     await ctx.send(url)
             file.close()
 
-    @emoji.command()
+    @emoji.command(aliases=["cp"], brief="Copy a custom emoji onto another server")
     @commands.has_permissions(manage_emojis=True)
     async def copy(self, ctx, *, msg):
         await ctx.message.delete()
@@ -183,7 +182,7 @@ class Emoji(commands.Cog):
             )
         )
 
-    @emoji.command()
+    @emoji.command(brief="Add a new emoji to the current server")
     @commands.has_permissions(manage_emojis=True)
     async def add(self, ctx, name, url):
         await ctx.message.delete()
@@ -212,7 +211,7 @@ class Emoji(commands.Cog):
             )
         )
 
-    @emoji.command()
+    @emoji.command(aliases=["rm"],brief="Remove an emoji from the current server")
     @commands.has_permissions(manage_emojis=True)
     async def remove(self, ctx, name):
         await ctx.message.delete()
@@ -243,7 +242,7 @@ class Emoji(commands.Cog):
                 break
         return animated, static, message
 
-    @commands.command(aliases=["loot", "swag", "pinch", "begal"], hidden=False)
+    @commands.command(aliases=["loot", "swag", "pinch", "begal","stl"], hidden=False)
     async def steal(self, ctx, *, message=None):
         """
         Takes a message ID for the current channel, or if not, a string message containing
@@ -304,7 +303,7 @@ class Emoji(commands.Cog):
             for emoji in sorted(emojis, key=lambda e: e.name.lower())
         ]
 
-    @commands.command(aliases=["emojis", "emojilist"], hidden=False)
+    @commands.command(aliases=["emojis", "emojilist","lsem"], hidden=False)
     async def emojilibrary(self, ctx, arg=None):
         """Shows all emojis I can see ever. Pass the --verbose/-v flag to see names."""
         if arg:

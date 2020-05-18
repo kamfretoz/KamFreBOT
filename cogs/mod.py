@@ -96,47 +96,46 @@ class Mod(commands.Cog):
 
     @commands.has_permissions(ban_members=True)
     @commands.command()
-    async def unban(self, ctx, userid: discord.User, *, reason = None):
+    async def unban(self, ctx, userid: discord.User, *, reasons = None):
         """Unban someone from the server."""
         ban = await ctx.guild.fetch_ban(userid)
 
-        try:
-            await ctx.guild.unban(ban.user, reason = reason)
-        except:
-            success = False
+        if reasons is None:
+            try:
+                await ctx.guild.unban(ban.user, reason = "No Reason Specified!")
+            except:
+                success = False
+            else:
+                success = True
+        
         else:
-            success = True
+            try:
+                await ctx.guild.unban(ban.user, reason = reasons)
+            except:
+                success = False
+            else:
+                success = True
 
         emb = await self.format_mod_embed(ctx, ban.user, success, "unban")
 
         await ctx.send(embed = emb)
 
+    @commands.cooldown(rate=1, per=5.0)
     @commands.has_permissions(manage_messages=True)
     @commands.command(aliases = ["del", "p", "prune"])
     async def purge(self, ctx, limit: int, member: discord.Member = None):
         """Clean a number of messages"""
-        if member is None:
-            await ctx.channel.purge(limit = limit + 1)
+        if limit < 500:
+            if member is None:
+                await ctx.channel.purge(limit = limit + 1)
+            else:
+                async for message in ctx.channel.history(limit = limit + 1):
+                    if message.author is member:
+                        await message.delete()
         else:
-            async for message in ctx.channel.history(limit = limit + 1):
-                if message.author is member:
-                    await message.delete()
+            await ctx.send("Maximum amount of purging reached. You can only purge 500 messages at a time")
 
-    @commands.command()
-    async def clean(self, ctx, quantity: int):
-        """ Clean a number of your own messages
-        Usage: {prefix}clean 5 """
-        if quantity <= 15:
-            total = quantity + 1
-            async for message in ctx.channel.history(limit = total):
-                if message.author == ctx.author:
-                    await message.delete()
-                    await asyncio.sleep(3.0)
-        else:
-            async for message in ctx.channel.history(limit = 6):
-                if message.author == ctx.author:
-                    await message.delete()
-                    await asyncio.sleep(3.0)
+
 
     @commands.has_permissions(ban_members=True)
     @commands.command()
@@ -152,7 +151,7 @@ class Mod(commands.Cog):
 
         await ctx.send(embed = em)
 
-    @commands.has_permissions(ban_members=True)
+    @commands.has_permissions(ban_members=True, view_audit_log=True)
     @commands.command()
     async def baninfo(self, ctx, *, userid: discord.User):
         """Check the reason of a ban from the audit logs."""
@@ -173,7 +172,7 @@ class Mod(commands.Cog):
             return await ctx.send("That role does not exist.")
         try:
             await member.add_roles(role)
-            await ctx.send(f"Added: `{role.name}`")
+            await ctx.send(f"Added: `{role.name}` to {member}")
         except:
             await ctx.send("I don't have the perms to add that role.")
 
@@ -204,7 +203,7 @@ class Mod(commands.Cog):
             return await ctx.send("That role does not exist.")
         try:
             await member.remove_roles(role)
-            await ctx.send(f"Removed: `{role.name}`")
+            await ctx.send(f"Removed: `{role.name}` from {member}")
         except:
             await ctx.send("I don't have the perms to add that role.")
 
@@ -269,7 +268,7 @@ class Mod(commands.Cog):
         emb = await self.format_mod_embed(
             ctx, member, success, "mute", f"{str(duration[:-1])} {longunit}"
         )
-        progress.delete()
+        await progress.delete()
         await ctx.send(embed = emb)
         await asyncio.sleep(time)
         try:
@@ -278,6 +277,7 @@ class Mod(commands.Cog):
         except:
             pass
 
+    @commands.has_permissions(kick_members=True)
     @commands.command()
     async def unmute(self, ctx, member: discord.Member, *, reason = None):
         """Removes channel overrides for specified member"""
@@ -294,30 +294,30 @@ class Mod(commands.Cog):
         progress.delete()
         await ctx.send(embed = emb)
 
-@commands.has_permissions(manage_nicknames=True)
-@commands.command(aliases=["selfnick"])
-@commands.guild_only()
-async def selfnickname(self, ctx, *, newname: str = None):
-    """Change my nickname, if omitted, removes it instead."""
-    guild = ctx.guild
-    if newname == None:
-        await guild.me.edit(nick=None)
-        await ctx.send(
-            embed=discord.Embed(description=f"Successfully reset my nickname.")
-        )
-    elif len(newname) > 32:
-        await ctx.send(
-            embed=discord.Embed(
-                description=f":warning: The new nickname must be 32 or fewer in length."
+    @commands.has_permissions(manage_nicknames=True)
+    @commands.command(aliases=["selfnick"])
+    @commands.guild_only()
+    async def selfnickname(self, ctx, *, newname: str = None):
+        """Change my nickname, if omitted, removes it instead."""
+        guild = ctx.guild
+        if newname == None:
+            await guild.me.edit(nick=None)
+            await ctx.send(
+                embed=discord.Embed(description=f"Successfully reset my nickname.")
             )
-        )
-    else:
-        await guild.me.edit(nick=newname)
-        await ctx.send(
-            embed=discord.Embed(
-                description=f"Successfully changed my nickname to **{newname}**!"
+        elif len(newname) > 32:
+            await ctx.send(
+                embed=discord.Embed(
+                    description=f":warning: The new nickname must be 32 or fewer in length."
+                )
             )
-        )
+        else:
+            await guild.me.edit(nick=newname)
+            await ctx.send(
+                embed=discord.Embed(
+                    description=f"Successfully changed my nickname to **{newname}**!"
+                )
+            )
 
 
 def setup(bot):

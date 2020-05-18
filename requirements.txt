@@ -1,5 +1,5 @@
 git+https://github.com/Rapptz/discord.py#egg=discord.py[voice]
-libneko
+git+https://gitlab.com/Tmpod/libneko
 psutil
 bs4
 lxml
@@ -7,3 +7,6 @@ pytz
 datetime
 safygiphy
 youtube-dl
+bs4
+google-api-python-client
+PyDictionary

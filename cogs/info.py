@@ -27,7 +27,9 @@ import libneko
 import psutil
 import bs4
 import lxml
+import time
 from discord.ext import commands
+from libneko import pag
 
 import config
 
@@ -63,13 +65,13 @@ class Information(commands.Cog):
         self.bot = bot
 
     # About command
-    @commands.command(brief="Some info about the bot. :)", hidden=True)
+    @commands.command()
     async def about(self, ctx):
         """Information about this bot."""
         about = discord.Embed(
             title=f"{config.botname}", description=f"{config.desc}", color=0xFFFFFF
         )
-        about.set_footer(text="Made by KamFretoZ#0080")
+        about.set_footer(text="Made by **@KamFretoZ**")
         await ctx.send(embed=about)
 
     @commands.command(aliases=["status"], pass_context=True)
@@ -107,7 +109,7 @@ class Information(commands.Cog):
         for guild in self.bot.guilds:
             channel_count += len(guild.channels)
         try:
-            em = discord.Embed(title="Bot Stats", color=0x32441C)
+            em = discord.Embed(title="System Status", color=0x32441C)
             em.add_field(
                 name=":desktop: CPU Usage.",
                 value=f"{psutil.cpu_percent():.2f}%",
@@ -131,7 +133,7 @@ class Information(commands.Cog):
                 value=f"Total Size: {solveunit(psutil.disk_usage('/').total)} GB \nCurrently Used: {solveunit(psutil.disk_usage('/').used)} GB",
                 inline=False,
             )
-            em.add_field(name="\U0001F553 Uptime", value=time, inline=False)
+            em.add_field(name="\U0001F553 BOT Uptime", value=time, inline=False)
             em.add_field(
                 name="\u2694 Servers", value=str(len(self.bot.guilds)), inline=False
             )
@@ -149,11 +151,7 @@ class Information(commands.Cog):
             await ctx.send(msg)
             await ctx.message.delete()
 
-    @commands.group(
-        invoke_without_command=True,
-        brief="Show this server info",
-        aliases=["server", "si"],
-    )
+    @commands.group(invoke_without_command=True, aliases=["server", "si"])
     @commands.guild_only()
     async def serverinfo(self, ctx):
         """This command will show some informations about this server"""
@@ -162,7 +160,7 @@ class Information(commands.Cog):
 
         booster_amount = None
 
-        if guild.premium_subscription_count is None:
+        if guild.premium_subscription_count == 0 or None:
             booster_amount = "This server is not boosted"
         else:
             booster_amount = (
@@ -206,10 +204,12 @@ class Information(commands.Cog):
         )
         server.add_field(name="》 Owner ID", value=guild.owner_id, inline=False)
         if guild.icon:
-            server.set_thumbnail(url=guild.icon_url_as(format="png", size=1024))
-
+            if guild.is_icon_animated() is True:
+                server.set_thumbnail(url=guild.icon_url_as(format="gif", size=4096))
+            else:
+                server.set_thumbnail(url=guild.icon_url_as(format="png", size=4096))
         if guild.splash:
-            server.set_image(url=guild.splash_url)
+            server.set_image(url=guild.splash_url_as(format="png",size=4096))
 
         fmt = f"Text {text_channels} ({secret_channels} secret)\nVoice {voice_channels} ({secret_voice} locked)"
         server.add_field(name="》 Channels", value=fmt)
@@ -262,22 +262,45 @@ class Information(commands.Cog):
         )
         await ctx.send(embed=server, content=None)
 
-    @serverinfo.command(brief="Show this server icon", name="icon")
+    @serverinfo.command(name="icon", brief="Show the icon of this server.")
     @commands.guild_only()
     async def serverinfo_icon(self, ctx):
+        """
+        Show the icon of this server.
+        """
         icon = discord.Embed(
             title=f"Server icon for {ctx.guild.name}", color=ctx.message.author.color
         )
-        icon.set_image(url=ctx.guild.icon_url_as(format="png", size=2048))
-        await ctx.send(embed=icon, content=None)
 
-    @serverinfo.command(
-        brief="shows the amount of members on this server",
-        name="membercount",
-        aliases=["count", "memcount"],
-    )
+        if ctx.guild.is_icon_animated() is True:
+            icon.set_image(url=ctx.guild.icon_url_as(format="gif", size=4096))
+        else:
+            icon.set_image(url=ctx.guild.icon_url_as(format="png", size=4096))
+        
+        await ctx.send(embed=icon, content=None)
+    
+    @serverinfo.command(name="banner", brief="Show this server")
+    @commands.guild_only()
+    async def serverinfo_banner(self, ctx):
+        """
+        Show this server's banner, if any
+        """
+        if "BANNER" in ctx.guild.features:
+            bannerembed = discord.Embed(title=f"Server Banner for **{ctx.guild.name}**")
+            bannerembed.set_image(url=ctx.guild.banner_url_as(format="png", size=4096))
+            await ctx.send(embed=bannerembed, content=None)
+            
+        else:
+            nobanner = discord.Embed(description="This server doesn't have the Boost level Required to set a banner.")
+            await ctx.send(embed=nobanner)
+
+
+    @serverinfo.command(name="membercount", aliases=["count", "memcount"], brief="shows the amount of members on this server.")
     @commands.guild_only()
     async def serverinfo_membercount(self, ctx):
+        """
+        shows the amount of members on this server.
+        """
         bots = 0
         members = 0
         total = 0
@@ -296,51 +319,9 @@ class Information(commands.Cog):
         count.add_field(name="Total", value=f"{total}", inline=False)
         await ctx.send(embed=count, content=None)
 
-    @serverinfo.command(
-        no_pm=True, brief="Shows ALL channels, use wisely!", name="channels"
-    )
+    @serverinfo.command(aliases=["rl", "role"], no_pm=True, name="roleinfo", brief="Shows information about a role")
     @commands.guild_only()
-    async def serverinfo_channels(self, ctx, serverid: int = None):
-        if serverid is None:
-            server = ctx.guild
-        else:
-            server = discord.utils.get(self.bot.guilds, id=serverid)
-            if server is None:
-                return await ctx.send("Server not found!")
-
-        e = discord.Embed()
-
-        voice = ""
-        text = ""
-        categories = ""
-
-        for channel in server.voice_channels:
-            voice += f"\U0001f508 {channel}\n"
-        for channel in server.categories:
-            categories += f"\U0001f4da {channel}\n"
-        for channel in server.text_channels:
-            text += f"\U0001f4dd {channel}\n"
-
-        if len(server.text_channels) > 0:
-            e.add_field(name="Text Channels", value=f"```{text}```")
-        if len(server.categories) > 0:
-            e.add_field(name="Categories", value=f"```{categories}```")
-        if len(server.voice_channels) > 0:
-            e.add_field(name="Voice Channels", value=f"```{voice}```")
-
-        try:
-            await ctx.send(embed=e)
-        except discord.HTTPException:
-            await ctx.send(":Warning: Unable to send the embed. Make sure that you have allowed the Embed Permission! (OR the embed itself is maybe too long to be displayed)")
-
-    @serverinfo.command(
-        aliases=["ri", "role"],
-        no_pm=True,
-        name="roleinfo",
-        brief="Shows some info about a role",
-    )
-    @commands.guild_only()
-    async def serverinfo_roleinfo(self, ctx, *, role: discord.Role):
+    async def serverinfo_roleinfo(self, ctx, *, role: libneko.converters.RoleConverter):
         """Shows information about a role"""
         guild = ctx.guild
 
@@ -372,57 +353,55 @@ class Information(commands.Cog):
         em.add_field(name="Managed", value=role.managed)
         em.add_field(name="Colour", value=colour)
         em.add_field(name="Creation Date", value=created_on)
-        em.add_field(name="Members", value=members[:-2], inline=False)
+        em.add_field(name="Members", value=members[:-2], inline=True)
         em.set_footer(text=f"Role ID: {role.id}")
 
         await ctx.send(embed=em)
 
     @commands.guild_only()
-    @serverinfo.command(
-        name="inrole",
-        brief="Show the list of users on a particular role",
-    )
-    async def serverinfo_inrole(self, ctx, role:discord.Role):
-        embed = discord.Embed(
-            description=f"List of users on the {role.name} role.", color=0x00FF00
-        )
-        for x in role.members:
-            embed.add_field(
-                name=f"{x.name}#{x.discriminator}", value=f"{x.mention}", inline=False
-            )
+    @serverinfo.command(name="inrole", aliases=["inrl"], brief="Show the list of users on a particular role.")
+    async def serverinfo_inrole(self, ctx, role:libneko.converters.RoleConverter = None):
+        """
+        Show the list of users on a particular role.
+        """
+        if role is None:
+            noembed = discord.Embed(description="Which role?")
+            await ctx.send(embed=noembed)
+        else:
+            embed = discord.Embed(description=f"List of users on the {role.name} role.", color=0x00FF00)
+            for x in role.members:
+                embed.add_field(name=f"{x.name}#{x.discriminator}", value=f"{x.mention}", inline=False)
 
         embed.set_footer(text=f"{len(role.members)} Users in total")
         await ctx.send(embed=embed)
 
-    @serverinfo.command(
-        brief="Shows who is the owner of this server", name="owner", aliases=["own"]
-    )
+    @serverinfo.command(name="owner", aliases=["own"], brief="Shows the owner of this server")
     @commands.guild_only()
     async def serverinfo_owner(self, ctx):
+        """
+        Shows the owner of this server
+        """
         await ctx.send(
             embed=discord.Embed(
                 description=f"{ctx.guild.owner} ({ctx.guild.owner.mention}) owns this server!"
             )
         )
 
-    @serverinfo.command(
-        brief="Shows when this server was created",
-        name="created",
-        aliases=["madeon", "born"],
-    )
+    @serverinfo.command(name="created", aliases=["madeon", "born"], brief="Shows when this server was created")
     @commands.guild_only()
     async def serverinfo_created(self, ctx):
-        await ctx.send(
-            f"**{ctx.guild.name}** was created on `{ctx.guild.created_at.strftime('%B %d, %Y at %I:%M %p')}`"
-        )
+        """
+        Shows when this server was created.
+        """
+        create = discord.Embed(description=f"**{ctx.guild.name}** was created on `{ctx.guild.created_at.strftime('%B %d, %Y at %I:%M %p')}`")
+        await ctx.send(embed = create)
 
-    @serverinfo.command(
-        brief="shows people with administrator permission on the server",
-        aliases=["mods", "mod", "admin"],
-        name="admins",
-    )
+    @serverinfo.command(aliases=["mods", "mod", "admin"], name="admins" ,brief="shows people with administrator permission on the server.")
     @commands.guild_only()
     async def serverinfo_admins(self, ctx):
+        """
+        shows people with administrator permission on the server.
+        """
         admin = discord.Embed(description=f"Admins on {ctx.guild.name}", color=0x00FF00)
         for x in ctx.guild.members:
             if x.bot is False:
@@ -435,12 +414,11 @@ class Information(commands.Cog):
         await ctx.send(embed=admin)
 
     @commands.guild_only()
-    @serverinfo.command(
-        aliases=["booster"],
-        name="boost",
-        brief="Show the list of Nitro booster on this server",
-    )
+    @serverinfo.command(aliases=["booster"], name="boost", brief="Show the list of Nitro booster on this server.")
     async def serverinfo_boost(self, ctx):
+        """
+        Show the list of Nitro booster on this server.
+        """
         boost = discord.Embed(
             description=f"Nitro Booster on {ctx.guild.name}.", color=0x00FF00
         )
@@ -451,13 +429,48 @@ class Information(commands.Cog):
         boost.set_footer(text=f"{len(ctx.guild.premium_subscribers)} Users in total")
         await ctx.send(embed=boost)
 
-    @commands.group(
-        invoke_without_command=True,
-        brief="Show some info about a user",
-        aliases=["user", "ui"],
-    )
+    @staticmethod
+    def transform_mute(emojis):
+        return [str(emoji) + " " for emoji in emojis]
+
+    @staticmethod
+    def transform_verbose(emojis):
+        return [
+            f"{emoji} = {emoji.name}\n"
+            for emoji in sorted(emojis, key=lambda e: e.name.lower())
+        ]
+
     @commands.guild_only()
-    async def userinfo(self, ctx, user: libneko.converters.MemberConverter = None):
+    @serverinfo.command(name="emoji",aliases=["emojis","emote"], brief="Shows all emojis I can see in this server.")
+    async def serverinfo_emojilibrary(self, ctx, arg=None):
+        """Shows all emojis I can see in this server. Pass the --verbose/-v flag to see names."""
+        if arg:
+            transform = self.transform_verbose
+        else:
+            transform = self.transform_mute
+        emojis = transform(ctx.guild.emojis)
+        p = pag.StringNavigatorFactory()
+        for emoji in emojis:
+            p += emoji
+        p.start(ctx)
+
+    
+    @commands.guild_only()
+    @serverinfo.command(name="splash", aliases=["splashes","images"])
+    async def serverinfo_splash(self, ctx):
+        """Show the splash image of this server, if any"""
+        if "INVITE_SPLASH" in ctx.guild.features and ctx.guild.splash is not None:
+            splashembed = discord.Embed(title=f"{ctx.guild.name}'s Splash Image.")
+            splashembed.set_image(url=ctx.guild.splash_url_as(format="png", size=4096))
+            await ctx.send(embed=splashembed, content=None)
+        else:
+            nosplash = discord.Embed(description="This server doesn't have the required boost lever or has no splash image configured.")
+            await ctx.send(embed=nosplash)
+
+
+    @commands.group(invoke_without_command=True,aliases=["user", "ui"])
+    @commands.guild_only()
+    async def userinfo(self, ctx, user: libneko.converters.InsensitiveMemberConverter = None):
         """Show info about the user. If not specified, the command invoker info will be shown instead."""
         if user is None:
             user = ctx.author
@@ -529,14 +542,20 @@ class Information(commands.Cog):
 
         await ctx.send(embed=member)
 
-    @userinfo.command(
-        brief="View other user's avatar", name="avatar", aliases=["pfp", "pp"]
-    )
+    @userinfo.command(name="avatar", aliases=["pfp", "pp"], brief="View the avatar of a member.")
     @commands.guild_only()
-    async def userinfo_avatar(
-        self, ctx, *, user: libneko.converters.MemberConverter = None
-    ):
-        """Show a user profile picture.\nYou can either use Discord ID or ping them"""
+    async def userinfo_avatar(self, ctx, *, user: libneko.converters.InsensitiveMemberConverter = None):
+        """View the avatar of a member.\nYou can either use Discord ID or ping them instead"""
+        pic_frmt = None
+
+        if user is None:
+            user = ctx.message.author
+
+            if user.is_avatar_animated() is True:
+                pic_frmt = "gif"
+            else:
+                pic_frmt = "png"
+
         try:
             if user is None:  # This will be executed when no argument is provided
                 pfp = discord.Embed(
@@ -545,7 +564,7 @@ class Information(commands.Cog):
                     color=ctx.author.color,
                     timestamp=datetime.utcnow(),
                 )
-                pfp.set_image(url=ctx.message.author.avatar_url)
+                pfp.set_image(url=ctx.message.author.avatar_url_as(format=pic_frmt, size=4096))
                 await ctx.send(embed=pfp)
             else:  # This is what normally executed.
                 pfp = discord.Embed(
@@ -553,17 +572,15 @@ class Information(commands.Cog):
                     title="Avatar Viewer",
                     timestamp=datetime.utcnow(),
                 )
-                pfp.set_image(url=user.avatar_url)
+                pfp.set_image(url=user.avatar_url_as(format=pic_frmt, size=4096))
                 pfp.colour = user.colour
                 await ctx.send(embed=pfp)
         except discord.InvalidArgument:
             await ctx.send("Please provide a correct format!")
             await ctx.message.add_reaction("❌")
 
-    @userinfo.command(brief="Return the ID of a user", name="id")
-    async def userinfo_id(
-        self, ctx, *, user: libneko.converters.MemberConverter = None
-    ):
+    @userinfo.command(name="id", brief="Mention the user to get their ID")
+    async def userinfo_id(self, ctx, user: libneko.converters.InsensitiveMemberConverter = None):
         """Ping the user to get their ID, you can also type their username instead."""
         if user is None:
             user = ctx.message.author
@@ -573,16 +590,30 @@ class Information(commands.Cog):
             )
         )
 
+    @userinfo.command(name="roles", brief="Show all roles that the member has.")
+    async def userinfo_roles(self, ctx, member: libneko.converters.InsensitiveMemberConverter = None):
+        """Show all roles that the member has."""
+        if member is None:
+            member = ctx.message.author
 
-##    [ WORKS IN PROGRESS ]
-#    @userinfo.command(brief="Allows you to check Spotify playback status of other member", name = "spotify")
-#    async def userinfo_spotify(self, ctx, *user: libneko.converters.MemberConverter):
-#        if user is None:
-#            user = ctx.message.author
-#        spt = discord.Embed(title="Spotify Playback Viewer",description=f"{user} is listening to...", color=0x1DB954)
-#        spt.add_field(name="Title", value=user.Spotify.title)
-#
-    
+        roles = [role.name.replace("@", "@\u200b") for role in member.roles]
+        memrole = discord.Embed(title=f"Role Viewer.")
+        memrole.add_field(
+            name=f"{member}'s Roles", value=", ".join(roles))
+        memrole.set_footer(text=f"{len(roles)} roles in total!", icon_url=member.avatar_url)
+        await ctx.send(embed=memrole)
+
+
+    @userinfo.command(name="mention", brief="Mention a user.")
+    async def userinfo_mention(self, ctx, target: discord.Member = None):
+        """
+        Mention a user.
+        """
+        if target is None:
+            await ctx.send(f"Mention who? {ctx.message.author}")
+
+        await ctx.send(f"{target} has been mentioned by {ctx.message.author}!")
+
 def setup(bot):
     bot.add_cog(Information(bot))
     print("Information Module has been loaded.")

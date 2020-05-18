@@ -7,8 +7,10 @@ import os
 import logging
 import config
 import sys
+import subprocess
 import traceback
 import random
+import libneko
 from textwrap import dedent
 from discord.ext import commands
 
@@ -35,12 +37,14 @@ print(f"Starting {config.botname}!")
 #print(f"Welcome back {os.getlogin()}!")
 bootsplash()
 
-# Bot client initialization
+# setting up prefix
+print("\nRetrieving the prefix from config.py ....[OK]")
 def get_prefix(bot, message):
     """A callable Prefix for my bot."""
     prefix = config.prefix
     return commands.when_mentioned_or(*prefix)(bot, message)
 
+# Bot client initialization
 bot = commands.Bot(
     command_prefix=get_prefix, description=config.desc, case_insensitive=True
 )
@@ -49,10 +53,8 @@ bot = commands.Bot(
 print("\nSetting Log files to system.log ...[Success]")
 logger = logging.getLogger()
 logger.setLevel(logging.ERROR)
-handler = logging.FileHandler(filename="system.log", encoding="utf-8", mode="w")
-handler.setFormatter(
-    logging.Formatter("{asctime}:{levelname}:{name}:{message}", style="{")
-)
+handler = logging.FileHandler(filename="system.log", encoding="utf-8", mode="a+")
+handler.setFormatter(logging.Formatter("\n{asctime}:{levelname}:{name}:{message}", style="{"))
 logger.addHandler(handler)
 
 # more logging stuff
@@ -65,10 +67,7 @@ with open("coin.json") as json_fp:
     classified = json.load(json_fp)  # Loading data from the json file
     TOKEN = classified["token"]  # Getting the token
 
-# setting up prefix
-print("Retrieving the prefix from config.py ....[OK]")
-
-# Load up cogs
+# Load up cogs (Ugly implementation i know, at least it works for now...)
 print("Loading all Cogs and Extensions...")
 for extension in os.listdir("cogs"):
     if extension.endswith(".py"):
@@ -80,6 +79,9 @@ for extension in os.listdir("cogs"):
                     extension, type(e).__name__, e
                 )
             )
+
+bot.load_extension("libneko.extras.help")
+bot.load_extension("libneko.extras.superuser")
 
 # Listener setup                    [RESPONSE ON MENTION WAS A MISTAKE]
 #@bot.listen("on_message")
@@ -129,12 +131,13 @@ async def on_ready():
         f"List of servers i'm in ({len(bot.guilds)} Servers in total):\n==========================="
     )
     for x in bot.guilds:
-        print(f"{x.name} (Membert Count: {x.member_count})")
+        print(f"{x.name} (ID: {x.id}) (Membert Count: {x.member_count})")
     print("===========================")
     bot.loop.create_task(change_activities())
 
 async def change_activities():
     """Quite self-explanatory. It changes the bot activities"""
+    random.seed()
     timeout = 10  # The time between each change of status in seconds
     statuses = (discord.Status.online, discord.Status.idle, discord.Status.dnd)
     while True:  # Infinite loop
@@ -196,6 +199,7 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.errors.DisabledCommand):
         ded = discord.Embed(description=f"**:warning: This command are disabled.**")
         await ctx.send(embed=ded, content=None)
+
     elif isinstance(error, discord.Forbidden):
         missaccess = discord.Embed(
             description=f"**:no_entry_sign: I'm not allowed to send message there!**"
@@ -204,11 +208,12 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.errors.NotOwner):
         notowner = discord.Embed(description=f"**:warning: You are not my owner!**")
         await ctx.send(embed=notowner, content=None, delete_after=5.0)
+
     elif isinstance(error, discord.NotFound):
         notfound = discord.Embed(
-            description=f"**:warning: Can't find the target message!**"
-        )
+            description=f"**:warning: Can't find the target message!**")
         await ctx.send(embed=notfound, content=None, delete_after=5.0)
+
     else:
         try:
             print(f"Ignoring exception in command {ctx.command.name}")
@@ -230,12 +235,18 @@ async def on_command_error(ctx, error):
 # DEBUGGING and SYSTEM UTILITIES #
 #################################
 
-@bot.command(brief="Fully restarts the bot", hidden=True, aliases=["reboot"])
+@bot.command(hidden=True, aliases=["reboot"])
 @commands.is_owner()
 async def restart(ctx):
     """Restarts the bot for updates"""
+    openerr = None
+    core = "main.py"
     await ctx.send("Restarting!")
-    os.startfile("main.py")
+    if sys.platform == "win32":
+        os.startfile(core)
+    else:
+        openerr ="open" if sys.platform == "darwin" else "xdg-open"
+        subprocess.call([openerr, core])
     await ctx.bot.logout()
     sys.exit()
 
@@ -358,6 +369,7 @@ async def unloadallcogs(self, ctx):
         else:
             await ctx.send(":gear: Successfully Unloaded all cogs!")
 
+## RUN THE WHOLE THING ##
 bot.run(TOKEN)
 
 print("EOF")
