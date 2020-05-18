@@ -20,9 +20,9 @@ Feel free to explore it by yourself
 
 For configuration, see `config.py` file.
 
-> This Bot has a custom boot/loading screen, Feel free to use it for whatever you like (I recommend to use it as an MOTD or something.)
-> This bot also has a customizeable Error message quotes
-> There also a meme command. You can put your own memes on `/memes/` folder and use the meme command to send it randomly.
+* This Bot has a custom boot/loading screen, Feel free to use it for whatever you like (I recommend to use it as an MOTD or something.)
+* The bot also has a customizeable Error message quotes
+* There also a meme command. You can put your own memes on `/memes/` folder and use the meme command to send it randomly.
 
 * To customize the bootup logo, edit the `bootup_logo.txt` to your liking.
 * Go to `quotes.py` to customize the error message quotes.
