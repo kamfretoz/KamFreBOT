@@ -64,16 +64,6 @@ class Information(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # About command
-    @commands.command()
-    async def about(self, ctx):
-        """Information about this bot."""
-        about = discord.Embed(
-            title=f"{config.botname}", description=f"{config.desc}", color=0xFFFFFF
-        )
-        about.set_footer(text="Made by **@KamFretoZ**")
-        await ctx.send(embed=about)
-
     @commands.command(aliases=["status"], pass_context=True)
     async def stats(self, ctx):
         """Bot stats."""
@@ -91,6 +81,8 @@ class Information(commands.Cog):
             mem_usage = "{:.2f} MiB".format(
                 __import__("psutil").Process().memory_full_info().rss / 1024 ** 2
             )
+
+        sysboot = datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d at %H:%M:%S")
 
         uptime = datetime.now() - counter
         hours, rem = divmod(int(uptime.total_seconds()), 3600)
@@ -112,7 +104,7 @@ class Information(commands.Cog):
             em = discord.Embed(title="System Status", color=0x32441C)
             em.add_field(
                 name=":desktop: CPU Usage.",
-                value=f"{psutil.cpu_percent():.2f}%",
+                value=f"{psutil.cpu_percent():.2f}% ({psutil.cpu_count(logical=False)} Core(s) System.) \n(load avg:{psutil.getloadavg()})",
                 inline=False,
             )
             em.add_field(
@@ -122,7 +114,7 @@ class Information(commands.Cog):
             )
             em.add_field(
                 name=":computer: Memory Usage.",
-                value=f"System Memory Usage: {psutil.virtual_memory().percent}%",
+                value=f"System: {psutil.virtual_memory().percent}%",
                 inline=False,
             )
             em.add_field(
@@ -137,6 +129,7 @@ class Information(commands.Cog):
             em.add_field(
                 name="\u2694 Servers", value=str(len(self.bot.guilds)), inline=False
             )
+            em.add_field(name="⏲️ Last System Boot Time", value=sysboot, inline=False)
             em.add_field(
                 name="\ud83d\udcd1 Channels", value=str(channel_count), inline=False
             )
@@ -223,7 +216,7 @@ class Information(commands.Cog):
         )
         server.add_field(
             name="》 Created",
-            value=guild.created_at.strftime("%d-%m-%Y at %H:%M:%S"),
+            value=guild.created_at.strftime("%B %d, %Y at %I:%M %p"),
             inline=False,
         )
         server.add_field(name="》 Is a large guild?", value=guild.large, inline=False)
@@ -476,6 +469,7 @@ class Information(commands.Cog):
             user = ctx.author
 
         boost_stats = None
+        nitro_stats = None
 
         if user.premium_since is None:
             boost_stats = "This user is not boosting this server."
@@ -504,7 +498,7 @@ class Information(commands.Cog):
         )
         member.add_field(
             name="》 Member since",
-            value=f'{user.joined_at.strftime("%d-%m-%Y - %H:%M:%S")}',
+            value=f'{user.joined_at.strftime("%B %d, %Y at %I:%M %p")}',
             inline=False,
         )
         member.add_field(name="》 User ID", value=user.id, inline=False)
@@ -514,11 +508,11 @@ class Information(commands.Cog):
             name="》 Shared Servers", value=f"{shared} shared", inline=False
         )
         member.add_field(
-            name="》 Created at",
-            value=user.created_at.strftime("%d-%m-%Y at %H:%M:%S"),
+            name="》 Created",
+            value=user.created_at.strftime("%B %d, %Y at %I:%M %p"),
             inline=False,
         )
-        member.add_field(name="》 Current Activity", value=user.activity, inline=False)
+        member.add_field(name="》 Current Activity/Status", value=user.activity, inline=False)
         member.add_field(
             name="》 is Active on Mobile?", value=user.is_on_mobile(), inline=False
         )
@@ -547,14 +541,17 @@ class Information(commands.Cog):
     async def userinfo_avatar(self, ctx, *, user: libneko.converters.InsensitiveMemberConverter = None):
         """View the avatar of a member.\nYou can either use Discord ID or ping them instead"""
         pic_frmt = None
+        link_frmt = None
 
         if user is None:
             user = ctx.message.author
 
-            if user.is_avatar_animated() is True:
-                pic_frmt = "gif"
-            else:
-                pic_frmt = "png"
+        if user.is_avatar_animated() is True:
+            pic_frmt = "gif"
+            link_frmt = f"[png]({user.avatar_url_as(format='png',size=4096)}) | [gif]({user.avatar_url_as(format='gif',size=4096)}) | [jpg]({user.avatar_url_as(format='jpg',size=4096)}) | [webp]({user.avatar_url_as(format='webp',size=4096)})"
+        else:
+            pic_frmt = "png"
+            link_frmt = f"[png]({user.avatar_url_as(format='png',size=4096)}) | [jpg]({user.avatar_url_as(format='jpg',size=4096)}) | [webp]({user.avatar_url_as(format='webp',size=4096)})"
 
         try:
             if user is None:  # This will be executed when no argument is provided
@@ -564,6 +561,7 @@ class Information(commands.Cog):
                     color=ctx.author.color,
                     timestamp=datetime.utcnow(),
                 )
+                pfp.add_field(name="Full avatar link", value=link_frmt)
                 pfp.set_image(url=ctx.message.author.avatar_url_as(format=pic_frmt, size=4096))
                 await ctx.send(embed=pfp)
             else:  # This is what normally executed.
@@ -572,6 +570,7 @@ class Information(commands.Cog):
                     title="Avatar Viewer",
                     timestamp=datetime.utcnow(),
                 )
+                pfp.add_field(name="Full avatar link", value=link_frmt)
                 pfp.set_image(url=user.avatar_url_as(format=pic_frmt, size=4096))
                 pfp.colour = user.colour
                 await ctx.send(embed=pfp)
@@ -605,14 +604,14 @@ class Information(commands.Cog):
 
 
     @userinfo.command(name="mention", brief="Mention a user.")
-    async def userinfo_mention(self, ctx, target: discord.Member = None):
+    async def userinfo_mention(self, ctx, target: libneko.converters.InsensitiveMemberConverter = None):
         """
         Mention a user.
         """
         if target is None:
             await ctx.send(f"Mention who? {ctx.message.author}")
 
-        await ctx.send(f"{target} has been mentioned by {ctx.message.author}!")
+        await ctx.send(f"{target.mention} has been mentioned by {ctx.message.author.mention}!")
 
 def setup(bot):
     bot.add_cog(Information(bot))

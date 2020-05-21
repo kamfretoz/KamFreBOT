@@ -532,7 +532,7 @@ class Fun(commands.Cog):
                 s += "   "
         await ctx.send(s)
 
-    @commands.command(aliases=["kitty", "kitten", "kat"])
+    @commands.command(aliases=["kitty", "kitten", "kat","catto"])
     async def cat(self, ctx):
         """
         Send cute cat pics.
@@ -545,7 +545,7 @@ class Fun(commands.Cog):
         await ctx.send(embed=embed)
         await ctx.message.delete()
 
-    @commands.command(aliases=["doggie","doge"])
+    @commands.command(aliases=["doggie","doge","doggo"])
     async def dog(self, ctx):
         """
         Send cute cat pics.
@@ -582,7 +582,10 @@ class Fun(commands.Cog):
 
     @commands.cooldown(rate=1, per=15, type=commands.BucketType.guild)
     @commands.command(name="curse", aliases=("oppugno", "jynx", "kutuk", "santet"), hidden=True)
-    async def emoji_curse(self, ctx, user: discord.Member, emoji: discord.Emoji, *, text=None):
+    async def emoji_curse(self, ctx, user: discord.Member = None, emoji: discord.Emoji = "<:all_powerful_pepe:712952544514801716>", *, text=None):
+        if user is None:
+            user = ctx.message.author
+
         emoji = (
             self.bot.get_emoji(int(emoji.split(":")[2].strip(">")))
             if "<:" in emoji or "<a:" in emoji
@@ -621,14 +624,12 @@ class Fun(commands.Cog):
                     start = time.monotonic()
                     while time.monotonic() - start < 1800:
                         if text is None:
-                            # print(f"\n3rd\n{self.jynxed}")
                             msg = await self.bot.wait_for("message", check=check)
                             try:
                                 await msg.add_reaction(emoji)
                             except:
                                 pass
                         else:
-                            # print(f"\n3rd\n{self.jynxed}")
                             msg = await self.bot.wait_for("message", check=check)
                             try:
                                 await msg.add_reaction(emoji)

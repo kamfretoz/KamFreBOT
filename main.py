@@ -120,7 +120,7 @@ async def on_ready():
         Current prefix: {config.prefix}
         Python Version: {sys.version[:6]}
         Discord.py Version: {discord.__version__}
-        {bot.user.name} Version: "Alpha v0.0.1"
+        {bot.user.name} Version: {config.version}
         Watching {len(bot.users)} users across {len(bot.guilds)} servers.
         Logged in at {time.ctime()}
         ===========================
@@ -230,6 +230,20 @@ async def on_command_error(ctx, error):
             await ctx.send(
                 ":boom: An error occurred while displaying the previous error."
             )
+
+
+# About command
+@bot.command()
+async def about(ctx):
+    """Information about this bot."""
+    creator = (await bot.application_info()).owner
+    about = discord.Embed(
+        title=f"{config.botname}", description=f"{config.desc}", color=0xFFFFFF
+    )
+    about.add_field(name="GitHub Link.", value="[Click Here!](https://github.com/kamfretoz/KamFreBOT)")
+    about.set_thumbnail(url=config.about_thumbnail_img)
+    about.set_footer(text=f"Made by {creator}")
+    await ctx.send(embed=about)
 
 ###################################
 # DEBUGGING and SYSTEM UTILITIES #

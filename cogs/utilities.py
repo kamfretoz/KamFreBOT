@@ -97,8 +97,8 @@ class Utilities(commands.Cog):
         except:
             await ctx.send("No source was found...")
 
-    @commands.command(aliases=["uc"])
-    async def unicodeinfo(self, ctx, *, msg: str):
+    @commands.command(aliases=["uc", "uni"])
+    async def uniconvert(self, ctx, *, msg: str):
         """Convert to unicode emoji if possible. Ex: [p]uni :eyes:"""
         await ctx.send("`" + msg.replace("`", "") + "`")
 

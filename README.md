@@ -2,7 +2,7 @@
 
 ## A simple Discord bot made by me for some of my private Discord servers
 
-This is Frankenstein abomination of a bot i have made few years ago. The result of accumulation of me copying some codes from another GitHub repo (only some, not the entire repo)
+This Frankenstein abomination of a bot is something i have made few years ago. The resulting accumulation of me copying some codes from another GitHub repo (only some, not the entire repo)
 Feel free to explore it by yourself
 
 ![Bootup Screen](/screenshot/bootup.png)
@@ -13,19 +13,26 @@ Feel free to explore it by yourself
 * Navigate to the desired directory
 * Install the required dependencies with `python3 -m pip install -r requirements.txt`
 * Fill in the Token and The YT API Key
-* Run the bot with `./run.sh` or `./run.bat` according to your prerferred operating sytem.
+* Run the bot with `./run.sh` or `./run.bat` according to your prerferred operating system.
 * Enjoy the abomination 😂
 
 ## Customization
 
 For configuration, see `config.py` file.
 
-* This Bot has a custom boot/loading screen, Feel free to use it for whatever you like (I recommend to use it as an MOTD or something.)
-* The bot also has a customizeable Error message quotes
-* There also a meme command. You can put your own memes on `/memes/` folder and use the meme command to send it randomly.
-
+* This Bot has a custom boot/loading screen
+* Feel free to use it for whatever you like (I recommend to use it as an MOTD or something.)
 * To customize the bootup logo, edit the `bootup_logo.txt` to your liking.
+  
+* The bot also has a customizeable Error message quotes
 * Go to `quotes.py` to customize the error message quotes.
+  
+* There also a meme command.
+* You can put your own memes on `/memes/` folder and use the meme command to send it randomly.
+
+* You can also put custom sound into the `/audio/` folder
+* And use `localplay` command to play the audio
+* NOTE: The filename IS case sensitive. (For example, `[p]localplay lingsir_wengi.mp3`)
 
 ## Token, Key and Stuff
 
