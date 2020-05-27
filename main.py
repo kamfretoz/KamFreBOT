@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import time
 import asyncio
 import discord
@@ -13,6 +15,7 @@ import random
 import libneko
 from textwrap import dedent
 from discord.ext import commands
+from _datetime import datetime
 
 print("Importing Modules....[Success]")
 
@@ -99,10 +102,8 @@ async def on_connect():
 
 @bot.event
 async def on_resumed():
-    print(
-        "WARNING: connection error was occurred and Successfully Resumed/Reconnected the Session."
-    )
-    print(f"\nCurrent time: {time.ctime()}")
+    print("WARNING: connection error was occurred and Successfully Resumed/Reconnected the Session.")
+    print(f"Current time: {time.ctime()}")
     print(f"Still watching {len(bot.users)} users across {len(bot.guilds)} servers.")
 
 
@@ -127,9 +128,7 @@ async def on_ready():
         """
         )
     )
-    print(
-        f"List of servers i'm in ({len(bot.guilds)} Servers in total):\n==========================="
-    )
+    print(f"List of servers i'm in ({len(bot.guilds)} Servers in total):\n===========================")
     for x in bot.guilds:
         print(f"{x.name} (ID: {x.id}) (Membert Count: {x.member_count})")
     print("===========================")
@@ -138,26 +137,25 @@ async def on_ready():
 async def change_activities():
     """Quite self-explanatory. It changes the bot activities"""
     random.seed()
-    timeout = 10  # The time between each change of status in seconds
     statuses = (discord.Status.online, discord.Status.idle, discord.Status.dnd)
     while True:  # Infinite loop
-        game = discord.Game(name="Have a nice day! ^^")  # Pick a choice from 'playopt'.
+        game = discord.Game(name=config.playing_status)  # Pick a choice from 'playopt'.
         # Watch out for how you import 'random.choice', as that might affect how this line needs to be written.
         # For more help refer to the Python Docs.
         watch = discord.Activity(
             type=discord.ActivityType.watching,
-            name=f"{len(bot.users)} users across {len(bot.guilds)} servers.",
+            name=config.playing_status
         )  # Pick a choice from 'watchopt'
-        stream = discord.Streaming(url="", name="")  # Pick a choice from 'streamopt'
+        stream = discord.Streaming(url=config.streaming_url, name=config.streaming_status)  # Pick a choice from 'streamopt'
         listen = discord.Activity(
-            type=discord.ActivityType.listening, name="You"
+            type=discord.ActivityType.listening, name=config.listening_status
         )  # Pick a choice from 'listenopt'
-        possb = random.choice(
-            [game, watch, listen]
+        kind = random.choice(
+            [game, watch, listen, stream]
         )  # Pick a choice from all the possibilities: "Playing", "Watching", "Streaming", "Listening"
         for s in statuses:
-            await bot.change_presence(activity=possb, status=s)
-            await asyncio.sleep(timeout)
+            await bot.change_presence(activity=kind, status=s)
+            await asyncio.sleep(config.status_timeout)
 
 
 # Main Exception Handler
@@ -165,46 +163,46 @@ async def change_activities():
 async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.CommandNotFound):
         nocommand = discord.Embed(description=":warning: **Invalid Command!**")
-        await ctx.send(content=None, embed=nocommand, delete_after=3)
+        await ctx.send(content=None, embed=nocommand, delete_after=5.0)
     elif isinstance(error, commands.errors.CheckFailure):
         nopermission = discord.Embed(
             description="**:warning: You don't have permissions to use that command.**"
         )
-        await ctx.send(content=None, embed=nopermission)
+        await ctx.send(content=None, embed=nopermission, delete_after=5.0)
     elif isinstance(error, commands.errors.MissingRequiredArgument):
         missingargs = discord.Embed(
             description="**:warning: You are missing required arguments.**"
         )
-        await ctx.send(content=None, embed=missingargs)
+        await ctx.send(content=None, embed=missingargs, delete_after=5.0)
     elif isinstance(error, commands.errors.BadArgument):
         badargument = discord.Embed(
             description="**:warning: You have given an invalid argument.**"
         )
-        await ctx.send(content=None, embed=badargument)
+        await ctx.send(content=None, embed=badargument, delete_after=5.0)
     elif isinstance(error, commands.CommandOnCooldown):
         cooldownerr = discord.Embed(
             description=f"**:warning: That command is on cooldown. Please try again after {int(error.retry_after) + 1} second(s).**"
         )
-        await ctx.send(embed=cooldownerr, content=None)
+        await ctx.send(embed=cooldownerr, content=None, delete_after=5.0)
     elif isinstance(error, commands.errors.BotMissingPermissions):
         missperm = discord.Embed(
             description=f"**:warning: I don't have required permission to complete that command.**"
         )
-        await ctx.send(embed=missperm, content=None)
+        await ctx.send(embed=missperm, content=None, delete_after=5.0)
     elif isinstance(error, commands.errors.TooManyArguments):
         toomanyargs = discord.Embed(
             description=f"**:warning: You have inputted too many arguments!**"
         )
-        await ctx.send(embed=toomanyargs, content=None)
+        await ctx.send(embed=toomanyargs, content=None, delete_after=5.0)
     elif isinstance(error, commands.errors.DisabledCommand):
         ded = discord.Embed(description=f"**:warning: This command are disabled.**")
-        await ctx.send(embed=ded, content=None)
+        await ctx.send(embed=ded, content=None, delete_after=5.0)
 
     elif isinstance(error, discord.Forbidden):
         missaccess = discord.Embed(
             description=f"**:no_entry_sign: I'm not allowed to send message there!**"
         )
-        await ctx.send(embed=missaccess, content=None)
+        await ctx.send(embed=missaccess, content=None, delete_after=5.0)
     elif isinstance(error, commands.errors.NotOwner):
         notowner = discord.Embed(description=f"**:warning: You are not my owner!**")
         await ctx.send(embed=notowner, content=None, delete_after=5.0)
@@ -216,20 +214,18 @@ async def on_command_error(ctx, error):
 
     else:
         try:
+            now = datetime.now()
             print(f"Ignoring exception in command {ctx.command.name}")
             trace = traceback.format_exception(type(error), error, error.__traceback__)
             print("".join(trace))
-            errormsg = discord.Embed(
-                description=f":octagonal_sign:  An error occurred with the `{ctx.command.name}` command."
-            )
-            await ctx.send(content=f"'{random.choice(quotes.errors)}'", embed=errormsg)
-            await ctx.send(
-                ":scroll: **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```"
-            )
+            errormsg = discord.Embed(title=f"🛑 An error occurred with the `{ctx.command.name}` command.", description=f"ℹ More Information:\n🖥 Server: {ctx.guild.name}\n📑 Channel: #{ctx.channel}\n👥 User: {ctx.message.author}\n🕓 At: {now.strftime('%B %d, %Y - %H:%M:%S')} GMT+7")
+            await bot.get_channel(config.home).send(content=f"{random.choice(quotes.errors)}", embed=errormsg)
+            await ctx.send(content=f"'{random.choice(quotes.errors)}'", embed=errormsg, delete_after=9.9)
+            await bot.get_channel(config.home).send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```")
+            await ctx.send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```", delete_after=10)
         except discord.HTTPException:
-            await ctx.send(
-                ":boom: An error occurred while displaying the previous error."
-            )
+            fuckeduperr = discord.Embed(title="💥 An error occurred while displaying the previous error.")
+            await ctx.send(embed=fuckeduperr, delete_after=5)
 
 
 # About command
@@ -240,7 +236,7 @@ async def about(ctx):
     about = discord.Embed(
         title=f"{config.botname}", description=f"{config.desc}", color=0xFFFFFF
     )
-    about.add_field(name="GitHub Link.", value="[Click Here!](https://github.com/kamfretoz/KamFreBOT)")
+    about.add_field(name="GitHub Link.", value=f"[Click Here!]({config.about_github_link})")
     about.set_thumbnail(url=config.about_thumbnail_img)
     about.set_footer(text=f"Made by {creator}")
     await ctx.send(embed=about)
@@ -287,7 +283,7 @@ async def runningcog(ctx):
 # This one is for testing error messages only
 @bot.command(hidden=True, aliases=["dummy"])
 @commands.is_owner()
-async def crash(self, ctx):
+async def crash(ctx):
     """Use to generate an error message for debugging purpose"""
     await ctx.send("Generating an Error Message..")
     raise ValueError('This is an Exception that are manually generated.')

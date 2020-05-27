@@ -55,7 +55,7 @@ class Mod(commands.Cog):
                 )
             else:
                 emb.description = (
-                    f"You do not have the permissions to {method} {user.name}."
+                    f"Unable to {method} {user.name}."
                 )
 
         return emb
@@ -318,6 +318,51 @@ class Mod(commands.Cog):
                     description=f"Successfully changed my nickname to **{newname}**!"
                 )
             )
+    @commands.has_permissions(manage_nicknames=True)
+    @commands.bot_has_permissions(manage_nicknames=True)
+    @commands.command(aliases=["changenick", "nick"])
+    @commands.guild_only()
+    async def nickname(self, ctx, member: discord.Member, *, newname: str = None):
+        """Change other user's nickname, if omitted, removes it instead."""
+        if newname == None:
+            await member.edit(nick=None)
+            await ctx.send(
+                embed=discord.Embed(
+                    description=f"Successfully reset the nickname of **{member.name}**"
+                )
+            )
+        elif len(newname) > 32:
+            await ctx.send(
+                embed=discord.Embed(
+                    description=f":warning: The new nickname must be 32 or fewer in length."
+                )
+            )
+        else:
+            await member.edit(nick=newname)
+            await ctx.send(
+                embed=discord.Embed(
+                    description=f"Successfully changed the nickname of **{member.name}** to **{newname}**"
+                )
+            )
+
+    @commands.guild_only()
+    @commands.has_permissions(manage_messages=True)
+    @commands.command(aliases=['slowmo'])
+    async def slowmode(self, ctx, seconds: int=0):
+        if seconds > 120:
+            return await ctx.send(":no_entry: Amount can't be over 120 seconds")
+        if seconds is 0:
+            await ctx.channel.edit(slowmode_delay=seconds)
+            a = await ctx.send("**Slowmode is off for this channel**")
+            await a.add_reaction(":ok_hand:")
+        else:
+            if seconds is 1:
+                numofsecs = "second"
+            else:    
+                numofsecs = "seconds"
+            await ctx.channel.edit(slowmode_delay=seconds)
+            confirm = await ctx.send(f"**Set the channel slow mode delay to `{seconds}` {numofsecs}\nTo turn this off, do $slowmode**")
+            await confirm.add_reaction(":ok_hand:")
 
 
 def setup(bot):

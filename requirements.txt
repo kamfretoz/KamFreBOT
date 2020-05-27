@@ -1,5 +1,6 @@
 git+https://github.com/Rapptz/discord.py#egg=discord.py[voice]
 git+https://gitlab.com/Tmpod/libneko
+git+https://github.com/LiBa001/disputils
 psutil
 bs4
 lxml
@@ -10,3 +11,4 @@ youtube-dl
 bs4
 google-api-python-client
 PyDictionary
+qrcode[pil]

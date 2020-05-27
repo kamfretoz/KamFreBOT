@@ -102,6 +102,7 @@ class Information(commands.Cog):
             channel_count += len(guild.channels)
         try:
             em = discord.Embed(title="System Status", color=0x32441C)
+            
             em.add_field(
                 name=":desktop: CPU Usage.",
                 value=f"{psutil.cpu_percent():.2f}% ({psutil.cpu_count(logical=False)} Core(s) System.) \n(load avg:{psutil.getloadavg()})",
@@ -118,20 +119,33 @@ class Information(commands.Cog):
                 inline=False,
             )
             em.add_field(
-                name="\U0001F4BE BOT Memory usage:", value=mem_usage, inline=False
+                name="\U0001F4BE BOT Memory usage:", 
+                value=mem_usage, 
+                inline=False
             )
             em.add_field(
                 name=":minidisc: Disk Usage.",
                 value=f"Total Size: {solveunit(psutil.disk_usage('/').total)} GB \nCurrently Used: {solveunit(psutil.disk_usage('/').used)} GB",
                 inline=False,
             )
-            em.add_field(name="\U0001F553 BOT Uptime", value=time, inline=False)
             em.add_field(
-                name="\u2694 Servers", value=str(len(self.bot.guilds)), inline=False
+                name="\U0001F553 BOT Uptime",
+                value=time, 
+                inline=False
             )
-            em.add_field(name="⏲️ Last System Boot Time", value=sysboot, inline=False)
             em.add_field(
-                name="\ud83d\udcd1 Channels", value=str(channel_count), inline=False
+                name="\u2694 Servers", 
+                value=str(len(self.bot.guilds)), 
+                inline=False
+            )
+            em.add_field(
+                name="⏲️ Last System Boot Time", 
+                value=sysboot, 
+                inline=False)
+            em.add_field(
+                name="\ud83d\udcd1 Channels", 
+                value=str(channel_count), 
+                inline=False
             )
 
             await ctx.send(content=None, embed=em)
@@ -219,15 +233,31 @@ class Information(commands.Cog):
             value=guild.created_at.strftime("%B %d, %Y at %I:%M %p"),
             inline=False,
         )
-        server.add_field(name="》 Is a large guild?", value=guild.large, inline=False)
-        server.add_field(name="》 Region", value=f"{guild.region}", inline=False)
-        server.add_field(name="》 AFK Channel", value=guild.afk_channel, inline=False)
         server.add_field(
-            name="》 AFK Timeout", value=f"{guild.afk_timeout} Seconds", inline=False
+            name="》 Is a large guild?", 
+            value=guild.large, 
+            inline=False)
+        server.add_field(
+            name="》 Region", 
+            value=f"{guild.region}", 
+            inline=False)
+        server.add_field(
+            name="》 AFK Channel", 
+            value=guild.afk_channel, 
+            inline=False)
+        server.add_field(
+            name="》 AFK Timeout", 
+            value=f"{guild.afk_timeout} Seconds", 
+            inline=False
         )
-        server.add_field(name="》 2FA Level", value=guild.mfa_level, inline=False)
         server.add_field(
-            name="》 Verification Level", value=guild.verification_level, inline=False
+            name="》 2FA Level", 
+            value=guild.mfa_level, 
+            inline=False)
+        server.add_field(
+            name="》 Verification Level", 
+            value=guild.verification_level, 
+            inline=False
         )
         server.add_field(
             name="》 Explicit Content Filter",
@@ -239,11 +269,19 @@ class Information(commands.Cog):
             value=guild.default_notifications,
             inline=False,
         )
-        server.add_field(name="》 Server Features", value=guild.features, inline=False)
         server.add_field(
-            name="》 Nitro Boost Status", value=booster_amount, inline=False
+            name="》 Server Features", 
+            value=guild.features, 
+            inline=False)
+        server.add_field(
+            name="》 Nitro Boost Status", 
+            value=booster_amount, 
+            inline=False
         )
-        server.add_field(name="》 Members", value=fmt, inline=False)
+        server.add_field(
+            name="》 Members", 
+            value=fmt, 
+            inline=False)
         server.add_field(
             name="》 Roles",
             value=", ".join(roles) if len(roles) < 10 else f"{len(roles)} roles",
@@ -346,7 +384,7 @@ class Information(commands.Cog):
         em.add_field(name="Managed", value=role.managed)
         em.add_field(name="Colour", value=colour)
         em.add_field(name="Creation Date", value=created_on)
-        em.add_field(name="Members", value=members[:-2], inline=True)
+        em.add_field(name="Members", value=f"{members[:-2]}", inline=False)
         em.set_footer(text=f"Role ID: {role.id}")
 
         await ctx.send(embed=em)
@@ -389,22 +427,68 @@ class Information(commands.Cog):
         create = discord.Embed(description=f"**{ctx.guild.name}** was created on `{ctx.guild.created_at.strftime('%B %d, %Y at %I:%M %p')}`")
         await ctx.send(embed = create)
 
-    @serverinfo.command(aliases=["mods", "mod", "admin"], name="admins" ,brief="shows people with administrator permission on the server.")
+    @serverinfo.command(name="administrators", aliases=["admin", "admins"], brief="Check which admins are online on current server")
     @commands.guild_only()
-    async def serverinfo_admins(self, ctx):
-        """
-        shows people with administrator permission on the server.
-        """
-        admin = discord.Embed(description=f"Admins on {ctx.guild.name}", color=0x00FF00)
-        for x in ctx.guild.members:
-            if x.bot is False:
-                if x.guild_permissions.administrator:
-                    admin.add_field(
-                        name=f"{x.name}",
-                        value=f"{x.mention}\n===========================",
-                        inline=False,
-                    )
-        await ctx.send(embed=admin)
+    async def serverinfo_administrators(self, ctx):
+        """ Check which admins are online on current guild """
+        admins = ""
+        online, idle, dnd, offline = [], [], [], []
+        ctx.trigger_typing()
+
+        for user in ctx.guild.members:
+            if ctx.channel.permissions_for(user).administrator:
+                if not user.bot and user.status is discord.Status.online:
+                    online.append(f"{user}")
+                if not user.bot and user.status is discord.Status.idle:
+                    idle.append(f"{user}")
+                if not user.bot and user.status is discord.Status.dnd:
+                    dnd.append(f"{user}")
+                if not user.bot and user.status is discord.Status.offline:
+                    offline.append(f"{user}")
+
+        if online:
+            admins += f"🟢 {', '.join(online)}\n"
+        if idle:
+            admins += f"🟡 {', '.join(idle)}\n"
+        if dnd:
+            admins += f"🔴 {', '.join(dnd)}\n"
+        if offline:
+            admins += f"⚫ {', '.join(offline)}\n"
+
+        emb = discord.Embed(title=f"Admins in `{ctx.guild.name}`", description=f"```{admins}```")
+        await ctx.send(embed=emb)
+
+    @serverinfo.command(name="moderators", aliases=["moderator", "mod","mods"], brief="Check which mods are online on current server")
+    @commands.guild_only()
+    async def serverinfo_moderators(self, ctx):
+        """ Check which mods are online on current guild """
+        mods = ""
+        online, idle, dnd, offline = [], [], [], []
+        ctx.trigger_typing()
+
+        for user in ctx.guild.members:
+            if ctx.channel.permissions_for(user).kick_members or \
+               ctx.channel.permissions_for(user).ban_members:
+                if not user.bot and user.status is discord.Status.online:
+                    online.append(f"{user}")
+                if not user.bot and user.status is discord.Status.idle:
+                    idle.append(f"{user}")
+                if not user.bot and user.status is discord.Status.dnd:
+                    dnd.append(f"{user}")
+                if not user.bot and user.status is discord.Status.offline:
+                    offline.append(f"{user}")
+
+        if online:
+            mods += f"🟢 {', '.join(online)}\n"
+        if idle:
+            mods += f"🟡 {', '.join(idle)}\n"
+        if dnd:
+            mods += f"🔴 {', '.join(dnd)}\n"
+        if offline:
+            mods += f"⚫ {', '.join(offline)}\n"
+
+        emb = discord.Embed(title=f"Moderators in `{ctx.guild.name}`", description=f"```{mods}```")
+        await ctx.send(embed=emb)
 
     @commands.guild_only()
     @serverinfo.command(aliases=["booster"], name="boost", brief="Show the list of Nitro booster on this server.")
@@ -449,7 +533,7 @@ class Information(commands.Cog):
 
     
     @commands.guild_only()
-    @serverinfo.command(name="splash", aliases=["splashes","images"])
+    @serverinfo.command(name="splash", aliases=["splashes","images"], brief="Show the splash image of this server, if any")
     async def serverinfo_splash(self, ctx):
         """Show the splash image of this server, if any"""
         if "INVITE_SPLASH" in ctx.guild.features and ctx.guild.splash is not None:
@@ -492,41 +576,73 @@ class Information(commands.Cog):
             voice = "Not connected."
 
         member.set_author(name=f"Info for {str(user)}")
-        member.add_field(name="》 Display Name", value=user.display_name, inline=False)
+
         member.add_field(
-            name="》 Discriminator/Tag", value=f"#{user.discriminator}", inline=False
+            name="》 Display Name", 
+            value=user.display_name, 
+            inline=False)
+        member.add_field(
+            name="》 Discriminator/Tag", 
+            value=f"#{user.discriminator}", 
+            inline=False
         )
         member.add_field(
             name="》 Member since",
             value=f'{user.joined_at.strftime("%B %d, %Y at %I:%M %p")}',
             inline=False,
         )
-        member.add_field(name="》 User ID", value=user.id, inline=False)
-        member.add_field(name="》 Mention", value=user.mention, inline=False)
-        member.add_field(name="》 Status", value=user.status, inline=False)
         member.add_field(
-            name="》 Shared Servers", value=f"{shared} shared", inline=False
+            name="》 User ID", 
+            value=user.id, 
+            inline=False)
+        member.add_field(
+            name="》 Mention", 
+            value=user.mention, 
+            inline=False)
+        member.add_field(
+            name="》 Status", 
+            value=user.status, 
+            inline=False)
+        member.add_field(
+            name="》 Shared Servers", 
+            value=f"{shared} shared", 
+            inline=False
         )
         member.add_field(
             name="》 Created",
             value=user.created_at.strftime("%B %d, %Y at %I:%M %p"),
             inline=False,
         )
-        member.add_field(name="》 Current Activity/Status", value=user.activity, inline=False)
         member.add_field(
-            name="》 is Active on Mobile?", value=user.is_on_mobile(), inline=False
+            name="》 Current Activity/Status", 
+            value=user.activity, 
+            inline=False)
+        member.add_field(
+            name="》 is Active on Mobile?", 
+            value=user.is_on_mobile(), 
+            inline=False
         )
-        member.add_field(name="》 Voice", value=voice, inline=False)
         member.add_field(
-            name="》 Has Boosted the server since", value=boost_stats, inline=False
+            name="》 Voice", 
+            value=voice, 
+            inline=False)
+        member.add_field(
+            name="》 Has Boosted the server since", 
+            value=boost_stats, 
+            inline=False
         )
         member.add_field(
             name="》 Roles",
             value=", ".join(roles) if len(roles) < 10 else f"{len(roles)} roles",
             inline=False,
         )
-        member.add_field(name="》 Top Role", value=user.top_role, inline=False)
+        member.add_field(
+            name="》 Top Role", 
+            value=user.top_role, 
+            inline=False)
+            
         member.colour = user.colour
+
         member.set_footer(
             text=f"Requested by {ctx.message.author.name}#{ctx.message.author.discriminator}",
             icon_url=f"{ctx.message.author.avatar_url}",

@@ -1,4 +1,5 @@
 import asyncio
+import aiohttp
 import random
 import time
 import config
@@ -7,6 +8,7 @@ import discord
 import libneko
 import requests
 import os
+from random import randint
 from discord.ext import commands
 from libneko import embeds
 
@@ -18,7 +20,6 @@ def get_filesystem_slash():
         return "/"
     else:
         return "/"
-
 
 class Fun(commands.Cog):
     def __init__(self, bot):
@@ -186,6 +187,14 @@ class Fun(commands.Cog):
             await ctx.send(file=discord.File(folder))
         await ctx.send("Finished!")
         await upload.delete()
+
+    @commands.command()
+    async def f(self, ctx, *, text: commands.clean_content = None):
+        """ Press F to pay respect """
+        hearts = ['❤', '💛', '💚', '💙', '💜']
+        reason = f"for **{text}** " if text else ""
+        await ctx.send(f"**{ctx.author.name}** has paid their respect {reason}{random.choice(hearts)}")
+
 
     @commands.cooldown(rate=2,per=900.0, type=commands.BucketType.user)
     @memes.command(name='overload')
@@ -671,6 +680,156 @@ class Fun(commands.Cog):
                     color=discord.Colour.red(),
                 )
             )
+
+    @commands.command()
+    @commands.bot_has_permissions(embed_links=True, add_reactions=True)
+    async def xkcd(self, ctx, *, entry_number=None):
+        """Post a random xkcd"""
+        async with ctx.typing:
+            # Creates random number between 0 and 2190 (number of xkcd comics at time of writing) and queries xkcd
+            headers = {"content-type": "application/json"}
+            url = "https://xkcd.com/info.0.json"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=headers) as response:
+                    xkcd_latest = await response.json()
+                    xkcd_max = xkcd_latest.get("num") + 1
+    
+            if entry_number is not None and int(entry_number) > 0 and int(entry_number) < xkcd_max:
+                i = int(entry_number)
+            else:
+                i = randint(0, xkcd_max)
+            headers = {"content-type": "application/json"}
+            url = "https://xkcd.com/" + str(i) + "/info.0.json"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=headers) as response:
+                    xkcd = await response.json()
+    
+            # Build Embed
+            embed = discord.Embed()
+            embed.title = xkcd["title"] + " (" + xkcd["day"] + "/" + xkcd["month"] + "/" + xkcd["year"] + ")"
+            embed.url = "https://xkcd.com/" + str(i)
+            embed.description = xkcd["alt"]
+            embed.set_image(url=xkcd["img"])
+            embed.set_footer(text="Powered by xkcd")
+            await ctx.send(embed=embed)
+
+    @commands.command()
+    async def ship(self, ctx, name1 : commands.clean_content, name2 : commands.clean_content):
+        shipnumber = random.randint(0,100)
+        if 0 <= shipnumber <= 10:
+            status = "Really low! {}".format(random.choice(["Friendzone ;(", 
+                                                            'Just "friends"', 
+                                                            '"Friends"', 
+                                                            "Little to no love ;(", 
+                                                            "There's barely any love ;("]))
+        elif 10 < shipnumber <= 20:
+            status = "Low! {}".format(random.choice(["Still in the friendzone", 
+                                                     "Still in that friendzone ;(", 
+                                                     "There's not a lot of love there... ;("]))
+        elif 20 < shipnumber <= 30:
+            status = "Poor! {}".format(random.choice(["But there's a small sense of romance from one person!", 
+                                                     "But there's a small bit of love somewhere", 
+                                                     "I sense a small bit of love!", 
+                                                     "But someone has a bit of love for someone..."]))
+        elif 30 < shipnumber <= 40:
+            status = "Fair! {}".format(random.choice(["There's a bit of love there!", 
+                                                      "There is a bit of love there...", 
+                                                      "A small bit of love is in the air..."]))
+        elif 40 < shipnumber <= 60:
+            status = "Moderate! {}".format(random.choice(["But it's very one-sided OwO", 
+                                                          "It appears one sided!", 
+                                                          "There's some potential!", 
+                                                          "I sense a bit of potential!", 
+                                                          "There's a bit of romance going on here!", 
+                                                          "I feel like there's some romance progressing!", 
+                                                          "The love is getting there..."]))
+        elif 60 < shipnumber <= 70:
+            status = "Good! {}".format(random.choice(["I feel the romance progressing!", 
+                                                      "There's some love in the air!", 
+                                                      "I'm starting to feel some love!"]))
+        elif 70 < shipnumber <= 80:
+            status = "Great! {}".format(random.choice(["There is definitely love somewhere!", 
+                                                       "I can see the love is there! Somewhere...", 
+                                                       "I definitely can see that love is in the air"]))
+        elif 80 < shipnumber <= 90:
+            status = "Over average! {}".format(random.choice(["Love is in the air!", 
+                                                              "I can definitely feel the love", 
+                                                              "I feel the love! There's a sign of a match!", 
+                                                              "There's a sign of a match!", 
+                                                              "I sense a match!", 
+                                                              "A few things can be imporved to make this a match made in heaven!"]))
+        elif 90 < shipnumber <= 100:
+            status = "True love! {}".format(random.choice(["It's a match!", 
+                                                           "There's a match made in heaven!", 
+                                                           "It's definitely a match!", 
+                                                           "Love is truely in the air!", 
+                                                           "Love is most definitely in the air!"]))
+
+        if shipnumber <= 33:
+            shipColor = 0xE80303
+        elif 33 < shipnumber < 66:
+            shipColor = 0xff6600
+        else:
+            shipColor = 0x3be801
+
+        emb = (discord.Embed(color=shipColor, \
+                             title="Love test for:", \
+                             description="**{0}** and **{1}** {2}".format(name1, name2, random.choice([
+                                                                                                        ":sparkling_heart:", 
+                                                                                                        ":heart_decoration:", 
+                                                                                                        ":heart_exclamation:", 
+                                                                                                        ":heartbeat:", 
+                                                                                                        ":heartpulse:", 
+                                                                                                        ":hearts:", 
+                                                                                                        ":blue_heart:", 
+                                                                                                        ":green_heart:", 
+                                                                                                        ":purple_heart:", 
+                                                                                                        ":revolving_hearts:", 
+                                                                                                        ":yellow_heart:", 
+                                                                                                        ":two_hearts:"]))))
+        emb.add_field(name="Results:", value=f"{shipnumber}%", inline=True)
+        emb.add_field(name="Status:", value=(status), inline=False)
+        emb.set_author(name="Shipping", icon_url="http://moziru.com/images/kopel-clipart-heart-6.png")
+        await ctx.send(embed=emb)
+
+    @commands.command(aliases=['gay-scanner', 'gayscanner', 'gay'])
+    async def gay_scanner(self, ctx,* ,user: commands.clean_content=None):
+        """very mature command yes haha"""
+        if not user:
+            user = ctx.author.name
+        gayness = random.randint(0,100)
+        if gayness <= 33:
+            gayStatus = random.choice(["No homo", 
+                                       "Wearing socks", 
+                                       '"Only sometimes"', 
+                                       "Straight-ish", 
+                                       "No homo bro", 
+                                       "Girl-kisser", 
+                                       "Hella straight"])
+            gayColor = 0xFFC0CB
+        elif 33 < gayness < 66:
+            gayStatus = random.choice(["Possible homo", 
+                                       "My gay-sensor is picking something up", 
+                                       "I can't tell if the socks are on or off", 
+                                       "Gay-ish", 
+                                       "Looking a bit homo", 
+                                       "lol half  g a y", 
+                                       "safely in between for now"])
+            gayColor = 0xFF69B4
+        else:
+            gayStatus = random.choice(["LOL YOU GAY XDDD FUNNY", 
+                                       "HOMO ALERT", 
+                                       "MY GAY-SESNOR IS OFF THE CHARTS", 
+                                       "STINKY GAY", 
+                                       "BIG GEAY", 
+                                       "THE SOCKS ARE OFF", 
+                                       "HELLA GAY"])
+            gayColor = 0xFF00FF
+        emb = discord.Embed(description=f"Gayness for **{user}**", color=gayColor)
+        emb.add_field(name="Gayness:", value=f"{gayness}% gay")
+        emb.add_field(name="Comment:", value=f"{gayStatus} :kiss_mm:")
+        emb.set_author(name="Gay-Scanner™", icon_url="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/ICA_flag.svg/2000px-ICA_flag.svg.png")
+        await ctx.send(embed=emb)
 
 def setup(bot):
     bot.add_cog(Fun(bot))

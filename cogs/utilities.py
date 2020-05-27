@@ -6,11 +6,17 @@ import urllib
 import time
 import random
 import math
+import io
+import functools
+import os
+import operator
 from pytz import timezone
 from datetime import datetime
 import safygiphy
 import urbandict
 import PyDictionary
+import qrcode
+from io import BytesIO
 
 from libneko import pag, converters
 import discord
@@ -180,8 +186,10 @@ class Utilities(commands.Cog):
     # time command
     # ~~Scrapped for now until~~ i can figure out how to do the customizeable timezone. EDIT: I DID IT! HURRAHH!
     @commands.command(aliases=["time","date","now"])
-    async def clock(self, ctx, location = "UTC"):
+    async def clock(self, ctx, location: str = "UTC"):
         """Show current time. [p]time <timezone>\n for timezone list see: http://tiny.cc/on60iz"""
+
+        location.replace(" ","_")
         time_fmt = "%I:%M:%S %p"
         date_fmt = "%A, %d %B %Y"
         
@@ -197,7 +205,8 @@ class Utilities(commands.Cog):
             clock.add_field(name="🌐 Timezone", value=location, inline=False)
             await ctx.send(embed=clock, content=f"⏰ Tick.. Tock..")
         except:
-            await ctx.send(":warning: **Warning!** An Error Occured.\nMake sure that the syntax is correct and i have the permission.\nfor timezone list see: http://tiny.cc/on60iz")
+            err = discord.Embed(title="⚠ **Warning!** An Error Occured.", description="Make sure that the syntax is correct and i have the correct permission.\nFor timezone list see: http://tiny.cc/on60iz")
+            await ctx.send(embed = err)
 
 
     @commands.command()
@@ -226,7 +235,7 @@ class Utilities(commands.Cog):
 
 
 
-    @commands.command(aliases=["a2b"])
+    @commands.command(aliases=["a2b"], hidden=True)
     async def ascii2bin(self, ctx, *, string):
         """
         Converts the ASCII string to binary.
@@ -239,7 +248,7 @@ class Utilities(commands.Cog):
             else:
                 string = prev.content
         return await self._ascii2bin(ctx, string=string)
-    @commands.command(aliases=["b2a"])
+    @commands.command(aliases=["b2a"],hidden=True)
     async def bin2ascii(self, ctx, *, string):
         """
         Converts the binary string to ASCII.
@@ -251,6 +260,7 @@ class Utilities(commands.Cog):
             else:
                 string = prev.content
         return await self._bin2ascii(ctx, string=string)
+
     async def _ascii2bin(self, ctx, *, string):
         string = "".join(c for c in string if 0 <= ord(c) < 0xFFFF)
         if not string:
@@ -286,9 +296,9 @@ class Utilities(commands.Cog):
             return history[0]
 
 #
-#      DISABLED FOR NOW AS THERE IS A BUG.
+#      DISABLED FOR NOW AS THERE IS A BUG WHERE IT ONLY SHOWS FEW WORDS AT MOST.
 #
-#    @commands.command(brief="Searches the Urban Dictionary for a term",aliases=["ud"], disabled=True)
+#    @commands.command(aliases=["ud"], disabled=True)
 #    async def urban(self, ctx, *, word: str):
 #        "Browse Urban Dictionary."
 #        try:
@@ -330,16 +340,21 @@ class Utilities(commands.Cog):
                     formatted += "\n```\n"
                 await ctx.send(formatted)
 
-    @commands.command(name="channels", hidden=True)
-    @commands.is_owner()
-    async def allchannel(self, ctx, serverid: int = None):
-        """Shows ALL Channels on the chosen server. Use Wisely!"""
-        if serverid is None:
-            server = ctx.guild
-        else:
-            server = discord.utils.get(self.bot.guilds, id=serverid)
-            if server is None:
-                return await ctx.send("Server not found!")
+    @commands.command(aliases=["channels"])
+    @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    async def allchannel(self, ctx):
+        """Shows ALL Channels on this server."""
+        server = ctx.guild
+        #if serverid is None:
+        #    server = ctx.guild
+        #
+        #if serverid is None:
+        #    server = ctx.guild
+        #else:
+        #    server = discord.utils.get(self.bot.guilds, id=serverid)
+        #    if server is None:
+        #        return await ctx.send("Server not found!")
         
         e = discord.Embed(title=f"**{server.name}**\'s Channel list.")
 
@@ -364,8 +379,57 @@ class Utilities(commands.Cog):
         try:
             await ctx.send(embed=e)
         except discord.HTTPException:
-            await ctx.send("⚠️ Unable to send the embed. Make sure that you have allowed the Embed Permission! (OR the embed itself is maybe too long to be displayed)")
+            loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
+            everything = f"Text Channels:\n{text}\nCategories:\n{categories}\nVoice Channels:\n{voice}"
+            data = BytesIO(everything.encode('utf-8'))
+            await ctx.send(content=f"**{ctx.guild.name}'s Channel List**", file=discord.File(data, filename=f"{ctx.guild.name}_Channel_Lists.txt"))
+            await loading.delete()
 
+    @commands.command(aliases=["members"])
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
+    async def allmembers(self, ctx):
+        """Get all members in this server"""
+        bots = ""
+        bots_amount = 0
+        members = ""
+        members_amount = 0
+        total = 0
+        everything =""
+
+        for x in ctx.guild.members:
+            if x.bot is True:
+                bots += f"[BOT][{x.id}]\t{x}\n"
+                bots_amount += 1
+                total += 1
+            else:
+                members += f"[USER][{x.id}]\t{x}\n"
+                members_amount += 1
+                total += 1
+
+        loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
+        everything = f"Member Amount: {members_amount}\nBot Amount: {bots_amount}\nTotal: {total}\n\nMember List:\n{members + bots}"        
+        data = BytesIO(everything.encode('utf-8'))
+        await ctx.send(content=f"**{ctx.guild.name}'s Member List**", file=discord.File(data, filename=f"{ctx.guild.name}_Member_Lists.txt"))
+        await loading.delete()
+
+    @commands.command(aliases=["allrole","roles"])
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
+    async def allroles(self, ctx):
+        """Get all roles in current server"""
+        allroles = ""
+        async with ctx.typing():
+            for num, role in enumerate(sorted(ctx.guild.roles, reverse=True), start=1):
+                allroles += f"[{str(num).zfill(2)}] {role.id}\t[ Users: {len(role.members)} ]\t{role.name}\t\r\n"
+            try:
+                embroles = discord.Embed(title=f"Roles in **{ctx.guild.name}**", description=f"```{allroles}```")
+                await ctx.send(embed=embroles)
+            except discord.HTTPException:
+                loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
+                data = BytesIO(allroles.encode('utf-8'))
+                await ctx.send(content=f"Roles in **{ctx.guild.name}**", file=discord.File(data, filename=f"{ctx.guild.name}_Role_Lists.txt"))
+                await loading.delete()
 
     @commands.command()
     @commands.guild_only()
@@ -453,17 +517,312 @@ class Utilities(commands.Cog):
             em.description = random.randint(a,b)
             await ctx.send(embed=em)
 
-    @commands.command()
-    async def timer(self, ctx, timer):
-        """Counts down till it's over! Usage: *timer [time in secs]"""
-        try:
-            float(timer)
-        except ValueError:
-            await ctx.send("UH OH! Timer did not start. Usage: *timer [time in secs]. Make sure the time is a *whole number*.")
+    @commands.cooldown(rate=1, per=500, type=commands.BucketType.guild)
+    @commands.command(aliases=["cd","timer"])
+    async def countdown(self, ctx, timer: int = None):
+        """Create a timer with the given time."""
+        if timer is None:
+            await ctx.send(
+                embed=discord.Embed(
+                    description=":watch: Please enter the time!",
+                    color=discord.Colour.red(),
+                )
+            )
         else:
-            await ctx.send("Timer started and rolling! :timer:")
-            await asyncio.sleep(float(timer))
-            await ctx.send("TIME'S UP! :clock:")
+            if timer <= 0:
+                await ctx.send(
+                    embed=discord.Embed(
+                        description=":octagonal_sign: That's not a valid time!",
+                        color=discord.Colour.red(),
+                    )
+                )
+            elif timer > 1000:
+                await ctx.send(
+                    embed=discord.Embed(
+                        description=":octagonal_sign: That time is too big! It must be between 1 and 1001",
+                        color=discord.Colour.red(),
+                    )
+                )
+            else:
+                msg = await ctx.send(
+                    embed=discord.Embed(
+                        description="**Starting countdown!**",
+                        color=discord.Colour.orange(),
+                    )
+                )
+                loop = ctx.bot.loop
+                await asyncio.sleep(0.5)
+                stop = "\N{BLACK SQUARE FOR STOP}"
+                await msg.add_reaction(stop)
+                try:
+                    reaction, user = await self.bot.wait_for(
+                        "reaction_add",
+                        timeout=timer + 2,
+                        check=lambda r, u: u == ctx.author and r.emoji in (stop),
+                    )
+                except asyncio.TimeoutError:
+                    pass
+                finally:
+                    msg.delete()
+                for t in range(timer, 0, -1):
+                    mins, secs = divmod(t, 60)
+                    loop.create_task(
+                        msg.edit(
+                            embed=discord.Embed(
+                                description=f"**{mins:,}:{secs:02}**",
+                                color=discord.Colour.orange(),
+                            )
+                        )
+                    )
+                    await asyncio.sleep(1)
+                await msg.edit(
+                    embed=discord.Embed(
+                        description=":watch::exclamation: Time's up!",
+                        color=discord.Colour.red(),
+                    )
+                )
+                ping = await ctx.send(ctx.author.mention)
+                await ping.delete()
+
+    @commands.command()
+    async def qr(self, ctx, *, data):
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=2,
+        )
+        qr.add_data(data)
+        img = qr.make_image(fill_color="black", back_color="white")
+        img.save("qrcodes/QR.png")
+        await ctx.send(f"{ctx.author.mention}", file=discord.File("qrcodes/QR.png"))
+        os.remove("qrcodes/QR.png")
+
+    @commands.command(aliases=["whoisplaying"])
+    @commands.guild_only()
+    async def whosplaying(self, ctx, *, game):
+        """Shows who's playing a specific game"""
+        if len(game) <= 1:
+            await ctx.send("```The game should be at least 2 characters long...```", delete_after=5.0)
+            return
+
+        guild = ctx.message.guild
+        members = guild.members
+        playing_game = ""
+        count_playing = 0
+
+        for member in members:
+            if not member:
+                continue
+            if not member.activity or not member.activity.name:
+                continue
+            if member.bot:
+                continue
+            if game.lower() in member.activity.name.lower():
+                count_playing += 1
+                if count_playing <= 15:
+                    emote = random.choice(["🌜", "🔆", "🌞", "🌙", "🌛"])
+                    playing_game += f"{emote} {member.name}#{member.discriminator} ({member.mention}) ({member.activity.name})\n"
+
+        if playing_game == "":
+            await ctx.send("```Search results:\nNo users are currently playing that game.```")
+        else:
+            msg = playing_game
+            if count_playing > 15:
+                showing = "(Showing 15/{})".format(count_playing)       
+            else:
+                showing = "({})".format(count_playing)
+
+            em = discord.Embed(description=msg, colour=discord.Colour(value=0x36393e))
+            em.set_author(name=f"""Who's playing "{game}"? {showing} User(s) in total.""")
+            await ctx.send(embed=em)
+
+    @commands.command(no_pm=True)
+    async def currentgames(self, ctx):
+        """Shows the most played games right now"""
+        guild = ctx.message.guild
+        members = guild.members
+
+        freq_list = {}
+        for member in members:
+            if not member:
+                continue
+            if not member.activity or not member.activity.name:
+                continue
+            if member.bot:
+                continue
+            if member.activity.name not in freq_list:
+                freq_list[member.activity.name] = 0
+            freq_list[member.activity.name] += 1
+
+        sorted_list = sorted(freq_list.items(),
+                             key=operator.itemgetter(1),
+                             reverse=True)
+
+        if not freq_list:
+            await ctx.send("```Search results:\nNo users are currently playing any games. Odd...```")
+        else:
+            # Create display and embed
+            msg = ""
+            max_games = min(len(sorted_list), 10)
+
+            em = discord.Embed(description=msg, colour=discord.Colour(value=0x36393e))
+            for i in range(max_games):
+                game, freq = sorted_list[i]
+                if int(freq_list[game]) < 2:
+                    amount = "1 person"
+                else:
+                    amount = f"{int(freq_list[game])} people"
+                em.add_field(name=game, value=amount)
+            em.set_thumbnail(url=guild.icon_url)
+            em.set_footer(text="Do $whosplaying <game> to see whos playing a specific game")
+            em.set_author(name="Top games being played right now in the server:")
+            await ctx.send(embed=em)
+
+    @commands.command(aliases=['drunkify'])
+    async def mock(self, ctx, *, txt):
+        lst = [str.upper, str.lower]
+        newText = await commands.clean_content().convert(ctx, ''.join(random.choice(lst)(c) for c in txt))
+        if len(newText) <= 512:
+            await ctx.send(newText)
+        else:
+            try:
+                await ctx.author.send(newText)
+                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+            except Exception:
+                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+
+    @commands.command()
+    async def expand(self, ctx,  num: int, *, txt: commands.clean_content):
+        spacing = ""
+        if num > 0 and num <= 5:
+            for _ in range(num):
+                spacing+=" "
+            result = spacing.join(txt)
+            if len(result) <= 200:
+                await ctx.send(result)
+            else:
+                try:
+                    await ctx.author.send(result)
+                    await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+                except Exception:
+                    await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+        else:
+            await ctx.send("```fix\nError: The number can only be from 1 to 5```")
+
+    @commands.command()
+    async def reverse(self, ctx, *, txt: commands.clean_content):
+        result = await commands.clean_content().convert(ctx, txt[::-1])
+        if len(result) <= 350:
+            await ctx.send(f"{result}")
+        else:
+            try:
+                await ctx.author.send(f"{result}")
+                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+            except Exception:
+                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+
+    @commands.command()
+    async def texttohex(self, ctx, *, txt):
+        try:
+            hexoutput = await commands.clean_content().convert(ctx, (" ".join("{:02x}".format(ord(c)) for c in txt)))
+        except Exception as e:
+            await ctx.send(f"**Error: `{e}`. This probably means the text is malformed. Sorry, you can always try here: http://www.unit-conversion.info/texttools/hexadecimal/#data**")
+        if len(hexoutput) <= 479:
+            await ctx.send(f"```fix\n{hexoutput}```")
+        else:
+            try:
+                await ctx.author.send(f"```fix\n{hexoutput}```")
+                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+            except Exception:
+                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+
+    @commands.command()
+    async def hextotext(self, ctx, *, txt):
+        try:
+            cleanS = await commands.clean_content().convert(ctx, bytearray.fromhex(txt).decode())
+        except Exception as e:
+            await ctx.send(f"**Error: `{e}`. This probably means the text is malformed. Sorry, you can always try here: http://www.unit-conversion.info/texttools/hexadecimal/#data**")
+        if len(cleanS) <= 479:
+            await ctx.send(f"```{cleanS}```")
+        else:
+            try:
+                await ctx.author.send(f"```{cleanS}```")
+                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+            except Exception:
+                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+
+    @commands.command()
+    async def texttobinary(self, ctx, *, txt):
+        try:
+            cleanS = await commands.clean_content().convert(ctx, ' '.join(format(ord(x), 'b') for x in txt))
+        except Exception as e:
+            await ctx.send(f"**Error: `{e}`. This probably means the text is malformed. Sorry, you can always try here: http://www.unit-conversion.info/texttools/convert-text-to-binary/#data**")
+        if len(cleanS) <= 479:
+            await ctx.send(f"```fix\n{cleanS}```")
+        else:
+            try:
+                await ctx.author.send(f"```fix\n{cleanS}```")
+                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+            except Exception:
+                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+
+    @commands.command()
+    async def binarytotext(self, ctx, *, txt):
+        try:
+            cleanS = await commands.clean_content().convert(ctx, ''.join([chr(int(txt, 2)) for txt in txt.split()]))
+        except Exception as e:
+            await ctx.send(f"**Error: `{e}`. This probably means the text is malformed. Sorry, you can always try here: http://www.unit-conversion.info/texttools/convert-text-to-binary/#data**")
+        if len(cleanS) <= 479:
+            await ctx.send(f"```{cleanS}```")
+        else:
+            try:
+                await ctx.author.send(f"```{cleanS}```")
+                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+            except Exception:
+                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+
+    @commands.group()
+    async def specrypt(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send("```fix\nInvalid input. Please use one of the following:\nencrypt (e)\ndecrypt (d)\n\nExample: $specrypt e Hello world!```")
+
+    @specrypt.command(aliases=['e'])
+    async def encrypt(self, ctx, *, txt):
+        a = ''
+        try:
+            for letter in txt:
+                a+=chr(ord(letter)+len(txt))
+            cleanS = await commands.clean_content().convert(ctx, a)
+        except Exception as e:
+            await ctx.send(f"**Error: `{e}`. This probably means the input is malformed. Sorry, I'm not perfect and my creator is dumb**")
+        if len(cleanS) <= 479:
+            await ctx.send(f"```{cleanS}```")
+        else:
+            try:
+                await ctx.author.send(f"```{cleanS}```")
+                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+            except Exception:
+                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+
+    @specrypt.command(aliases=['d'])
+    async def decrypt(self, ctx, *, s):
+        a = ''
+        try:
+            for letter in s:
+                a+=chr(ord(letter)-len(s))
+            cleanS = await commands.clean_content().convert(ctx, a)
+        except Exception as e:
+            await ctx.send(f"**Error: `{e}`. This probably means the input is malformed. Sorry, I'm not perfect and my creator is dumb**")
+        if len(cleanS) <= 479:
+            await ctx.send(f"```{cleanS}```")
+        else:
+            try:
+                await ctx.author.send(f"```{cleanS}```")
+                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+            except Exception:
+                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+
 
 def setup(bot):
     bot.add_cog(Utilities(bot))

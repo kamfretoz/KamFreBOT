@@ -399,7 +399,6 @@ class AsyncSongQueue(asyncio.Queue):
         random.shuffle(self._queue)
 
 
-
 class Music(commands.Cog):
     def __init__(self, bot):
         self.client = bot
@@ -594,8 +593,6 @@ class Music(commands.Cog):
         ctx.voice_client.play(
             source, after=lambda e: print("Player error: %s" % e) if e else None
         )
-
-        await ctx.send("Now playing!")
 
     @commands.command(name="playlist", aliases=["pl", "play_list"])
     async def play_list(self, ctx, *, url):
