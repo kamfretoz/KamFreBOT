@@ -8,9 +8,115 @@ import discord
 import libneko
 import requests
 import os
-from random import randint
+from random import randint, sample
 from discord.ext import commands
 from libneko import embeds
+
+ZALGO_DEFAULT_AMT = 3
+ZALGO_MAX_AMT = 7
+
+ZALGO_PARAMS = {"above": (5, 10), "below": (5, 10), "overlay": (0, 2)}
+
+ZALGO_CHARS = {
+    "above": [
+        "\u0300",
+        "\u0301",
+        "\u0302",
+        "\u0303",
+        "\u0304",
+        "\u0305",
+        "\u0306",
+        "\u0307",
+        "\u0308",
+        "\u0309",
+        "\u030A",
+        "\u030B",
+        "\u030C",
+        "\u030D",
+        "\u030E",
+        "\u030F",
+        "\u0310",
+        "\u0311",
+        "\u0312",
+        "\u0313",
+        "\u0314",
+        "\u0315",
+        "\u031A",
+        "\u031B",
+        "\u033D",
+        "\u033E",
+        "\u033F",
+        "\u0340",
+        "\u0341",
+        "\u0342",
+        "\u0343",
+        "\u0344",
+        "\u0346",
+        "\u034A",
+        "\u034B",
+        "\u034C",
+        "\u0350",
+        "\u0351",
+        "\u0352",
+        "\u0357",
+        "\u0358",
+        "\u035B",
+        "\u035D",
+        "\u035E",
+        "\u0360",
+        "\u0361",
+    ],
+    "below": [
+        "\u0316",
+        "\u0317",
+        "\u0318",
+        "\u0319",
+        "\u031C",
+        "\u031D",
+        "\u031E",
+        "\u031F",
+        "\u0320",
+        "\u0321",
+        "\u0322",
+        "\u0323",
+        "\u0324",
+        "\u0325",
+        "\u0326",
+        "\u0327",
+        "\u0328",
+        "\u0329",
+        "\u032A",
+        "\u032B",
+        "\u032C",
+        "\u032D",
+        "\u032E",
+        "\u032F",
+        "\u0330",
+        "\u0331",
+        "\u0332",
+        "\u0333",
+        "\u0339",
+        "\u033A",
+        "\u033B",
+        "\u033C",
+        "\u0345",
+        "\u0347",
+        "\u0348",
+        "\u0349",
+        "\u034D",
+        "\u034E",
+        "\u0353",
+        "\u0354",
+        "\u0355",
+        "\u0356",
+        "\u0359",
+        "\u035A",
+        "\u035C",
+        "\u035F",
+        "\u0362",
+    ],
+    "overlay": ["\u0334", "\u0335", "\u0336", "\u0337", "\u0338"],
+}
 
 
 def get_filesystem_slash():
@@ -258,7 +364,18 @@ class Fun(commands.Cog):
     @commands.command()
     async def hack(self, ctx, user: discord.Member):
         """Hack someone's account! Try it!"""
-        msg = await ctx.send(f"Hacking! Target: {user}")
+        random.seed()
+        gifs = [
+            "https://thumbs.gfycat.com/LightheartedObviousBlowfish-size_restricted.gif",
+            "https://media3.giphy.com/media/115BJle6N2Av0A/giphy.gif",
+            "https://giffiles.alphacoders.com/119/119969.gif",
+            "https://thumbs.gfycat.com/FlippantAdeptHatchetfish-size_restricted.gif",
+            "https://media1.tenor.com/images/3d190af70cfeea404f796f869f46a3c3/tenor.gif",
+            "https://media1.tenor.com/images/505ddb5e0b0e8c3e96b66e1469ef47c1/tenor.gif",
+            ]
+        gifemb = discord.Embed()
+        gifemb.set_image(url=random.choice(gifs))
+        msg = await ctx.send(embed=gifemb,content=f"Hacking! Target: {user}")
         await asyncio.sleep(2)
         await msg.edit(content="Accessing Discord Files... [▓▓    ]")
         await asyncio.sleep(2)
@@ -278,9 +395,9 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=['animation', 'a'])
     async def anim(self, ctx, Type):
-        """Animations! Usage: *anim [type]. For a list, use *anim list."""
+        """Animations! Usage: anim [type]. For a list, use anim list."""
         if Type is None:
-            await ctx.send('Probably a really cool animation, but we have not added them yet! But hang in there! You never know... For a current list, type *anim list')
+            await ctx.send('Probably a really cool animation, but we have not added them yet! But hang in there! You never know... For a current list, type anim list')
         else:
             if Type.lower() == 'wtf':
               msg = await ctx.send("```W```")
@@ -590,11 +707,8 @@ class Fun(commands.Cog):
         await ctx.send(embed=zuccy, content="<:zucc:451945809144184862>")
 
     @commands.cooldown(rate=1, per=15, type=commands.BucketType.guild)
-    @commands.command(name="curse", aliases=("oppugno", "jynx", "kutuk", "santet"), hidden=True)
-    async def emoji_curse(self, ctx, user: discord.Member = None, emoji: discord.Emoji = "<:all_powerful_pepe:712952544514801716>", *, text=None):
-        if user is None:
-            user = ctx.message.author
-
+    @commands.command(name="curse", aliases=("oppugno", "jynx", "kutuk", "santet"))
+    async def emoji_curse(self, ctx, user: discord.Member, emoji: discord.Emoji, *, text: str = None):
         emoji = (
             self.bot.get_emoji(int(emoji.split(":")[2].strip(">")))
             if "<:" in emoji or "<a:" in emoji
@@ -619,7 +733,7 @@ class Fun(commands.Cog):
                     )
                 )
             else:
-
+            
                 def check(msg):
                     return ctx.guild.id == msg.guild.id and msg.author.id == user.id
 
@@ -645,15 +759,13 @@ class Fun(commands.Cog):
                                 await ctx.send(f"<@{user.id}> {text}")
                             except:
                                 pass
-
+                            
                     del self.jynxed[f"{user.id}@{ctx.guild.id}"]
 
                 curse = self.bot.loop.create_task(curse_task(self))
                 self.jynxed.update({f"{user.id}@{ctx.guild.id}": curse})
 
-    @commands.command(
-        name="bless", aliases=("ruqyah", "finitincantatem", "countercurse"), hidden=True
-    )
+    @commands.command(name="bless", aliases=("ruqyah", "finitincantatem", "countercurse"), hidden=False)
     async def emoji_bless(self, ctx, user: discord.Member):
         """Cure someone from a curse"""
         cursed = self.jynxed.get(f"{user.id}@{ctx.guild.id}")
@@ -792,7 +904,7 @@ class Fun(commands.Cog):
         emb.set_author(name="Shipping", icon_url="http://moziru.com/images/kopel-clipart-heart-6.png")
         await ctx.send(embed=emb)
 
-    @commands.command(aliases=['gay-scanner', 'gayscanner', 'gay'])
+    @commands.command(aliases=['gay-scanner', 'gayscanner', 'gay','homo'])
     async def gay_scanner(self, ctx,* ,user: commands.clean_content=None):
         """very mature command yes haha"""
         if not user:
@@ -830,6 +942,28 @@ class Fun(commands.Cog):
         emb.add_field(name="Comment:", value=f"{gayStatus} :kiss_mm:")
         emb.set_author(name="Gay-Scanner™", icon_url="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/ICA_flag.svg/2000px-ICA_flag.svg.png")
         await ctx.send(embed=emb)
+
+    def zalgoify(self, text, amount=3):
+        zalgo_text = ""
+        for c in text:
+            zalgo_text += c
+            if c != " ":
+                for t, range in ZALGO_PARAMS.items():
+                    range = (round(x * amount / 5) for x in range)
+                    n = min(randint(*range), len(ZALGO_CHARS[t]))
+                    zalgo_text += "".join(sample(ZALGO_CHARS[t], n))
+        return zalgo_text
+
+    @commands.command()
+    async def zalgo(self, ctx, *, text: str):
+        fw = text.split()[0]
+        try:
+            amount = min(int(fw), ZALGO_MAX_AMT)
+            text = text[len(fw) :].strip()
+        except ValueError:
+            amount = ZALGO_DEFAULT_AMT
+        text = self.zalgoify(text.upper(), amount)
+        await ctx.send(text)
 
 def setup(bot):
     bot.add_cog(Fun(bot))

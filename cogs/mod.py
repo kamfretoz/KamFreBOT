@@ -125,13 +125,16 @@ class Mod(commands.Cog):
     @commands.command(aliases = ["del", "p", "prune"])
     async def purge(self, ctx, limit: int, member: discord.Member = None):
         """Clean a number of messages"""
-        if limit < 500:
+        if limit <= 500:
+            loading = await ctx.send(embed=discord.Embed(description="Processing..."))
             if member is None:
                 await ctx.channel.purge(limit = limit + 1)
+                await loading.delete()
             else:
                 async for message in ctx.channel.history(limit = limit + 1):
                     if message.author is member:
                         await message.delete()
+                    await loading.delete()
         else:
             await ctx.send("Maximum amount of purging reached. You can only purge 500 messages at a time")
 
@@ -227,7 +230,7 @@ class Mod(commands.Cog):
             emb = await self.format_mod_embed(ctx, userid, success, "hackban")
         await ctx.send(embed = emb)
 
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(kick_members=True)
     @commands.command()
     async def mute(self, ctx, member: discord.Member, duration, *, reason = None):
         """Denies someone from chatting in all text channels and talking in voice channels for a specified duration"""
@@ -324,26 +327,29 @@ class Mod(commands.Cog):
     @commands.guild_only()
     async def nickname(self, ctx, member: discord.Member, *, newname: str = None):
         """Change other user's nickname, if omitted, removes it instead."""
-        if newname == None:
-            await member.edit(nick=None)
-            await ctx.send(
-                embed=discord.Embed(
-                    description=f"Successfully reset the nickname of **{member.name}**"
+        try:
+            if newname == None:
+                await member.edit(nick=None)
+                await ctx.send(
+                    embed=discord.Embed(
+                        description=f"Successfully reset the nickname of **{member.name}**"
+                    )
                 )
-            )
-        elif len(newname) > 32:
-            await ctx.send(
-                embed=discord.Embed(
-                    description=f":warning: The new nickname must be 32 or fewer in length."
+            elif len(newname) > 32:
+                await ctx.send(
+                    embed=discord.Embed(
+                        description=f":warning: The new nickname must be 32 or fewer in length."
+                    )
                 )
-            )
-        else:
-            await member.edit(nick=newname)
-            await ctx.send(
-                embed=discord.Embed(
-                    description=f"Successfully changed the nickname of **{member.name}** to **{newname}**"
+            else:
+                await member.edit(nick=newname)
+                await ctx.send(
+                    embed=discord.Embed(
+                        description=f"Successfully changed the nickname of **{member.name}** to **{newname}**"
+                    )
                 )
-            )
+        except discord.Forbidden:
+                await ctx.send(embed=discord.Embed(description="⚠ I don't have permission to change their nickname!"))
 
     @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
@@ -354,15 +360,15 @@ class Mod(commands.Cog):
         if seconds is 0:
             await ctx.channel.edit(slowmode_delay=seconds)
             a = await ctx.send("**Slowmode is off for this channel**")
-            await a.add_reaction(":ok_hand:")
+            await a.add_reaction("👌")
         else:
             if seconds is 1:
                 numofsecs = "second"
             else:    
                 numofsecs = "seconds"
             await ctx.channel.edit(slowmode_delay=seconds)
-            confirm = await ctx.send(f"**Set the channel slow mode delay to `{seconds}` {numofsecs}\nTo turn this off, do $slowmode**")
-            await confirm.add_reaction(":ok_hand:")
+            confirm = await ctx.send(f"**Set the channel slow mode delay to `{seconds}` {numofsecs}\nTo turn this off, run the command without any value**")
+            await confirm.add_reaction("👌")
 
 
 def setup(bot):

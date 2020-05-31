@@ -1,3 +1,23 @@
+"""
+MIT License
+Copyright (c) 2018 Koyagami
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
 import asyncio
 import inspect
 import re
@@ -340,10 +360,10 @@ class Utilities(commands.Cog):
                     formatted += "\n```\n"
                 await ctx.send(formatted)
 
-    @commands.command(aliases=["channels"])
+    @commands.command(aliases=["channels","allchannel"])
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
-    async def allchannel(self, ctx):
+    async def allchannels(self, ctx):
         """Shows ALL Channels on this server."""
         server = ctx.guild
         #if serverid is None:
@@ -629,15 +649,16 @@ class Utilities(commands.Cog):
         else:
             msg = playing_game
             if count_playing > 15:
-                showing = "(Showing 15/{})".format(count_playing)       
+                showing = f"(Showing 15/{count_playing})"
             else:
-                showing = "({})".format(count_playing)
+                showing = f"({count_playing})"
 
             em = discord.Embed(description=msg, colour=discord.Colour(value=0x36393e))
             em.set_author(name=f"""Who's playing "{game}"? {showing} User(s) in total.""")
             await ctx.send(embed=em)
 
-    @commands.command(no_pm=True)
+    @commands.command(aliases=["currentgame"])
+    @commands.guild_only()
     async def currentgames(self, ctx):
         """Shows the most played games right now"""
         guild = ctx.message.guild
@@ -675,7 +696,7 @@ class Utilities(commands.Cog):
                     amount = f"{int(freq_list[game])} people"
                 em.add_field(name=game, value=amount)
             em.set_thumbnail(url=guild.icon_url)
-            em.set_footer(text="Do $whosplaying <game> to see whos playing a specific game")
+            em.set_footer(text="Do [p]whosplaying <game> to see whos playing a specific game")
             em.set_author(name="Top games being played right now in the server:")
             await ctx.send(embed=em)
 
@@ -783,11 +804,11 @@ class Utilities(commands.Cog):
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
     @commands.group()
-    async def specrypt(self, ctx):
+    async def crypt(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send("```fix\nInvalid input. Please use one of the following:\nencrypt (e)\ndecrypt (d)\n\nExample: $specrypt e Hello world!```")
+            await ctx.send("```fix\nInvalid input. Please use one of the following:\nencrypt (e)\ndecrypt (d)\n\nExample: [p]specrypt e Hello world!```")
 
-    @specrypt.command(aliases=['e'])
+    @crypt.command(aliases=['e'])
     async def encrypt(self, ctx, *, txt):
         a = ''
         try:
@@ -805,7 +826,7 @@ class Utilities(commands.Cog):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @specrypt.command(aliases=['d'])
+    @crypt.command(aliases=['d'])
     async def decrypt(self, ctx, *, s):
         a = ''
         try:

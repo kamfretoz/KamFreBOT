@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## v0.1.2
+
+Changes since v0.1.1:
+
+* Added full avatar link to `servericon`, `banner`, and `splash` command
+* Added more aliases to the `currentgame` and `whosplaying` command
+* Added cool gif to `hack` command
+* Added more error messages text
+* Cat-ified the error handler messages.
+* Unhide the `curse` command
+* Formatting adjustments for `stats` command
+* Fixed a typo in the streaming status
+* Fixed emote not found error in `slowmode` command
+
 ## v0.1.1
 
 Changes since v0.1.0:

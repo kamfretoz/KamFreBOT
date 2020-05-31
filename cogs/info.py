@@ -1,23 +1,3 @@
-"""
-MIT License
-Copyright (c) 2018-2019 Koyagami
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-"""
 import random
 from collections import Counter
 from datetime import datetime
@@ -82,7 +62,7 @@ class Information(commands.Cog):
                 __import__("psutil").Process().memory_full_info().rss / 1024 ** 2
             )
 
-        sysboot = datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d at %H:%M:%S")
+        sysboot = datetime.fromtimestamp(psutil.boot_time()).strftime("%B %d, %Y at %I:%M %p")
 
         uptime = datetime.now() - counter
         hours, rem = divmod(int(uptime.total_seconds()), 3600)
@@ -105,7 +85,7 @@ class Information(commands.Cog):
             
             em.add_field(
                 name=":desktop: CPU Usage.",
-                value=f"{psutil.cpu_percent():.2f}% ({psutil.cpu_count(logical=False)} Core(s) System.) \n(load avg:{psutil.getloadavg()})",
+                value=f"{psutil.cpu_percent():.2f}% ({psutil.cpu_count(logical=False)} Cores) \nload avg: {psutil.getloadavg()}",
                 inline=False,
             )
             em.add_field(
@@ -114,8 +94,8 @@ class Information(commands.Cog):
                 inline=False,
             )
             em.add_field(
-                name=":computer: Memory Usage.",
-                value=f"System: {psutil.virtual_memory().percent}%",
+                name=":computer: System Memory Usage.",
+                value=f"**{psutil.virtual_memory().percent}%** Used",
                 inline=False,
             )
             em.add_field(
@@ -173,7 +153,7 @@ class Information(commands.Cog):
             booster_amount = (
                 f"{guild.premium_subscription_count} user(s) has boosted this server!"
             )
-
+            
         # we're going to duck type our way here
         class Secret:
             pass
@@ -222,11 +202,11 @@ class Information(commands.Cog):
         server.add_field(name="》 Channels", value=fmt)
 
         fmt = (
-            f'Online: {member_by_status["online"]}\n'
-            f'Idle: {member_by_status["idle"]}\n'
-            f'Do Not Disturb: {member_by_status["dnd"]}\n'
-            f'Offline: {member_by_status["offline"]}\n'
-            f"Total: {guild.member_count}"
+            f'🟢 Online: {member_by_status["online"]}\n'
+            f'🟡 Idle: {member_by_status["idle"]}\n'
+            f'🔴 Do Not Disturb: {member_by_status["dnd"]}\n'
+            f'⚫ Offline: {member_by_status["offline"]}\n'
+            f"➕ Total: {guild.member_count}"
         )
         server.add_field(
             name="》 Created",
@@ -236,15 +216,18 @@ class Information(commands.Cog):
         server.add_field(
             name="》 Is a large guild?", 
             value=guild.large, 
-            inline=False)
+            inline=False
+        )
         server.add_field(
             name="》 Region", 
             value=f"{guild.region}", 
-            inline=False)
+            inline=False
+        )
         server.add_field(
             name="》 AFK Channel", 
             value=guild.afk_channel, 
-            inline=False)
+            inline=False
+        )
         server.add_field(
             name="》 AFK Timeout", 
             value=f"{guild.afk_timeout} Seconds", 
@@ -272,7 +255,8 @@ class Information(commands.Cog):
         server.add_field(
             name="》 Server Features", 
             value=guild.features, 
-            inline=False)
+            inline=False
+        )
         server.add_field(
             name="》 Nitro Boost Status", 
             value=booster_amount, 
@@ -280,8 +264,9 @@ class Information(commands.Cog):
         )
         server.add_field(
             name="》 Members", 
-            value=fmt, 
-            inline=False)
+            value=f"```{fmt}```",
+            inline=False
+        )
         server.add_field(
             name="》 Roles",
             value=", ".join(roles) if len(roles) < 10 else f"{len(roles)} roles",
@@ -299,25 +284,29 @@ class Information(commands.Cog):
         """
         Show the icon of this server.
         """
-        icon = discord.Embed(
-            title=f"Server icon for {ctx.guild.name}", color=ctx.message.author.color
-        )
+        link_frmt = ""
+        icon = discord.Embed(title=f"Server icon for {ctx.guild.name}", color=ctx.message.author.color)
 
         if ctx.guild.is_icon_animated() is True:
             icon.set_image(url=ctx.guild.icon_url_as(format="gif", size=4096))
+            link_frmt = f"[png]({ctx.guild.icon_url_as(format='png',size=4096)}) | [gif]({ctx.guild.icon_url_as(format='gif',size=4096)}) | [jpg]({ctx.guild.icon_url_as(format='jpg',size=4096)}) | [webp]({ctx.guild.icon_url_as(format='webp',size=4096)})"
         else:
             icon.set_image(url=ctx.guild.icon_url_as(format="png", size=4096))
-        
+            link_frmt = f"[png]({ctx.guild.icon_url_as(format='png',size=4096)}) | [jpg]({ctx.guild.icon_url_as(format='jpg',size=4096)}) | [webp]({ctx.guild.icon_url_as(format='webp',size=4096)})"
+        icon.add_field(name="Full server icon link", value=link_frmt)
         await ctx.send(embed=icon, content=None)
     
-    @serverinfo.command(name="banner", brief="Show this server")
+    @serverinfo.command(name="banner", brief="Show this server's banner, if any")
     @commands.guild_only()
     async def serverinfo_banner(self, ctx):
         """
         Show this server's banner, if any
         """
+        link_frmt = f"[png]({ctx.guild.banner_url_as(format='png',size=4096)}) | [jpg]({ctx.guild.banner_url_as(format='jpg',size=4096)}) | [webp]({ctx.guild.banner_url_as(format='webp',size=4096)})"
+
         if "BANNER" in ctx.guild.features:
             bannerembed = discord.Embed(title=f"Server Banner for **{ctx.guild.name}**")
+            bannerembed.add_field(name="Full image link", value=link_frmt)
             bannerembed.set_image(url=ctx.guild.banner_url_as(format="png", size=4096))
             await ctx.send(embed=bannerembed, content=None)
             
@@ -497,7 +486,7 @@ class Information(commands.Cog):
         Show the list of Nitro booster on this server.
         """
         boost = discord.Embed(
-            description=f"Nitro Booster on {ctx.guild.name}.", color=0x00FF00
+            title=f"Nitro Booster on **{ctx.guild.name}**.", color=0x00FF00
         )
         for x in ctx.guild.premium_subscribers:
             boost.add_field(
@@ -536,8 +525,11 @@ class Information(commands.Cog):
     @serverinfo.command(name="splash", aliases=["splashes","images"], brief="Show the splash image of this server, if any")
     async def serverinfo_splash(self, ctx):
         """Show the splash image of this server, if any"""
+        link_frmt = f"[png]({ctx.guild.splash_url_as(format='png',size=4096)}) | [jpg]({ctx.guild.splash_url_as(format='jpg',size=4096)}) | [webp]({ctx.guild.splash_url_as(format='webp',size=4096)})"
+
         if "INVITE_SPLASH" in ctx.guild.features and ctx.guild.splash is not None:
             splashembed = discord.Embed(title=f"{ctx.guild.name}'s Splash Image.")
+            splashembed.add_field(name="Full image link", value=link_frmt)
             splashembed.set_image(url=ctx.guild.splash_url_as(format="png", size=4096))
             await ctx.send(embed=splashembed, content=None)
         else:

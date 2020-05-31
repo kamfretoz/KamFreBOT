@@ -155,7 +155,21 @@ errors = [
     "You don't care about me, don't you?",
     "stop reading this message and do something useful like write german haikus in capital letters or idk",
     "Who you gonna catch?",
-    "You wanna touch it, don't ya?"
+    "You wanna touch it, don't ya?",
+    "NO FUN ALLOWED.",
+    "You are trying to do something useful, for this you require a proper computer, and a mouse with more than one button. Ask an adult to help you buy one.",
+    "We have detected that you are drunk, beyond the point of responsible posting - and that you •may' regret this post tomorrow. Would you like to save as a draft for the morning?",
+    "OOPS: child ded",
+    "These haiku circulated 20 years back. Things haven’t changed much.",
+    "You ask far too much.",
+    "I am the Blue Screen of Death",
+    "No one hears your screams.",
+    "Yesterday it worked, Today it is not working.",
+    "Lame.",
+    "E0001",
+    "Something happened.",
+    "Hell is empty",
+    "Catastrophic Failure"
 ]
 
 #############################################################################
