@@ -80,18 +80,19 @@ class Utilities(commands.Cog):
     @commands.command(aliases=["servlist"])
     async def serverlist(self, ctx):
         """Shows a list of servers that the bot is in along with member count"""
-        servlist = discord.Embed(color=0x00FF00)
-        servlist.set_author(
-            name=f"Servers that I am in. ({len(self.bot.guilds)} Servers in total)",
-            icon_url=ctx.bot.user.avatar_url,
-        )
-        for x in self.bot.guilds:
-            servlist.add_field(
-                name=f"{x.name}",
-                value=f"Member Count: {x.member_count}\nID: {x.id}",
-                inline=False,
-            )
-        await ctx.send(embed=servlist, content=None)
+        @pag.embed_generator(max_chars=2048)
+        def main_embed(paginator, page, page_index):
+            servlist = discord.Embed(title=f"Servers that I am in. ({len(self.bot.guilds)} Servers in total)", description=page, color=0x00FF00)
+            return servlist
+        
+        navi = pag.EmbedNavigatorFactory(factory=main_embed, max_lines=10)
+        servers = ""
+        for guild in self.bot.guilds:
+                servers += f'{guild.name} \t|\t {guild.id} \t|\t {guild.member_count}\n'
+
+        navi += servers
+        navi.start(ctx)
+        
 
     @commands.command(hidden=True)
     @commands.is_owner()
@@ -138,7 +139,7 @@ class Utilities(commands.Cog):
         search_results = re.findall(
             'href=\\"\\/watch\\?v=(.{11})', html_content.read().decode()
         )
-        await ctx.send("http://www.youtube.com/watch?v=" + search_results[0])
+        await ctx.send(f"Top Result:\nhttp://www.youtube.com/watch?v={search_results[0]}")
 
     # pingstorm command
     @commands.cooldown(rate=3, per=1800.0)
@@ -209,7 +210,7 @@ class Utilities(commands.Cog):
     async def clock(self, ctx, location: str = "UTC"):
         """Show current time. [p]time <timezone>\n for timezone list see: http://tiny.cc/on60iz"""
 
-        location.replace(" ","_")
+        location.replace(" ", "_")
         time_fmt = "%I:%M:%S %p"
         date_fmt = "%A, %d %B %Y"
         
@@ -225,7 +226,7 @@ class Utilities(commands.Cog):
             clock.add_field(name="🌐 Timezone", value=location, inline=False)
             await ctx.send(embed=clock, content=f"⏰ Tick.. Tock..")
         except:
-            err = discord.Embed(title="⚠ **Warning!** An Error Occured.", description="Make sure that the syntax is correct and i have the correct permission.\nFor timezone list see: http://tiny.cc/on60iz")
+            err = discord.Embed(title="⚠ **Warning!** An Error Occured.", description="Make sure that the timezone format is correct and is available.\nFor timezone list see: http://tiny.cc/on60iz")
             await ctx.send(embed = err)
 
 
@@ -253,8 +254,6 @@ class Utilities(commands.Cog):
         except discord.HTTPException:
             await ctx.send("Unable to send the messages, make sure i have access to embed.")
 
-
-
     @commands.command(aliases=["a2b"], hidden=True)
     async def ascii2bin(self, ctx, *, string):
         """
@@ -268,6 +267,7 @@ class Utilities(commands.Cog):
             else:
                 string = prev.content
         return await self._ascii2bin(ctx, string=string)
+
     @commands.command(aliases=["b2a"],hidden=True)
     async def bin2ascii(self, ctx, *, string):
         """
@@ -287,6 +287,7 @@ class Utilities(commands.Cog):
             return await ctx.send("No valid ASCII characters given.", delete_after=10)
         binaries = [bin(ord(c))[2:11].rjust(8, "0") for c in string]
         await ctx.send(" ".join(binaries).replace("@", "@" + chr(0xFFF0)))
+
     async def _bin2ascii(self, ctx, *, string):
         string = "".join(c for c in string if c not in " \t\r\n")
         if not all(c in "01" for c in string):
@@ -299,6 +300,7 @@ class Utilities(commands.Cog):
             chars.append(chr(int(string[i : i + 8], 2)))
         text = "".join(chars)
         await ctx.send(text)
+
     async def _get_prev(self, ctx):
         # Get the previous message.
         history = await ctx.channel.history(limit=3).flatten()
@@ -366,9 +368,6 @@ class Utilities(commands.Cog):
     async def allchannels(self, ctx):
         """Shows ALL Channels on this server."""
         server = ctx.guild
-        #if serverid is None:
-        #    server = ctx.guild
-        #
         #if serverid is None:
         #    server = ctx.guild
         #else:
@@ -583,7 +582,7 @@ class Utilities(commands.Cog):
                 except asyncio.TimeoutError:
                     pass
                 finally:
-                    msg.delete()
+                    await msg.delete()
                 for t in range(timer, 0, -1):
                     mins, secs = divmod(t, 60)
                     loop.create_task(
@@ -844,6 +843,22 @@ class Utilities(commands.Cog):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
+    @commands.command()
+    async def nickscan(self, ctx):
+        @pag.embed_generator(max_chars=2048)
+        def main_embed(paginator, page, page_index):
+            embed = discord.Embed(title=f'Servers I Have Nicknames In', description=page)
+            return embed
+
+        nicks = pag.EmbedNavigatorFactory(factory=main_embed, max_lines=10)
+
+        message = ""
+        for guild in self.bot.guilds:
+            if guild.me.nick != None:
+                message += f'{guild.name} | {guild.me.nick}\n'
+                
+        nicks += message
+        nicks.start(ctx)
 
 def setup(bot):
     bot.add_cog(Utilities(bot))

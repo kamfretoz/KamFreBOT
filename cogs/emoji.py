@@ -82,10 +82,8 @@ class Emoji(commands.Cog):
             codepoints = [x[1] for x in codepoints]
             emoji_code = "-".join(codepoints)
         else:
-            emoji_code = "3{}-{}".format(codepoints[0][0], codepoints[0][1])
-        url = "https://raw.githubusercontent.com/astronautlevel2/twemoji/gh-pages/128x128/{}.png".format(
-            emoji_code
-        )
+            emoji_code = f"3{codepoints[0][0]}-{codepoints[0][1]}"
+        url = f"https://raw.githubusercontent.com/astronautlevel2/twemoji/gh-pages/128x128/{emoji_code}.png"
         name = "emoji.png"
         return name, url, "N/A", "Official"
 
@@ -113,15 +111,11 @@ class Emoji(commands.Cog):
         for emoji in emojis:
             name, url, id, guild = self.find_emoji(emoji)
             if url == "":
-                await ctx.send("Could not find {}. Skipping.".format(emoji))
+                await ctx.send(f"Could not find {emoji}. Skipping.")
                 continue
             response = requests.get(url, stream=True)
             if response.status_code == 404:
-                await ctx.send(
-                    "Emoji {} not available. Open an issue on <https://github.com/astronautlevel2/twemoji> with the name of the missing emoji".format(
-                        emoji
-                    )
-                )
+                await ctx.send(f"Emoji {emoji} not available. Open an issue on <https://github.com/astronautlevel2/twemoji> with the name of the missing emoji")
                 continue
 
             img = io.BytesIO()
@@ -135,17 +129,12 @@ class Emoji(commands.Cog):
         for (guild, id, url, file) in images:
             if ctx.channel.permissions_for(ctx.author).attach_files:
                 if get_guild:
-                    await ctx.send(
-                        content="**ID:** {}\n**Server:** {}".format(id, guild),
-                        file=file,
-                    )
+                    await ctx.send(content=f"**ID:** {id}\n**Server:** {guild}",file=file)
                 else:
                     await ctx.send(file=file)
             else:
                 if get_guild:
-                    await ctx.send(
-                        "**ID:** {}\n**Server:** {}\n**URL: {}**".format(id, guild, url)
-                    )
+                    await ctx.send(f"**ID:** {id}\n**Server:** {guild}\n**URL: {url}**")
                 else:
                     await ctx.send(url)
             file.close()
@@ -224,13 +213,9 @@ class Emoji(commands.Cog):
         for emote in emotes:
             await emote.delete()
         if emote_length == 1:
-            await ctx.send("Successfully removed the {} emoji!".format(name))
+            await ctx.send(f"Successfully removed the {name} emoji!")
         else:
-            await ctx.send(
-                "Successfully removed {} emoji with the name {}.".format(
-                    emote_length, name
-                )
-            )
+            await ctx.send(f"Successfully removed {emote_length} emoji with the name {name}.")
 
     @staticmethod
     async def find_emojis(channel, limit):

@@ -84,27 +84,27 @@ class Information(commands.Cog):
             em = discord.Embed(title="System Status", color=0x32441C)
             
             em.add_field(
-                name=":desktop: CPU Usage.",
+                name=":desktop: CPU Usage",
                 value=f"{psutil.cpu_percent():.2f}% ({psutil.cpu_count(logical=False)} Cores) \nload avg: {psutil.getloadavg()}",
                 inline=False,
             )
             em.add_field(
-                name=":gear: CPU Frequency.",
+                name=":gear: CPU Frequency",
                 value=f"{psutil.cpu_freq().current} MHz",
                 inline=False,
             )
             em.add_field(
-                name=":computer: System Memory Usage.",
+                name=":computer: System Memory Usage",
                 value=f"**{psutil.virtual_memory().percent}%** Used",
                 inline=False,
             )
             em.add_field(
-                name="\U0001F4BE BOT Memory usage:", 
+                name="\U0001F4BE BOT Memory usage", 
                 value=mem_usage, 
                 inline=False
             )
             em.add_field(
-                name=":minidisc: Disk Usage.",
+                name=":minidisc: Disk Usage",
                 value=f"Total Size: {solveunit(psutil.disk_usage('/').total)} GB \nCurrently Used: {solveunit(psutil.disk_usage('/').used)} GB",
                 inline=False,
             )
@@ -186,7 +186,7 @@ class Information(commands.Cog):
         server.add_field(name="》 ID", value=guild.id, inline=False)
         server.add_field(
             name="》 Owner",
-            value=f"{guild.owner.mention} ({guild.owner.name})",
+            value=f"{guild.owner.mention} ({guild.owner})",
             inline=False,
         )
         server.add_field(name="》 Owner ID", value=guild.owner_id, inline=False)
@@ -199,8 +199,16 @@ class Information(commands.Cog):
             server.set_image(url=guild.splash_url_as(format="png",size=4096))
 
         fmt = f"Text {text_channels} ({secret_channels} secret)\nVoice {voice_channels} ({secret_voice} locked)"
-        server.add_field(name="》 Channels", value=fmt)
-
+        server.add_field(
+            name="》 Channels",
+            value=fmt, 
+            inline=False
+        )
+        server.add_field(
+            name="》 Roles",
+            value=", ".join(roles) if len(roles) < 10 else f"{len(roles)} roles",
+            inline=False,
+        )
         fmt = (
             f'🟢 Online: {member_by_status["online"]}\n'
             f'🟡 Idle: {member_by_status["idle"]}\n'
@@ -266,11 +274,6 @@ class Information(commands.Cog):
             name="》 Members", 
             value=f"```{fmt}```",
             inline=False
-        )
-        server.add_field(
-            name="》 Roles",
-            value=", ".join(roles) if len(roles) < 10 else f"{len(roles)} roles",
-            inline=False,
         )
         server.set_footer(
             text=f"Requested by {ctx.message.author.name}#{ctx.message.author.discriminator}",
@@ -348,13 +351,6 @@ class Information(commands.Cog):
         since_created = (ctx.message.created_at - role.created_at).days
         role_created = role.created_at.strftime("%d %b %Y %H:%M")
         created_on = "{} ({} days ago!)".format(role_created, since_created)
-        members = ""
-        i = 0
-        for user in role.members:
-            members += f"{user.name}, "
-            i += 1
-            if i > 30:
-                break
 
         if str(role.colour) is "#000000":
             colour = "default"
@@ -364,16 +360,79 @@ class Information(commands.Cog):
             colour = str(role.colour).upper()
             color = role.colour
 
+        perms = ""
+        if role.permissions.administrator:
+            perms += "Administrator, "
+        if role.permissions.create_instant_invite:
+            perms += "Create Instant Invite, "
+        if role.permissions.kick_members:
+            perms += "Kick Members, "
+        if role.permissions.ban_members:
+            perms += "Ban Members, "
+        if role.permissions.manage_channels:
+            perms += "Manage Channels, "
+        if role.permissions.manage_guild:
+            perms += "Manage Guild, "
+        if role.permissions.add_reactions:
+            perms += "Add Reactions, "
+        if role.permissions.view_audit_log:
+            perms += "View Audit Log, "
+        if role.permissions.read_messages:
+            perms += "Read Messages, "
+        if role.permissions.send_messages:
+            perms += "Send Messages, "
+        if role.permissions.send_tts_messages:
+            perms += "Send TTS Messages, "
+        if role.permissions.manage_messages:
+            perms += "Manage Messages, "
+        if role.permissions.embed_links:
+            perms += "Embed Links, "
+        if role.permissions.attach_files:
+            perms += "Attach Files, "
+        if role.permissions.read_message_history:
+            perms += "Read Message History, "
+        if role.permissions.mention_everyone:
+            perms += "Mention Everyone, "
+        if role.permissions.external_emojis:
+            perms += "Use External Emojis, "
+        if role.permissions.connect:
+            perms += "Connect to Voice, "
+        if role.permissions.speak:
+            perms += "Speak, "
+        if role.permissions.mute_members:
+            perms += "Mute Members, "
+        if role.permissions.deafen_members:
+            perms += "Deafen Members, "
+        if role.permissions.move_members:
+            perms += "Move Members, "
+        if role.permissions.use_voice_activation:
+            perms += "Use Voice Activation, "
+        if role.permissions.change_nickname:
+            perms += "Change Nickname, "
+        if role.permissions.manage_nicknames:
+            perms += "Manage Nicknames, "
+        if role.permissions.manage_roles:
+            perms += "Manage Roles, "
+        if role.permissions.manage_webhooks:
+            perms += "Manage Webhooks, "
+        if role.permissions.manage_emojis:
+            perms += "Manage Emojis, "
+
+        if perms is None:
+            perms = "None"
+        else:
+            perms = perms.strip(", ")
+
         em = discord.Embed(colour=color)
         em.set_author(name=role.name)
         em.add_field(name="Users", value=len(role.members))
         em.add_field(name="Mentionable", value=role.mentionable)
         em.add_field(name="Hoist", value=role.hoist)
-        em.add_field(name="Position", value=role.position)
+        em.add_field(name="Position from Bottom", value=role.position)
         em.add_field(name="Managed", value=role.managed)
         em.add_field(name="Colour", value=colour)
         em.add_field(name="Creation Date", value=created_on)
-        em.add_field(name="Members", value=f"{members[:-2]}", inline=False)
+        em.add_field(name='Permissions', value=perms, inline=False)
         em.set_footer(text=f"Role ID: {role.id}")
 
         await ctx.send(embed=em)
@@ -385,15 +444,23 @@ class Information(commands.Cog):
         Show the list of users on a particular role.
         """
         if role is None:
-            noembed = discord.Embed(description="Which role?")
-            await ctx.send(embed=noembed)
+            await ctx.send(discord.Embed(description="⚠ Please specify the role."))
         else:
-            embed = discord.Embed(description=f"List of users on the {role.name} role.", color=0x00FF00)
-            for x in role.members:
-                embed.add_field(name=f"{x.name}#{x.discriminator}", value=f"{x.mention}", inline=False)
+            @pag.embed_generator(max_chars=2048)
+            def det_embed(paginator, page, page_index):
+                embed = discord.Embed(description=page, title=f"Members on {role.name} role ({str(len(role.members))}):")
+                return embed
 
-        embed.set_footer(text=f"{len(role.members)} Users in total")
-        await ctx.send(embed=embed)
+
+            lst = pag.EmbedNavigatorFactory(factory=det_embed, max_lines=10)
+            
+            members = ""
+            for user in role.members:
+                members += f"{user.mention}:({user.name})\n "
+
+            lst += members
+            lst.start(ctx)
+
 
     @serverinfo.command(name="owner", aliases=["own"], brief="Shows the owner of this server")
     @commands.guild_only()
@@ -485,15 +552,21 @@ class Information(commands.Cog):
         """
         Show the list of Nitro booster on this server.
         """
-        boost = discord.Embed(
-            title=f"Nitro Booster on **{ctx.guild.name}**.", color=0x00FF00
-        )
+        @pag.embed_generator(max_chars=2048)
+        def main_embed(paginator, page, page_index):
+            boost = discord.Embed(title=f"Nitro Booster on **{ctx.guild.name}**.",description = page, color=0x00FF00)
+            boost.set_footer(text=f"{len(ctx.guild.premium_subscribers)} Users in total")
+            return boost
+
+        navi = pag.EmbedNavigatorFactory(factory=main_embed, max_lines=10)
+
+        boosters = ""
         for x in ctx.guild.premium_subscribers:
-            boost.add_field(
-                name=f"{x.name}#{x.discriminator}", value=f"{x.mention}", inline=False
-            )
-        boost.set_footer(text=f"{len(ctx.guild.premium_subscribers)} Users in total")
-        await ctx.send(embed=boost)
+                boosters += f"{x.name}#{x.discriminator} ({x.mention})\n"
+
+        navi += boosters
+        navi.start(ctx)
+        
 
     @staticmethod
     def transform_mute(emojis):
@@ -539,7 +612,7 @@ class Information(commands.Cog):
 
     @commands.group(invoke_without_command=True,aliases=["user", "ui"])
     @commands.guild_only()
-    async def userinfo(self, ctx, user: libneko.converters.InsensitiveMemberConverter = None):
+    async def userinfo(self, ctx, user: discord.Member = None):
         """Show info about the user. If not specified, the command invoker info will be shown instead."""
         if user is None:
             user = ctx.author
@@ -586,15 +659,18 @@ class Information(commands.Cog):
         member.add_field(
             name="》 User ID", 
             value=user.id, 
-            inline=False)
+            inline=False
+        )
         member.add_field(
             name="》 Mention", 
             value=user.mention, 
-            inline=False)
+            inline=False
+        )
         member.add_field(
             name="》 Status", 
             value=user.status, 
-            inline=False)
+            inline=False
+        )
         member.add_field(
             name="》 Shared Servers", 
             value=f"{shared} shared", 
@@ -622,7 +698,7 @@ class Information(commands.Cog):
             name="》 Has Boosted the server since", 
             value=boost_stats, 
             inline=False
-        )
+        )   
         member.add_field(
             name="》 Roles",
             value=", ".join(roles) if len(roles) < 10 else f"{len(roles)} roles",
@@ -632,7 +708,6 @@ class Information(commands.Cog):
             name="》 Top Role", 
             value=user.top_role, 
             inline=False)
-            
         member.colour = user.colour
 
         member.set_footer(

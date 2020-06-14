@@ -35,28 +35,25 @@ class Mod(commands.Cog):
     async def format_mod_embed(self, ctx, user, success, method, duration = None):
         """Helper func to format an embed to prevent extra code"""
         emb = discord.Embed(timestamp = ctx.message.created_at)
-        emb.set_author(name = method.title(), icon_url = user.avatar_url)
-        emb.set_footer(text = f"User ID: {user.id}")
-        if success:
-            if method == "ban" or method == "hackban":
-                emb.description = f"{user} was just {method}ned."
-            elif method == "unmute":
-                emb.description = f"{user} was just {method}d."
-            elif method == "mute":
-                emb.description = f"{user} was just {method}d for {duration}."
-            elif method == "channel-lockdown" or method == "server-lockdown":
-                emb.description = f"`Channel Locked!"
-            else:
-                emb.description = f"{user} was just {method}ed."
-        else:
-            if method == "lockdown" or "channel-lockdown":
-                emb.description = (
-                    f"You do not have the permissions to {method} `{ctx.channel.name}`."
-                )
+        try:
+            emb.set_author(name = method.title())
+            emb.set_footer(text = f"User ID: {user.id}")
+            emb.set_thumbnail(url = user.avatar_url)
+            if success:
+                if method == "ban" or method == "hackban":
+                    emb.description = f"{user} was just {method}ned."
+                elif method == "unmute":
+                    emb.description = f"{user} was just {method}d."
+                elif method == "mute":
+                    emb.description = f"{user} was just {method}d for {duration}."
+                else:
+                    emb.description = f"{user} was just {method}ed."
             else:
                 emb.description = (
-                    f"Unable to {method} {user.name}."
+                    f"Unable to {method} {user}."
                 )
+        except AttributeError:
+            emb.description = "❌ An Error Occured, The User cannot be found!"
 
         return emb
 
@@ -79,9 +76,7 @@ class Mod(commands.Cog):
 
     @commands.has_permissions(ban_members=True)
     @commands.command()
-    async def ban(
-        self, ctx, member: discord.Member, *, reason = "Please write a reason!"
-    ):
+    async def ban(self, ctx, member: discord.Member, *, reason = "Please write a reason!"):
         """Ban someone from the server."""
         try:
             await ctx.guild.ban(member, reason = reason)
@@ -123,25 +118,25 @@ class Mod(commands.Cog):
     @commands.cooldown(rate=1, per=5.0)
     @commands.has_permissions(manage_messages=True)
     @commands.command(aliases = ["del", "p", "prune"])
-    async def purge(self, ctx, limit: int, member: discord.Member = None):
+    async def purge(self, ctx, amount: int, member: discord.Member = None):
         """Clean a number of messages"""
-        if limit <= 500:
-            loading = await ctx.send(embed=discord.Embed(description="Processing..."))
+        if amount <= 500:
+            await ctx.author.send(embed=discord.Embed(description="The Great *Purge* is processing..."), delete_after=10)
             if member is None:
-                await ctx.channel.purge(limit = limit + 1)
-                await loading.delete()
+                await ctx.channel.purge(limit = amount + 1)
             else:
-                async for message in ctx.channel.history(limit = limit + 1):
+                async for message in ctx.channel.history(limit = amount + 1):
                     if message.author is member:
                         await message.delete()
-                    await loading.delete()
+        elif amount is 0:
+            await ctx.send(discord.Embed(description="⚠ Please Specify the amount of messages to be deleted!"))
         else:
-            await ctx.send("Maximum amount of purging reached. You can only purge 500 messages at a time")
+            await ctx.send(discord.Embed(description="❌ Maximum amount of purging reached. You can only purge 500 messages at a time"))
 
 
 
     @commands.has_permissions(ban_members=True)
-    @commands.command()
+    @commands.command(aliases=["banlist"])
     async def bans(self, ctx):
         """See a list of banned users in the guild"""
         try:
@@ -151,7 +146,6 @@ class Mod(commands.Cog):
 
         em = discord.Embed(title = f"List of Banned Members ({len(bans)}):")
         em.description = ", ".join([str(b.user) for b in bans])
-
         await ctx.send(embed = em)
 
     @commands.has_permissions(ban_members=True, view_audit_log=True)
@@ -179,21 +173,27 @@ class Mod(commands.Cog):
         except:
             await ctx.send("I don't have the perms to add that role.")
 
-    @commands.has_permissions(administrator=True)
-    @commands.command(disabled=True, hidden=True)
-    async def giveroletoeveryone(self, ctx, *, role: discord.Role):
-        """Add a role to everyone else."""
-        await ctx.send("Assigning roles to every member...")
-        if not role:
-            return await ctx.send("That role does not exist.")
-        try:
-            for users in ctx.guild.members:
-                if users.bot is False:
-                    await users.add_roles(role)
-                    print(f"Added Role: {role.name} to Member: {users}")
-        except:
-            await ctx.send("I don't have the perms to add that role.")
-            pass
+#    DISABLED FOR NOW
+#    @commands.has_permissions(administrator=True)
+#    @commands.command(disabled=True, hidden=True)
+#    async def giveroletoeveryone(self, ctx, *, role: discord.Role):
+#        """Add a role to everyone else."""
+#        if not role:
+#            return await ctx.send("That role does not exist.")
+#        curr = 0
+#        total = len(ctx.guild.members)
+#        progress = f"{curr}/{total}"
+#        await ctx.send(progress)
+#        await ctx.send("Assigning roles to every member... (THIS WILL TAKE A WHILE)")
+#        for users in ctx.guild.members:
+#            if users.bot is False:
+#                await users.add_roles(role)
+#                curr += 1
+#                await progress.edit(content=f"({curr}/{total})")
+#                print(f"Added Role: {role.name} to Member: {users}")
+#                await asyncio.sleep(5)
+#            await ctx.send("Completed!")
+#            print("Completed!")
         
     @commands.has_permissions(manage_roles=True)
     @commands.command()
@@ -212,7 +212,7 @@ class Mod(commands.Cog):
 
     @commands.has_permissions(ban_members=True)
     @commands.command()
-    async def hackban(self, ctx, userid: discord.User, *, reason = None):
+    async def hackban(self, ctx, userid: int, *, reason = None):
         """Ban someone not in the server"""
         try:
             await ctx.guild.ban(discord.Object(userid), reason = reason)
@@ -284,7 +284,7 @@ class Mod(commands.Cog):
     @commands.command()
     async def unmute(self, ctx, member: discord.Member, *, reason = None):
         """Removes channel overrides for specified member"""
-        progress = await ctx.send("Unmuting user!")
+        progress = await ctx.send(embed=discord.Embed(description=f"Unmuting user!"))
         try:
             for channel in ctx.message.guild.channels:
                 await channel.set_permissions(member, overwrite = None, reason = reason)
@@ -303,7 +303,7 @@ class Mod(commands.Cog):
     async def selfnickname(self, ctx, *, newname: str = None):
         """Change my nickname, if omitted, removes it instead."""
         guild = ctx.guild
-        if newname == None:
+        if newname is None:
             await guild.me.edit(nick=None)
             await ctx.send(
                 embed=discord.Embed(description=f"Successfully reset my nickname.")
@@ -328,7 +328,7 @@ class Mod(commands.Cog):
     async def nickname(self, ctx, member: discord.Member, *, newname: str = None):
         """Change other user's nickname, if omitted, removes it instead."""
         try:
-            if newname == None:
+            if newname is None:
                 await member.edit(nick=None)
                 await ctx.send(
                     embed=discord.Embed(

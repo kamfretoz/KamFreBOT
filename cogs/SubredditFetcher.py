@@ -18,7 +18,7 @@ async def getSub(self, ctx, sub):
         attempts = 1
         while attempts < 5:
             if 'error' in request:
-                print("failed request {}".format(attempts))
+                print(f"failed request {attempts}")
                 await asyncio.sleep(2)
                 async with aiohttp.ClientSession() as session:
                     async with session.get(f"https://www.reddit.com/r/{sub}/hot.json?limit=100") as response:
@@ -44,7 +44,7 @@ async def getSub(self, ctx, sub):
                                 break #done with this loop, can send image
                 await ctx.send(memeHistory[len(memeHistory) - 1]) #send the last image
                 return
-        await ctx.send("_{}! ({})_".format(str(request['message']), str(request['error'])))
+        await ctx.send(f"_{str(request['message'])}! ({str(request['error'])})_")
 
 class SubredditFetcher(commands.Cog):
     def __init__(self, bot):
@@ -54,16 +54,16 @@ class SubredditFetcher(commands.Cog):
     async def memesub(self, ctx):
         """Memes from various subreddits (excluding r/me_irl. some don't understand those memes)"""
         async with aiohttp.ClientSession() as session:
-            async with session.get("https://www.reddit.com/r/{0}/hot.json?limit=100".format(random.choice(memeSubreddits))) as response:
+            async with session.get(f"https://www.reddit.com/r/{random.choice(memeSubreddits)}/hot.json?limit=100") as response:
                 request = await response.json()
 
         attempts = 1
         while attempts < 5:
             if 'error' in request:
-                print("failed request {}".format(attempts))
+                print(f"failed request {attempts}")
                 await asyncio.sleep(2)
                 async with aiohttp.ClientSession() as session:
-                    async with session.get("https://www.reddit.com/r/{0}/hot.json?limit=100".format(random.choice(memeSubreddits))) as response:
+                    async with session.get("https://www.reddit.com/r/{(random.choice(memeSubreddits)}/hot.json?limit=100") as response:
                         request = await response.json()
                 attempts += 1
             else:
@@ -86,7 +86,7 @@ class SubredditFetcher(commands.Cog):
                                 break 
                 await ctx.send(memeHistory[len(memeHistory) - 1])
                 return
-        await ctx.send("_{}! ({})_".format(str(request['message']), str(request['error'])))
+        await ctx.send(f"_{str(request['message'])}! ({str(request['error'])})_")
     
     @commands.command()
     async def showerthought(self, ctx):
@@ -97,7 +97,7 @@ class SubredditFetcher(commands.Cog):
         attempts = 1
         while attempts < 5:
             if 'error' in request:
-                print("failed request {}".format(attempts))
+                print(f"failed request {attempts}")
                 await asyncio.sleep(2)
                 async with aiohttp.ClientSession() as session:
                     async with session.get("https://www.reddit.com/r/showerthoughts/hot.json?limit=100") as response:
@@ -126,7 +126,7 @@ class SubredditFetcher(commands.Cog):
                                 break
                 await ctx.send(memeHistory[len(memeHistory) - 1])
                 return
-        await ctx.send("_{}! ({})_".format(str(request['message']), str(request['error'])))
+        await ctx.send(f"_{str(request['message'])}! ({str(request['error'])})_")
 
     
     @commands.command(aliases=['dankmeme', 'dank'])

@@ -166,63 +166,64 @@ async def on_command_error(ctx, error):
             description=":warning: **Invalid Command!**"
             )
         nocommand.set_image(url="https://http.cat/404.jpg")
-        await ctx.send(content=None, embed=nocommand, delete_after=5.0)
+        await ctx.send(content=None, embed=nocommand, delete_after=10)
     elif isinstance(error, commands.errors.CheckFailure):
         nopermission = discord.Embed(
             description="**:warning: You don't have permissions to use that command.**"
         )
         nopermission.set_image(url="https://http.cat/403.jpg")
-        await ctx.send(content=None, embed=nopermission, delete_after=5.0)
+        await ctx.send(content=None, embed=nopermission, delete_after=10)
     elif isinstance(error, commands.errors.MissingRequiredArgument):
         missingargs = discord.Embed(
             description="**:warning: You are missing required arguments.**"
         )
-        await ctx.send(content=None, embed=missingargs, delete_after=5.0)
+        missingargs.set_image(url="https://http.cat/410.jpg")
+        await ctx.send(content=None, embed=missingargs, delete_after=10)
     elif isinstance(error, commands.errors.BadArgument):
         badargument = discord.Embed(
-            description="**:warning: You have given an invalid argument.**"
+            description="**:warning: You have given an invalid value.**"
         )
         badargument.set_image(url="https://http.cat/400.jpg")
-        await ctx.send(content=None, embed=badargument, delete_after=5.0)
+        await ctx.send(content=None, embed=badargument, delete_after=10)
     elif isinstance(error, commands.CommandOnCooldown):
         cooldownerr = discord.Embed(
             description=f"**:warning: That command is on cooldown. Please try again after {int(error.retry_after) + 1} second(s).**"
         )
         cooldownerr.set_image(url="https://http.cat/429.jpg")
-        await ctx.send(embed=cooldownerr, content=None, delete_after=5.0)
+        await ctx.send(embed=cooldownerr, content=None, delete_after=10)
     elif isinstance(error, commands.errors.BotMissingPermissions):
         missperm = discord.Embed(
             description=f"**:warning: I don't have required permission to complete that command.**"
         )
         missperm.set_image(url="https://http.cat/403.jpg")
-        await ctx.send(embed=missperm, content=None, delete_after=5.0)
+        await ctx.send(embed=missperm, content=None, delete_after=10)
     elif isinstance(error, commands.errors.TooManyArguments):
         toomanyargs = discord.Embed(
             description=f"**:warning: You have inputted too many arguments!**"
         )
         toomanyargs.set_image(url="https://http.cat/413.jpg")
-        await ctx.send(embed=toomanyargs, content=None, delete_after=5.0)
+        await ctx.send(embed=toomanyargs, content=None, delete_after=10)
     elif isinstance(error, commands.errors.DisabledCommand):
         ded = discord.Embed(description=f"**:warning: This command are disabled.**")
         ded.set_image(url="https://http.cat/410.jpg")
-        await ctx.send(embed=ded, content=None, delete_after=5.0)
+        await ctx.send(embed=ded, content=None, delete_after=10)
 
     elif isinstance(error, discord.Forbidden):
         missaccess = discord.Embed(
             description=f"**:no_entry_sign: I'm not allowed to do that!**"
         )
         missaccess.set_image(url="https://http.cat/401.jpg")
-        await ctx.send(embed=missaccess, content=None, delete_after=5.0)
+        await ctx.send(embed=missaccess, content=None, delete_after=10)
     elif isinstance(error, commands.errors.NotOwner):
         notowner = discord.Embed(description=f"**:warning: You are not my owner!**")
         notowner.set_image(url="https://http.cat/400.jpg")
-        await ctx.send(embed=notowner, content=None, delete_after=5.0)
+        await ctx.send(embed=notowner, content=None, delete_after=10)
 
     elif isinstance(error, discord.NotFound):
         notfound = discord.Embed(
             description=f"**:warning: Can't find the target message!**")
         notfound.set_image(url="https://http.cat/404.jpg")
-        await ctx.send(embed=notfound, content=None, delete_after=5.0)
+        await ctx.send(embed=notfound, content=None, delete_after=10)
 
     else:
         try:
@@ -233,7 +234,7 @@ async def on_command_error(ctx, error):
             errormsg = discord.Embed(title=f"🛑 An error occurred with the `{ctx.command.name}` command.", description=f"ℹ More Information:\n🖥 Server: {ctx.guild.name}\n📑 Channel: #{ctx.channel}\n👥 User: {ctx.message.author}\n🕓 At: {now.strftime('%B %d, %Y - %H:%M:%S')} GMT+7")
             errormsg.set_image(url="https://http.cat/500.jpg")
             await bot.get_channel(config.home).send(content=f"{random.choice(quotes.errors)}", embed=errormsg)
-            await ctx.send(content=f"'{random.choice(quotes.errors)}'", embed=errormsg, delete_after=9.9)
+            await ctx.send(content=f"'{random.choice(quotes.errors)}'", embed=errormsg)
             await bot.get_channel(config.home).send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```")
             await ctx.send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```", delete_after=10)
         except discord.HTTPException:

@@ -1,9 +1,10 @@
-version = "Alpha v0.1.2"
+version = "Alpha v0.1.3"
 botname = "KamFreBOT"
 
 home = 570978148586356750 #Your Error Log Channel ID Here.
 prefix = ["b!", "B!"]
 desc = "A simple Discord bot made by me for some of my private Discord servers"
+tc = "timecards"
 
 
 status_timeout = 10

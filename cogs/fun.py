@@ -8,6 +8,7 @@ import discord
 import libneko
 import requests
 import os
+from datetime import datetime
 from random import randint, sample
 from discord.ext import commands
 from libneko import embeds
@@ -115,7 +116,13 @@ ZALGO_CHARS = {
         "\u035F",
         "\u0362",
     ],
-    "overlay": ["\u0334", "\u0335", "\u0336", "\u0337", "\u0338"],
+    "overlay": [
+        "\u0334", 
+        "\u0335", 
+        "\u0336", 
+        "\u0337", 
+        "\u0338"
+    ],
 }
 
 
@@ -135,7 +142,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=["talk", "speak","s"])
     # @commands.bot_has_permissions(manage_messages=True)
-    async def say(self, ctx, *, text=None):
+    async def say(self, ctx, *, text: str = None):
         """Say whatever you typed in"""
         try:
             if text is None:
@@ -152,7 +159,7 @@ class Fun(commands.Cog):
     @commands.command(aliases=["stoall"], hidden=True)
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def saytoall(self, ctx, *, text=None):
+    async def saytoall(self, ctx, *, text: str = None):
         """Send a message to every member on the server (Can only be used by Administrator)"""
         try:
             if text is None:
@@ -171,7 +178,7 @@ class Fun(commands.Cog):
     # Say Command with TTS
     @commands.command(aliases=["ttstalk", "speaktts","st"], hidden=True)
     @commands.bot_has_permissions(manage_messages=True)
-    async def saytts(self, ctx, *, text=None):
+    async def saytts(self, ctx, *, text:str = None):
         """Say whatever you typed in, this time with TTS!"""
         if text is None:
             await ctx.send("❓ What do you want me to say?", delete_after=10.0)
@@ -182,19 +189,26 @@ class Fun(commands.Cog):
                 await ctx.trigger_typing()
                 await ctx.send(content=text, tts=True)
             except discord.Forbidden:
-                await ctx.author.send(
-                    ":no_entry_sign: I'm not allowed to send message here!",
-                    delete_after=10.0,
-                )
+                await ctx.author.send(":no_entry_sign: I'm not allowed to send message here!", delete_after=5)
             except discord.NotFound:
-                await ctx.send(
-                    ":grey_exclamation: ERROR: Original message not found! (404 UNKNOWN MESSAGE)"
-                )
+                await ctx.send(discord.Embed(description=":grey_exclamation: ERROR: Original message not found! (404 UNKNOWN MESSAGE)"), delete_after=5)
             except discord.ext.commands.BotMissingPermissions:
-                await ctx.send(
-                    "I don't have permission to delete the original message!",
-                    delete_after=5.0,
-                )
+                await ctx.send(discord.Embed(description="I don't have permission to delete the original message!"), delete_after=5.0,)
+
+    @commands.command(aliases=["embedsay","syd"])
+    @commands.bot_has_permissions(embed_links=True)
+    @commands.guild_only()
+    async def sayembed(self, ctx, *, message: str = None):
+        '''A command to embed messages quickly.'''
+        if message is None:
+            await ctx.send(discord.Embed(description="❓ What do you want me to say?", delete_after=5))
+            await ctx.message.add_reaction("❓")
+        else:
+            await ctx.message.delete()
+            em = discord.Embed(color=random.randint(0, 0xFFFFFF), timestamp=datetime.utcnow())
+            em.description = message
+            em.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Sent by: {ctx.message.author}")
+            await ctx.send(embed=em)
 
     @commands.command(aliases=["sto"])
     @commands.bot_has_permissions(manage_messages=True)
@@ -225,7 +239,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=["send", "dm"])
     @commands.guild_only()
-    async def sendto(self, ctx, target: libneko.converters.MemberConverter = None, *, text=None):
+    async def sendto(self, ctx, target: libneko.converters.InsensitiveMemberConverter = None, *, text=None):
         """Send whatever you want to a user's DM"""
         if text is None:
             await ctx.send("What do you want me to say?", delete_after=10.0)
@@ -964,6 +978,75 @@ class Fun(commands.Cog):
             amount = ZALGO_DEFAULT_AMT
         text = self.zalgoify(text.upper(), amount)
         await ctx.send(text)
+
+    @commands.group(invoke_without_command=True, aliases=["tc","timecard"])
+    async def timecards(self, ctx):
+        """Send Spongebob's Timecards"""
+        tipe = "pics"
+        random.seed()
+        slash = get_filesystem_slash()
+        upload = await ctx.send("Uploading, Please Wait!")
+        str(upload)
+        await asyncio.sleep(1)
+        await ctx.trigger_typing()
+        if os.path.isdir(config.tc):
+            folder = f"{config.tc}{slash}{tipe}{slash}" + random.choice(os.listdir(f"{config.tc}{slash}{tipe}"))
+            await ctx.send(file=discord.File(folder))
+        await upload.delete()
+    
+    @timecards.command(name="audio", aliases=["Sound"], brief="Send the audio version")
+    async def timecards_audio(self, ctx):
+        tipe = "sound"
+        random.seed()
+        slash = get_filesystem_slash()
+        upload = await ctx.send("Uploading, Please Wait!")
+        str(upload)
+        await asyncio.sleep(1)
+        await ctx.trigger_typing()
+        if os.path.isdir(config.tc):
+            folder = f"{config.tc}{slash}{tipe}{slash}" + random.choice(os.listdir(f"{config.tc}{slash}{tipe}"))
+            await ctx.send(file=discord.File(folder))
+        await upload.delete()
+
+    @commands.command()
+    async def textmojify(self, ctx, *, msg):
+        """Convert text into emojis"""
+        try:
+            await ctx.message.delete()
+        except discord.Forbidden:
+            pass
+
+        if msg != None:
+            out = msg.lower()
+            text = out.replace(' ', '    ').replace('10', '\u200B:keycap_ten:')\
+                      .replace('ab', '\u200B🆎').replace('cl', '\u200B🆑')\
+                      .replace('0', '\u200B:zero:').replace('1', '\u200B:one:')\
+                      .replace('2', '\u200B:two:').replace('3', '\u200B:three:')\
+                      .replace('4', '\u200B:four:').replace('5', '\u200B:five:')\
+                      .replace('6', '\u200B:six:').replace('7', '\u200B:seven:')\
+                      .replace('8', '\u200B:eight:').replace('9', '\u200B:nine:')\
+                      .replace('!', '\u200B❗').replace('?', '\u200B❓')\
+                      .replace('vs', '\u200B🆚').replace('.', '\u200B🔸')\
+                      .replace(',', '🔻').replace('a', '\u200B🅰')\
+                      .replace('b', '\u200B🅱').replace('c', '\u200B🇨')\
+                      .replace('d', '\u200B🇩').replace('e', '\u200B🇪')\
+                      .replace('f', '\u200B🇫').replace('g', '\u200B🇬')\
+                      .replace('h', '\u200B🇭').replace('i', '\u200B🇮')\
+                      .replace('j', '\u200B🇯').replace('k', '\u200B🇰')\
+                      .replace('l', '\u200B🇱').replace('m', '\u200B🇲')\
+                      .replace('n', '\u200B🇳').replace('ñ', '\u200B🇳')\
+                      .replace('o', '\u200B🅾').replace('p', '\u200B🅿')\
+                      .replace('q', '\u200B🇶').replace('r', '\u200B🇷')\
+                      .replace('s', '\u200B🇸').replace('t', '\u200B🇹')\
+                      .replace('u', '\u200B🇺').replace('v', '\u200B🇻')\
+                      .replace('w', '\u200B🇼').replace('x', '\u200B🇽')\
+                      .replace('y', '\u200B🇾').replace('z', '\u200B🇿')
+            try:
+                await ctx.send(text)
+            except Exception as e:
+                await ctx.send(f'```{e}```')
+        else:
+            await ctx.send('Write something, reee!', delete_after=3.0)
 
 def setup(bot):
     bot.add_cog(Fun(bot))
