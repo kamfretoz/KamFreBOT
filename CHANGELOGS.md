@@ -9,7 +9,6 @@ Changes since v0.1.3:
 * Added aliases to converter commands
 * Added more checks to the exception handler
 * Start using Libneko's converters for lookup
-* Also migrate from Discord's Embed to Libneko's Embed
 * Added safety measures to `pingstorm` commands
 * Integrated the list of timezones into the time command
 * Adjusted the `random.seed()` function

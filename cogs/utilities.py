@@ -37,7 +37,6 @@ import urbandict
 import PyDictionary
 import qrcode
 from io import BytesIO
-import libneko
 
 from libneko import pag, converters
 import discord
@@ -83,7 +82,7 @@ class Utilities(commands.Cog):
         """Shows a list of servers that the bot is in along with member count"""
         @pag.embed_generator(max_chars=2048)
         def main_embed(paginator, page, page_index):
-            servlist = libneko.embeds.Embed(title=f"Servers that I am in. ({len(self.bot.guilds)} Servers in total)", description=page, color=0x00FF00)
+            servlist = discord.Embed(title=f"Servers that I am in. ({len(self.bot.guilds)} Servers in total)", description=page, color=0x00FF00)
             return servlist
         
         navi = pag.EmbedNavigatorFactory(factory=main_embed, max_lines=10)
@@ -198,7 +197,7 @@ class Utilities(commands.Cog):
         else:
             colours = discord.Colour(0x26D934)
 
-        ping = libneko.embeds.Embed(
+        ping = discord.Embed(
             title="Current Ping:",
             description=f"```💓: {heartbeat:,.2f}ms\n💬: {millis:,.2f}ms.```",
             timestamp=datetime.utcnow(),
@@ -222,13 +221,13 @@ class Utilities(commands.Cog):
             time = now.strftime(time_fmt)
             date = now.strftime(date_fmt)
 
-            clock = libneko.embeds.Embed(color=0xC0C0C0)
+            clock = discord.Embed(color=0xC0C0C0)
             clock.add_field(name="🕓 Current Time", value=time, inline=False)
             clock.add_field(name="📆 Current Date", value=date, inline=False)
             clock.add_field(name="🌐 Timezone", value=location, inline=False)
             await ctx.send(embed=clock, content=f"⏰ Tick.. Tock..")
         except:
-            err = libneko.embeds.Embed(title="⚠ **Warning!** An Error Occured.", description="Make sure that the timezone format is correct and is also available.\nThe Correct format is for example: `America/New_York` \nFor timezone list, use [p]clock list")
+            err = discord.Embed(title="⚠ **Warning!** An Error Occured.", description="Make sure that the timezone format is correct and is also available.\nThe Correct format is for example: `America/New_York` \nFor timezone list, use [p]clock list")
             await ctx.send(embed = err)
 
     @clock.command(name="list", aliases=["timezone","timezones"], brief="Vew the list of available timezones")
@@ -236,7 +235,7 @@ class Utilities(commands.Cog):
         """Shows the list of available timezones"""
         @pag.embed_generator(max_chars=2048)
         def emb(paginator, page, page_index):
-            embed = libneko.embeds.Embed(title="🌐 Available Timezones:", description=f"```{page}```")
+            embed = discord.Embed(title="🌐 Available Timezones:", description=f"```{page}```")
             return embed
 
         with open("cogs/data/timezones.txt") as tzs:
@@ -264,7 +263,7 @@ class Utilities(commands.Cog):
         Usage: gif <query>"""
         g = safygiphy.Giphy()
         gif = g.random(tag=query)
-        em = libneko.embeds.Embed()
+        em = discord.Embed()
         em.set_image(url=str(gif.get("data", {}).get("image_original_url")))
         try:
             await ctx.send(embed=em)
@@ -280,7 +279,7 @@ class Utilities(commands.Cog):
 #            defi = urbandict.define(word)
 #            definition = defi[0]["def"]
 #            example = defi[0]["example"]
-#            ud = libneko.embeds.Embed(title=f":mag: {word}", description=definition, color=0x25332)
+#            ud = discord.Embed(title=f":mag: {word}", description=definition, color=0x25332)
 #            ud.add_field(name=":bulb: Example", value=example, inline=False)
 #            ud.set_footer(
 #                text="Urban Dictionary API",
@@ -293,7 +292,7 @@ class Utilities(commands.Cog):
 #
 #        except urllib.error.HTTPError:
 #            await ctx.send(
-#            embed=libneko.embeds.Embed(
+#            embed=discord.Embed(
 #                description=f":mag_right: No Definition Found."
 #            )
 #        )
@@ -328,7 +327,7 @@ class Utilities(commands.Cog):
         #    if server is None:
         #        return await ctx.send("Server not found!")
         
-        e = libneko.embeds.Embed(title=f"**{server.name}**\'s Channel list.")
+        e = discord.Embed(title=f"**{server.name}**\'s Channel list.")
 
         voice = ""
         text = ""
@@ -351,7 +350,7 @@ class Utilities(commands.Cog):
         try:
             await ctx.send(embed=e)
         except discord.HTTPException:
-            loading = await ctx.send(embed=libneko.embeds.Embed(title="Please Wait..."), delete_after=3)
+            loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
             everything = f"Text Channels:\n{text}\nCategories:\n{categories}\nVoice Channels:\n{voice}"
             data = BytesIO(everything.encode('utf-8'))
             await ctx.send(content=f"**{ctx.guild.name}'s Channel List**", file=discord.File(data, filename=f"{ctx.guild.name}_Channel_Lists.txt"))
@@ -379,7 +378,7 @@ class Utilities(commands.Cog):
                 members_amount += 1
                 total += 1
 
-        loading = await ctx.send(embed=libneko.embeds.Embed(title="Please Wait..."), delete_after=3)
+        loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
         everything = f"Member Amount: {members_amount}\nBot Amount: {bots_amount}\nTotal: {total}\n\nMember List:\n{members + bots}"        
         data = BytesIO(everything.encode('utf-8'))
         await ctx.send(content=f"**{ctx.guild.name}'s Member List**", file=discord.File(data, filename=f"{ctx.guild.name}_Member_Lists.txt"))
@@ -395,10 +394,10 @@ class Utilities(commands.Cog):
             for num, role in enumerate(sorted(ctx.guild.roles, reverse=True), start=1):
                 allroles += f"[{str(num).zfill(2)}] {role.id}\t[ Users: {len(role.members)} ]\t{role.name}\t\r\n"
             try:
-                embroles = libneko.embeds.Embed(title=f"Roles in **{ctx.guild.name}**", description=f"```{allroles}```")
+                embroles = discord.Embed(title=f"Roles in **{ctx.guild.name}**", description=f"```{allroles}```")
                 await ctx.send(embed=embroles)
             except discord.HTTPException:
-                loading = await ctx.send(embed=libneko.embeds.Embed(title="Please Wait..."), delete_after=3)
+                loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
                 data = BytesIO(allroles.encode('utf-8'))
                 await ctx.send(content=f"Roles in **{ctx.guild.name}**", file=discord.File(data, filename=f"{ctx.guild.name}_Role_Lists.txt"))
                 await loading.delete()
@@ -485,7 +484,7 @@ class Utilities(commands.Cog):
             await ctx.send("Boi, are you random! Usage: *ranint [least #] [greatest #], to set the range of the randomized number. Please use integers.")
         else:
             color = discord.Color(value=0x00ff00)
-            em = libneko.embeds.Embed(color=color, title='Your randomized number:')
+            em = discord.Embed(color=color, title='Your randomized number:')
             em.description = random.randint(a,b)
             await ctx.send(embed=em)
 
@@ -495,7 +494,7 @@ class Utilities(commands.Cog):
         """Create a timer with the given time."""
         if timer is None:
             await ctx.send(
-                embed=libneko.embeds.Embed(
+                embed=discord.Embed(
                     description=":watch: Please enter the time!",
                     color=discord.Colour.red(),
                 )
@@ -503,21 +502,21 @@ class Utilities(commands.Cog):
         else:
             if timer <= 0:
                 await ctx.send(
-                    embed=libneko.embeds.Embed(
+                    embed=discord.Embed(
                         description=":octagonal_sign: That's not a valid time!",
                         color=discord.Colour.red(),
                     )
                 )
             elif timer > 1000:
                 await ctx.send(
-                    embed=libneko.embeds.Embed(
+                    embed=discord.Embed(
                         description=":octagonal_sign: That time is too big! It must be between 1 and 1001",
                         color=discord.Colour.red(),
                     )
                 )
             else:
                 msg = await ctx.send(
-                    embed=libneko.embeds.Embed(
+                    embed=discord.Embed(
                         description="**Starting countdown!**",
                         color=discord.Colour.orange(),
                     )
@@ -540,7 +539,7 @@ class Utilities(commands.Cog):
                     mins, secs = divmod(t, 60)
                     loop.create_task(
                         msg.edit(
-                            embed=libneko.embeds.Embed(
+                            embed=discord.Embed(
                                 description=f"**{mins:,}:{secs:02}**",
                                 color=discord.Colour.orange(),
                             )
@@ -548,7 +547,7 @@ class Utilities(commands.Cog):
                     )
                     await asyncio.sleep(1)
                 await msg.edit(
-                    embed=libneko.embeds.Embed(
+                    embed=discord.Embed(
                         description=":watch::exclamation: Time's up!",
                         color=discord.Colour.red(),
                     )
@@ -630,7 +629,7 @@ class Utilities(commands.Cog):
             else:
                 showing = f"({count_playing})"
 
-            em = libneko.embeds.Embed(description=msg, colour=discord.Colour(value=0x36393e))
+            em = discord.Embed(description=msg, colour=discord.Colour(value=0x36393e))
             em.set_author(name=f"""Who's playing "{game}"? {showing} User(s) in total.""")
             await ctx.send(embed=em)
 
@@ -664,7 +663,7 @@ class Utilities(commands.Cog):
             msg = ""
             max_games = min(len(sorted_list), 10)
 
-            em = libneko.embeds.Embed(description=msg, colour=discord.Colour(value=0x36393e))
+            em = discord.Embed(description=msg, colour=discord.Colour(value=0x36393e))
             for i in range(max_games):
                 game, freq = sorted_list[i]
                 if int(freq_list[game]) < 2:
@@ -784,7 +783,7 @@ class Utilities(commands.Cog):
     async def nickscan(self, ctx):
         @pag.embed_generator(max_chars=2048)
         def main_embed(paginator, page, page_index):
-            embed = libneko.embeds.Embed(title=f'Servers I Have Nicknames In', description=page)
+            embed = discord.Embed(title=f'Servers I Have Nicknames In', description=page)
             return embed
 
         nicks = pag.EmbedNavigatorFactory(factory=main_embed, max_lines=10)

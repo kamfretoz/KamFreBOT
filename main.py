@@ -154,74 +154,73 @@ async def change_activities():
 # Main Exception Handler
 @bot.event
 async def on_command_error(ctx, error):
-
     if isinstance(error, commands.errors.CommandNotFound):
-        nocommand = libneko.embeds.Embed(description=":warning: **Invalid Command!**")
+        nocommand = discord.Embed(description=":warning: **Invalid Command!**")
         nocommand.set_image(url="https://http.cat/404.jpg")
         await ctx.send(content=None, embed=nocommand, delete_after=10)
         
     elif isinstance(error, commands.errors.MissingPermissions):
-        nopermission = libneko.embeds.Embed(description=f"**:warning: You don't have permissions to use that command. \nYou'll need these permissions: ```{error.missing_perms}```**")
+        nopermission = discord.Embed(description=f"**:warning: You don't have permissions to use that command. \nYou'll need these permissions: ```{error.missing_perms}```**")
         nopermission.set_image(url="https://http.cat/403.jpg")
-        await ctx.send(content=None, embed=nopermission, delete_after=15)
+        await ctx.send(content=None, embed=nopermission, delete_after=10)
 
     elif isinstance(error, commands.errors.MissingRequiredArgument):
-        missingargs = libneko.embeds.Embed(description="**:warning: You are missing required arguments.**")
+        missingargs = discord.Embed(description="**:warning: You are missing required arguments.**")
         missingargs.set_image(url="https://http.cat/410.jpg")
         await ctx.send(content=None, embed=missingargs, delete_after=10)
 
     elif isinstance(error, commands.errors.BadArgument):
-        badargument = libneko.embeds.Embed(description="**:warning: You have given an invalid value.**")
+        badargument = discord.Embed(description="**:warning: You have given an invalid value.**")
         badargument.set_image(url="https://http.cat/400.jpg")
         await ctx.send(content=None, embed=badargument, delete_after=10)
 
     elif isinstance(error, commands.CommandOnCooldown):
-        cooldownerr = libneko.embeds.Embed(description=f"**:warning: That command is on cooldown. Please try again after {int(error.retry_after) + 1} second(s).**")
+        cooldownerr = discord.Embed(description=f"**:warning: That command is on cooldown. Please try again after {int(error.retry_after) + 1} second(s).**")
         cooldownerr.set_image(url="https://http.cat/429.jpg")
         await ctx.send(embed=cooldownerr, content=None, delete_after=10)
 
     elif isinstance(error, commands.errors.BotMissingPermissions):
-        missperm = libneko.embeds.Embed(description=f"**:warning: I don't have required permission to complete that command. \nI am missing these permissions: ```{error.missing_perms}```**")
+        missperm = discord.Embed(description=f"**:warning: I don't have required permission to complete that command. \nI am missing these permissions: ```{error.missing_perms}```**")
         missperm.set_image(url="https://http.cat/403.jpg")
-        await ctx.send(embed=missperm, content=None, delete_after=15)
+        await ctx.send(embed=missperm, content=None, delete_after=10)
 
     elif isinstance(error, commands.errors.TooManyArguments):
-        toomanyargs = libneko.embeds.Embed(description=f"**:warning: You have inputted too many arguments!**")
+        toomanyargs = discord.Embed(description=f"**:warning: You have inputted too many arguments!**")
         toomanyargs.set_image(url="https://http.cat/413.jpg")
         await ctx.send(embed=toomanyargs, content=None, delete_after=10)
 
     elif isinstance(error, commands.errors.DisabledCommand):
-        ded = libneko.embeds.Embed(description=f"**:warning: This command are disabled.**")
+        ded = discord.Embed(description=f"**:warning: This command are disabled.**")
         ded.set_image(url="https://http.cat/410.jpg")
         await ctx.send(embed=ded, content=None, delete_after=10)
 
     elif isinstance(error, discord.Forbidden):
-        missaccess = libneko.embeds.Embed(description=f"**:no_entry_sign: I'm not allowed to do that!**")
+        missaccess = discord.Embed(description=f"**:no_entry_sign: I'm not allowed to do that!**")
         missaccess.set_image(url="https://http.cat/401.jpg")
         await ctx.send(embed=missaccess, content=None, delete_after=10)
 
     elif isinstance(error, commands.errors.NotOwner):
-        notowner = libneko.embeds.Embed(description=f"**:warning: You are not my owner!**")
+        notowner = discord.Embed(description=f"**:warning: You are not my owner!**")
         notowner.set_image(url="https://http.cat/400.jpg")
         await ctx.send(embed=notowner, content=None, delete_after=10)
 
     elif isinstance(error, discord.NotFound):
-        notfound = libneko.embeds.Embed(description=f"**:warning: Can't find the target message!**")
+        notfound = discord.Embed(description=f"**:warning: Can't find the target message!**")
         notfound.set_image(url="https://http.cat/404.jpg")
         await ctx.send(embed=notfound, content=None, delete_after=10)
 
     elif isinstance(error, commands.errors.ConversionError):
-        conv = libneko.embeds.Embed(description=f"**:warning: Lookup error, target not found! (is the syntax correct?)**")
+        conv = discord.Embed(description=f"**:warning: Lookup error, target not found! (is the syntax correct?)**")
         conv.set_image(url="https://http.cat/404.jpg")
         await ctx.send(embed=conv, content=None, delete_after=10)
 
     elif isinstance(error, commands.errors.ArgumentParsingError):
-        arg_err = libneko.embeds.Embed(description=f"**:warning: An Error occured during parsing of user's argument! (is the input correct?)**")
+        arg_err = discord.Embed(description=f"**:warning: An Error occured during parsing of user's argument! (is the input correct?)**")
         arg_err.set_image(url="https://http.cat/417.jpg")
         await ctx.send(embed=arg_err, content=None, delete_after=10)
 
     elif isinstance(error, commands.errors.MaxConcurrencyReached):
-        conv = libneko.embeds.Embed(description=f"**:warning: This command is currently rate-limited! You can use it only {error.number} time(s) at once until it is completed.**")
+        conv = discord.Embed(description=f"**:warning: This command is currently rate-limited! You can use it only {error.number} time(s) at once until it is completed.**")
         conv.set_image(url="https://http.cat/404.jpg")
         await ctx.send(embed=conv, content=None, delete_after=10)
 
@@ -231,14 +230,14 @@ async def on_command_error(ctx, error):
             print(f"Ignoring exception in command {ctx.command.name}")
             trace = traceback.format_exception(type(error), error, error.__traceback__)
             print("".join(trace))
-            errormsg = libneko.embeds.Embed(title=f"🛑 An error occurred with the `{ctx.command.name}` command.", description=f"ℹ More Information:\n🖥 Server: {ctx.guild.name}\n📑 Channel: #{ctx.channel}\n👥 User: {ctx.message.author}\n🕓 At: {now.strftime('%B %d, %Y - %H:%M:%S')} GMT+7")
+            errormsg = discord.Embed(title=f"🛑 An error occurred with the `{ctx.command.name}` command.", description=f"ℹ More Information:\n🖥 Server: {ctx.guild.name}\n📑 Channel: #{ctx.channel}\n👥 User: {ctx.message.author}\n🕓 At: {now.strftime('%B %d, %Y - %H:%M:%S')} GMT+7")
             errormsg.set_image(url="https://http.cat/500.jpg")
             await bot.get_channel(config.home).send(content=f"{random.choice(quotes.errors)}", embed=errormsg)
             await ctx.send(content=f"'{random.choice(quotes.errors)}'", embed=errormsg)
             await bot.get_channel(config.home).send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```")
             await ctx.send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```", delete_after=10)
         except discord.HTTPException:
-            fuckeduperr = libneko.embeds.Embed(title="💥 An error occurred while displaying the previous error.")
+            fuckeduperr = discord.Embed(title="💥 An error occurred while displaying the previous error.")
             fuckeduperr.set_image(url="https://http.cat/500.jpg")
             await ctx.send(embed=fuckeduperr, delete_after=5)
 
@@ -248,7 +247,7 @@ async def on_command_error(ctx, error):
 async def about(ctx):
     """Information about this bot."""
     creator = (await bot.application_info()).owner
-    about = libneko.embeds.Embed(
+    about = discord.Embed(
         title=f"{config.botname}", description=f"{config.desc}", color=0xFFFFFF
     )
     about.add_field(name="GitHub Link.", value=f"[Click Here!]({config.about_github_link})")
