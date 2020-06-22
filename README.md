@@ -32,7 +32,7 @@ You can put your own memes on `/memes/` folder and use the meme command to send 
 
 * You can also put custom sound into the `/audio/` folder
 Use `localplay` command to play the audio
-NOTE: The filename **ARE** case sensitive. (For example, `[p]localplay lingsir_wengi.mp3`)
+NOTE: The filename **IS** case sensitive. (For example, `[p]localplay lingsir_wengi.mp3`)
 
 * You can customize the Error Logging channel
 Open up `config.py` and put your desired channel ID on `home` variable
@@ -40,7 +40,7 @@ Open up `config.py` and put your desired channel ID on `home` variable
 ## Token, Key and Stuff
 
 You will need to provide your own Token.
-Put the token on `coin.js` file
+Put the token on `coin.json` file
 And your YouTube API v3 Key on `/cogs/core/config.py`
 
 ## Libraries used

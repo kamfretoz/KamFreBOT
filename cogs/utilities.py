@@ -37,6 +37,7 @@ import urbandict
 import PyDictionary
 import qrcode
 from io import BytesIO
+import libneko
 
 from libneko import pag, converters
 import discord
@@ -82,13 +83,13 @@ class Utilities(commands.Cog):
         """Shows a list of servers that the bot is in along with member count"""
         @pag.embed_generator(max_chars=2048)
         def main_embed(paginator, page, page_index):
-            servlist = discord.Embed(title=f"Servers that I am in. ({len(self.bot.guilds)} Servers in total)", description=page, color=0x00FF00)
+            servlist = libneko.embeds.Embed(title=f"Servers that I am in. ({len(self.bot.guilds)} Servers in total)", description=page, color=0x00FF00)
             return servlist
         
         navi = pag.EmbedNavigatorFactory(factory=main_embed, max_lines=10)
         servers = ""
         for guild in self.bot.guilds:
-                servers += f'{guild.name} \t|\t {guild.id} \t|\t {guild.member_count}\n'
+                servers += f'{guild.id} \t|\t {guild.name} \t|\t ({guild.member_count})\n'
 
         navi += servers
         navi.start(ctx)
@@ -139,11 +140,12 @@ class Utilities(commands.Cog):
         search_results = re.findall(
             'href=\\"\\/watch\\?v=(.{11})', html_content.read().decode()
         )
-        await ctx.send(f"Top Result:\nhttp://www.youtube.com/watch?v={search_results[0]}")
+        await ctx.send("http://www.youtube.com/watch?v=" + search_results[0])
 
     # pingstorm command
-    @commands.cooldown(rate=3, per=1800.0)
+    @commands.cooldown(rate=3, per=1800.0, type=commands.BucketType.guild)
     @commands.command(hidden=True, aliases=["pingmachine", "pingspam"], enabled=True)
+    @commands.max_concurrency(number=1, per=commands.BucketType.guild)
     @commands.guild_only()
     async def pingstorm(self, ctx, user: discord.Member, amount: int = 5):
         """Ping specified user number of times, 5 if no amount specified, Maximum amount is 200. (Cooldown: 1 use per 60 mins, Use wisely.)"""
@@ -196,7 +198,7 @@ class Utilities(commands.Cog):
         else:
             colours = discord.Colour(0x26D934)
 
-        ping = discord.Embed(
+        ping = libneko.embeds.Embed(
             title="Current Ping:",
             description=f"```💓: {heartbeat:,.2f}ms\n💬: {millis:,.2f}ms.```",
             timestamp=datetime.utcnow(),
@@ -206,9 +208,9 @@ class Utilities(commands.Cog):
 
     # time command
     # ~~Scrapped for now until~~ i can figure out how to do the customizeable timezone. EDIT: I DID IT! HURRAHH!
-    @commands.command(aliases=["time","date","now"])
+    @commands.group(invoke_without_command=True, aliases=["time","date","now"])
     async def clock(self, ctx, location: str = "UTC"):
-        """Show current time. [p]time <timezone>\n for timezone list see: http://tiny.cc/on60iz"""
+        """Show current time. [p]time <timezone>\nFor timezone list, use [p]clock list"""
 
         location.replace(" ", "_")
         time_fmt = "%I:%M:%S %p"
@@ -220,14 +222,29 @@ class Utilities(commands.Cog):
             time = now.strftime(time_fmt)
             date = now.strftime(date_fmt)
 
-            clock = discord.Embed(color=0xC0C0C0)
+            clock = libneko.embeds.Embed(color=0xC0C0C0)
             clock.add_field(name="🕓 Current Time", value=time, inline=False)
             clock.add_field(name="📆 Current Date", value=date, inline=False)
             clock.add_field(name="🌐 Timezone", value=location, inline=False)
             await ctx.send(embed=clock, content=f"⏰ Tick.. Tock..")
         except:
-            err = discord.Embed(title="⚠ **Warning!** An Error Occured.", description="Make sure that the timezone format is correct and is available.\nFor timezone list see: http://tiny.cc/on60iz")
+            err = libneko.embeds.Embed(title="⚠ **Warning!** An Error Occured.", description="Make sure that the timezone format is correct and is also available.\nThe Correct format is for example: `America/New_York` \nFor timezone list, use [p]clock list")
             await ctx.send(embed = err)
+
+    @clock.command(name="list", aliases=["timezone","timezones"], brief="Vew the list of available timezones")
+    async def clock_list(self, ctx):
+        """Shows the list of available timezones"""
+        @pag.embed_generator(max_chars=2048)
+        def emb(paginator, page, page_index):
+            embed = libneko.embeds.Embed(title="🌐 Available Timezones:", description=f"```{page}```")
+            return embed
+
+        with open("cogs/data/timezones.txt") as tzs:
+            lists = tzs.read()
+        
+        navi = pag.EmbedNavigatorFactory(factory=emb, max_lines=25)
+        navi += lists
+        navi.start(ctx)
 
 
     @commands.command()
@@ -247,77 +264,13 @@ class Utilities(commands.Cog):
         Usage: gif <query>"""
         g = safygiphy.Giphy()
         gif = g.random(tag=query)
-        em = discord.Embed()
+        em = libneko.embeds.Embed()
         em.set_image(url=str(gif.get("data", {}).get("image_original_url")))
         try:
             await ctx.send(embed=em)
         except discord.HTTPException:
             await ctx.send("Unable to send the messages, make sure i have access to embed.")
 
-    @commands.command(aliases=["a2b"], hidden=True)
-    async def ascii2bin(self, ctx, *, string):
-        """
-        Converts the ASCII string to binary.
-        Any UTF-8 characters are removed.
-        """
-        if string == "^":
-            prev = await self._get_prev(ctx)
-            if not prev:
-                return
-            else:
-                string = prev.content
-        return await self._ascii2bin(ctx, string=string)
-
-    @commands.command(aliases=["b2a"],hidden=True)
-    async def bin2ascii(self, ctx, *, string):
-        """
-        Converts the binary string to ASCII.
-        """
-        if string == "^":
-            prev = await self._get_prev(ctx)
-            if not prev:
-                return
-            else:
-                string = prev.content
-        return await self._bin2ascii(ctx, string=string)
-
-    async def _ascii2bin(self, ctx, *, string):
-        string = "".join(c for c in string if 0 <= ord(c) < 0xFFFF)
-        if not string:
-            return await ctx.send("No valid ASCII characters given.", delete_after=10)
-        binaries = [bin(ord(c))[2:11].rjust(8, "0") for c in string]
-        await ctx.send(" ".join(binaries).replace("@", "@" + chr(0xFFF0)))
-
-    async def _bin2ascii(self, ctx, *, string):
-        string = "".join(c for c in string if c not in " \t\r\n")
-        if not all(c in "01" for c in string):
-            print(string)
-            return await ctx.send("Not binary input...", delete_after=10)
-        zeros = math.ceil(len(string) / 8)
-        string = string.rjust(zeros, "0")
-        chars = []
-        for i in range(0, len(string), 8):
-            chars.append(chr(int(string[i : i + 8], 2)))
-        text = "".join(chars)
-        await ctx.send(text)
-
-    async def _get_prev(self, ctx):
-        # Get the previous message.
-        history = await ctx.channel.history(limit=3).flatten()
-        try:
-            # Sometimes discord bugs out and sends the message we just sent; other times it wont...
-            for i, m in enumerate(list(history)):
-                if m.id == ctx.message.id:
-                    del history[i]
-        except ValueError:
-            pass
-        if len(history) < 2 or not history[-1].content:
-            await ctx.send("I can't seem to find a message...", delete_after=10)
-            return None
-        else:
-            return history[0]
-
-#
 #      DISABLED FOR NOW AS THERE IS A BUG WHERE IT ONLY SHOWS FEW WORDS AT MOST.
 #
 #    @commands.command(aliases=["ud"], disabled=True)
@@ -327,7 +280,7 @@ class Utilities(commands.Cog):
 #            defi = urbandict.define(word)
 #            definition = defi[0]["def"]
 #            example = defi[0]["example"]
-#            ud = discord.Embed(title=f":mag: {word}", description=definition, color=0x25332)
+#            ud = libneko.embeds.Embed(title=f":mag: {word}", description=definition, color=0x25332)
 #            ud.add_field(name=":bulb: Example", value=example, inline=False)
 #            ud.set_footer(
 #                text="Urban Dictionary API",
@@ -340,7 +293,7 @@ class Utilities(commands.Cog):
 #
 #        except urllib.error.HTTPError:
 #            await ctx.send(
-#            embed=discord.Embed(
+#            embed=libneko.embeds.Embed(
 #                description=f":mag_right: No Definition Found."
 #            )
 #        )
@@ -375,7 +328,7 @@ class Utilities(commands.Cog):
         #    if server is None:
         #        return await ctx.send("Server not found!")
         
-        e = discord.Embed(title=f"**{server.name}**\'s Channel list.")
+        e = libneko.embeds.Embed(title=f"**{server.name}**\'s Channel list.")
 
         voice = ""
         text = ""
@@ -398,7 +351,7 @@ class Utilities(commands.Cog):
         try:
             await ctx.send(embed=e)
         except discord.HTTPException:
-            loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
+            loading = await ctx.send(embed=libneko.embeds.Embed(title="Please Wait..."), delete_after=3)
             everything = f"Text Channels:\n{text}\nCategories:\n{categories}\nVoice Channels:\n{voice}"
             data = BytesIO(everything.encode('utf-8'))
             await ctx.send(content=f"**{ctx.guild.name}'s Channel List**", file=discord.File(data, filename=f"{ctx.guild.name}_Channel_Lists.txt"))
@@ -426,7 +379,7 @@ class Utilities(commands.Cog):
                 members_amount += 1
                 total += 1
 
-        loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
+        loading = await ctx.send(embed=libneko.embeds.Embed(title="Please Wait..."), delete_after=3)
         everything = f"Member Amount: {members_amount}\nBot Amount: {bots_amount}\nTotal: {total}\n\nMember List:\n{members + bots}"        
         data = BytesIO(everything.encode('utf-8'))
         await ctx.send(content=f"**{ctx.guild.name}'s Member List**", file=discord.File(data, filename=f"{ctx.guild.name}_Member_Lists.txt"))
@@ -442,10 +395,10 @@ class Utilities(commands.Cog):
             for num, role in enumerate(sorted(ctx.guild.roles, reverse=True), start=1):
                 allroles += f"[{str(num).zfill(2)}] {role.id}\t[ Users: {len(role.members)} ]\t{role.name}\t\r\n"
             try:
-                embroles = discord.Embed(title=f"Roles in **{ctx.guild.name}**", description=f"```{allroles}```")
+                embroles = libneko.embeds.Embed(title=f"Roles in **{ctx.guild.name}**", description=f"```{allroles}```")
                 await ctx.send(embed=embroles)
             except discord.HTTPException:
-                loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
+                loading = await ctx.send(embed=libneko.embeds.Embed(title="Please Wait..."), delete_after=3)
                 data = BytesIO(allroles.encode('utf-8'))
                 await ctx.send(content=f"Roles in **{ctx.guild.name}**", file=discord.File(data, filename=f"{ctx.guild.name}_Role_Lists.txt"))
                 await loading.delete()
@@ -524,7 +477,7 @@ class Utilities(commands.Cog):
             await poll.add_reaction(emoji)
 
     @commands.command()
-    async def ranint(self, ctx, a: int, b: int):
+    async def randint(self, ctx, a: int, b: int):
         """Usage: *ranint [least number][greatest number]. RanDOM!"""
         if a is None:
             await ctx.send("Boi, are you random! Usage: *ranint [least #] [greatest #], to set the range of the randomized number. Please use integers.")
@@ -532,7 +485,7 @@ class Utilities(commands.Cog):
             await ctx.send("Boi, are you random! Usage: *ranint [least #] [greatest #], to set the range of the randomized number. Please use integers.")
         else:
             color = discord.Color(value=0x00ff00)
-            em = discord.Embed(color=color, title='Your randomized number:')
+            em = libneko.embeds.Embed(color=color, title='Your randomized number:')
             em.description = random.randint(a,b)
             await ctx.send(embed=em)
 
@@ -542,7 +495,7 @@ class Utilities(commands.Cog):
         """Create a timer with the given time."""
         if timer is None:
             await ctx.send(
-                embed=discord.Embed(
+                embed=libneko.embeds.Embed(
                     description=":watch: Please enter the time!",
                     color=discord.Colour.red(),
                 )
@@ -550,21 +503,21 @@ class Utilities(commands.Cog):
         else:
             if timer <= 0:
                 await ctx.send(
-                    embed=discord.Embed(
+                    embed=libneko.embeds.Embed(
                         description=":octagonal_sign: That's not a valid time!",
                         color=discord.Colour.red(),
                     )
                 )
             elif timer > 1000:
                 await ctx.send(
-                    embed=discord.Embed(
+                    embed=libneko.embeds.Embed(
                         description=":octagonal_sign: That time is too big! It must be between 1 and 1001",
                         color=discord.Colour.red(),
                     )
                 )
             else:
                 msg = await ctx.send(
-                    embed=discord.Embed(
+                    embed=libneko.embeds.Embed(
                         description="**Starting countdown!**",
                         color=discord.Colour.orange(),
                     )
@@ -587,7 +540,7 @@ class Utilities(commands.Cog):
                     mins, secs = divmod(t, 60)
                     loop.create_task(
                         msg.edit(
-                            embed=discord.Embed(
+                            embed=libneko.embeds.Embed(
                                 description=f"**{mins:,}:{secs:02}**",
                                 color=discord.Colour.orange(),
                             )
@@ -595,7 +548,7 @@ class Utilities(commands.Cog):
                     )
                     await asyncio.sleep(1)
                 await msg.edit(
-                    embed=discord.Embed(
+                    embed=libneko.embeds.Embed(
                         description=":watch::exclamation: Time's up!",
                         color=discord.Colour.red(),
                     )
@@ -603,8 +556,9 @@ class Utilities(commands.Cog):
                 ping = await ctx.send(ctx.author.mention)
                 await ping.delete()
 
-    @commands.command()
-    async def qr(self, ctx, *, data):
+    @commands.command(aliases=["qr"])
+    async def qrmaker(self, ctx, *, data: str):
+        """Allows you to make a custom QR Code"""
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -615,11 +569,35 @@ class Utilities(commands.Cog):
         img = qr.make_image(fill_color="black", back_color="white")
         img.save("qrcodes/QR.png")
         await ctx.send(f"{ctx.author.mention}", file=discord.File("qrcodes/QR.png"))
-        os.remove("qrcodes/QR.png")
+        os.remove("qrcodes/QR.png") #Feel free to disable the removal
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.has_permissions(create_instant_invite=True)
+    async def qrinvite(self, ctx, age: int = 86400, uses: int = 0, temp: bool = False):
+        """
+        Allows you to create a QR Code of the invite link of this server
+        Make sure to adjust the available options to suite your need!
+        Set the `age` (defaults to 1 day) and `uses` argument to 0 to make a permanent link
+        """
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=2,
+        )
+
+        link = await ctx.channel.create_invite(max_age = age, max_uses = uses, temporary = temp)
+        qr.add_data(link)
+        img = qr.make_image(fill_color="black", back_color="white")
+        img.save("qrcodes/QR.png")
+        await ctx.send(f"{ctx.author.mention}", file=discord.File("qrcodes/QR.png"))
+        os.remove("qrcodes/QR.png") #Feel free to disable the removal
+
 
     @commands.command(aliases=["whoisplaying"])
     @commands.guild_only()
-    async def whosplaying(self, ctx, *, game):
+    async def whosplaying(self, ctx, *, game: libneko.converters.GameConverter):
         """Shows who's playing a specific game"""
         if len(game) <= 1:
             await ctx.send("```The game should be at least 2 characters long...```", delete_after=5.0)
@@ -652,7 +630,7 @@ class Utilities(commands.Cog):
             else:
                 showing = f"({count_playing})"
 
-            em = discord.Embed(description=msg, colour=discord.Colour(value=0x36393e))
+            em = libneko.embeds.Embed(description=msg, colour=discord.Colour(value=0x36393e))
             em.set_author(name=f"""Who's playing "{game}"? {showing} User(s) in total.""")
             await ctx.send(embed=em)
 
@@ -686,7 +664,7 @@ class Utilities(commands.Cog):
             msg = ""
             max_games = min(len(sorted_list), 10)
 
-            em = discord.Embed(description=msg, colour=discord.Colour(value=0x36393e))
+            em = libneko.embeds.Embed(description=msg, colour=discord.Colour(value=0x36393e))
             for i in range(max_games):
                 game, freq = sorted_list[i]
                 if int(freq_list[game]) < 2:
@@ -742,7 +720,7 @@ class Utilities(commands.Cog):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @commands.command()
+    @commands.command(aliases=["ascii2hex"])
     async def texttohex(self, ctx, *, txt):
         try:
             hexoutput = await commands.clean_content().convert(ctx, (" ".join("{:02x}".format(ord(c)) for c in txt)))
@@ -757,8 +735,8 @@ class Utilities(commands.Cog):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @commands.command()
-    async def hextotext(self, ctx, *, txt):
+    @commands.command(aliases=["hex2ascii"])
+    async def hextotext(self, ctx, *, txt: str):
         try:
             cleanS = await commands.clean_content().convert(ctx, bytearray.fromhex(txt).decode())
         except Exception as e:
@@ -772,8 +750,8 @@ class Utilities(commands.Cog):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @commands.command()
-    async def texttobinary(self, ctx, *, txt):
+    @commands.command(aliases=["ascii2bin"])
+    async def texttobinary(self, ctx, *, txt: str):
         try:
             cleanS = await commands.clean_content().convert(ctx, ' '.join(format(ord(x), 'b') for x in txt))
         except Exception as e:
@@ -787,8 +765,8 @@ class Utilities(commands.Cog):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @commands.command()
-    async def binarytotext(self, ctx, *, txt):
+    @commands.command(aliases=["bin2ascii"])
+    async def binarytotext(self, ctx, *, txt: str):
         try:
             cleanS = await commands.clean_content().convert(ctx, ''.join([chr(int(txt, 2)) for txt in txt.split()]))
         except Exception as e:
@@ -802,52 +780,11 @@ class Utilities(commands.Cog):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @commands.group()
-    async def crypt(self, ctx):
-        if ctx.invoked_subcommand is None:
-            await ctx.send("```fix\nInvalid input. Please use one of the following:\nencrypt (e)\ndecrypt (d)\n\nExample: [p]specrypt e Hello world!```")
-
-    @crypt.command(aliases=['e'])
-    async def encrypt(self, ctx, *, txt):
-        a = ''
-        try:
-            for letter in txt:
-                a+=chr(ord(letter)+len(txt))
-            cleanS = await commands.clean_content().convert(ctx, a)
-        except Exception as e:
-            await ctx.send(f"**Error: `{e}`. This probably means the input is malformed. Sorry, I'm not perfect and my creator is dumb**")
-        if len(cleanS) <= 479:
-            await ctx.send(f"```{cleanS}```")
-        else:
-            try:
-                await ctx.author.send(f"```{cleanS}```")
-                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
-            except Exception:
-                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
-
-    @crypt.command(aliases=['d'])
-    async def decrypt(self, ctx, *, s):
-        a = ''
-        try:
-            for letter in s:
-                a+=chr(ord(letter)-len(s))
-            cleanS = await commands.clean_content().convert(ctx, a)
-        except Exception as e:
-            await ctx.send(f"**Error: `{e}`. This probably means the input is malformed. Sorry, I'm not perfect and my creator is dumb**")
-        if len(cleanS) <= 479:
-            await ctx.send(f"```{cleanS}```")
-        else:
-            try:
-                await ctx.author.send(f"```{cleanS}```")
-                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
-            except Exception:
-                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
-
     @commands.command()
     async def nickscan(self, ctx):
         @pag.embed_generator(max_chars=2048)
         def main_embed(paginator, page, page_index):
-            embed = discord.Embed(title=f'Servers I Have Nicknames In', description=page)
+            embed = libneko.embeds.Embed(title=f'Servers I Have Nicknames In', description=page)
             return embed
 
         nicks = pag.EmbedNavigatorFactory(factory=main_embed, max_lines=10)

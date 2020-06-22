@@ -36,7 +36,7 @@ errors = [
     "ETC.",
     "BAD.",
     "A funny symbol that I can’t read has just been input.  Continue, and I’ll forget that it ever happened.",
-    "I suspect you’ve forgotten a `}’, causing me to apply this control sequence to too much text. How can we recover? My plan is to forget the whole thing and hope for the best.",
+    "I suspect you’ve forgotten a `]’, causing me to apply this control sequence to too much text. How can we recover? My plan is to forget the whole thing and hope for the best.",
     "I dddon’t go any higher than filll.",
     "Dimensions can be in units of em, ex, in, pt, pc, cm, mm, dd, cc, bp, or sp; but yours is a new one!",
     "Something Rotten in Denmark, Interp Stack Not ALigned",

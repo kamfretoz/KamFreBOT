@@ -8,10 +8,13 @@ import discord
 import libneko
 import requests
 import os
+import topics
 from datetime import datetime
 from random import randint, sample
 from discord.ext import commands
 from libneko import embeds
+
+random.seed = (os.urandom(1024))
 
 ZALGO_DEFAULT_AMT = 3
 ZALGO_MAX_AMT = 7
@@ -191,9 +194,9 @@ class Fun(commands.Cog):
             except discord.Forbidden:
                 await ctx.author.send(":no_entry_sign: I'm not allowed to send message here!", delete_after=5)
             except discord.NotFound:
-                await ctx.send(discord.Embed(description=":grey_exclamation: ERROR: Original message not found! (404 UNKNOWN MESSAGE)"), delete_after=5)
+                await ctx.send(libneko.embeds.Embed(description=":grey_exclamation: ERROR: Original message not found! (404 UNKNOWN MESSAGE)"), delete_after=5)
             except discord.ext.commands.BotMissingPermissions:
-                await ctx.send(discord.Embed(description="I don't have permission to delete the original message!"), delete_after=5.0,)
+                await ctx.send(libneko.embeds.Embed(description="I don't have permission to delete the original message!"), delete_after=5.0,)
 
     @commands.command(aliases=["embedsay","syd"])
     @commands.bot_has_permissions(embed_links=True)
@@ -201,11 +204,11 @@ class Fun(commands.Cog):
     async def sayembed(self, ctx, *, message: str = None):
         '''A command to embed messages quickly.'''
         if message is None:
-            await ctx.send(discord.Embed(description="❓ What do you want me to say?", delete_after=5))
+            await ctx.send(libneko.embeds.Embed(description="❓ What do you want me to say?", delete_after=5))
             await ctx.message.add_reaction("❓")
         else:
             await ctx.message.delete()
-            em = discord.Embed(color=random.randint(0, 0xFFFFFF), timestamp=datetime.utcnow())
+            em = libneko.embeds.Embed(color=random.randint(0, 0xFFFFFF), timestamp=datetime.utcnow())
             em.description = message
             em.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Sent by: {ctx.message.author}")
             await ctx.send(embed=em)
@@ -213,7 +216,7 @@ class Fun(commands.Cog):
     @commands.command(aliases=["sto"])
     @commands.bot_has_permissions(manage_messages=True)
     @commands.guild_only()
-    async def sayto(self, ctx, destination: libneko.converters.GuildChannelConverter=None, *, text=None):
+    async def sayto(self, ctx, destination: libneko.converters.GuildChannelConverter=None, *, text: str = None):
         """Send whatever you want to specific channel"""
         if text is None:
             await ctx.send("What do you want me to say?", delete_after=10.0)
@@ -239,7 +242,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=["send", "dm"])
     @commands.guild_only()
-    async def sendto(self, ctx, target: libneko.converters.InsensitiveMemberConverter = None, *, text=None):
+    async def sendto(self, ctx, target: libneko.converters.InsensitiveMemberConverter = None, *, text: str =None):
         """Send whatever you want to a user's DM"""
         if text is None:
             await ctx.send("What do you want me to say?", delete_after=10.0)
@@ -265,9 +268,8 @@ class Fun(commands.Cog):
     @commands.command(aliases=["flipcoin", "coin"])
     async def coinflip(self, ctx):
         """Heads or Tails!"""
-        random.seed()
         choices = ["https://i.imgur.com/vzcNPdF.png", "https://i.imgur.com/9YBSnmr.png"]
-        flip = discord.Embed(title="Flip The Coin!", color=0xFFFFFF)
+        flip = libneko.embeds.Embed(title="Flip The Coin!", color=0xFFFFFF)
         flip.set_image(url=random.choice(choices))
         await ctx.send(embed=flip)
 
@@ -275,29 +277,27 @@ class Fun(commands.Cog):
     @commands.group(invoke_without_command=True, aliases=["qt"])
     async def quote(self, ctx):
         """Send a random Bobert Quote!"""
-        random.seed()
         choice = str(random.choice(quotes.bobert))
-        embed_quote = discord.Embed(title="Bobert said...", description=f"{choice}")
+        embed_quote = libneko.embeds.Embed(title="Bobert said...", description=f"{choice}")
         embed_quote.set_thumbnail(url="https://i.imgur.com/zcVN4q1.png")
         await ctx.send(embed=embed_quote)
 
     @quote.command(aliases=["qtchk"])
     async def quote_check(self,ctx):
         """checks the amount of quotes available."""
-        amount = discord.Embed(title="Bobert's Quote Checker", description=f"There are {str(quotes.bobert)} available quotes that are randomly chosen!")
+        amount = libneko.embeds.Embed(title="Bobert's Quote Checker", description=f"There are {str(quotes.bobert)} available quotes that are randomly chosen!")
         await ctx.send(embed=amount)
 
     @commands.command()
     async def dance(self, ctx):
         """Bobert Dance!"""
-        bdance = discord.Embed()
+        bdance = libneko.embeds.Embed()
         bdance.set_image(url="https://i.imgur.com/1DEtTrQ.gif")
         await ctx.send(embed=bdance)
 
     @commands.group(invoke_without_command=True, aliases=["meme"])
     async def memes(self, ctx):
         """send memes!"""
-        random.seed()
         upload = await ctx.send("Uploading, Please Wait!")
         str(upload)
         await asyncio.sleep(1)
@@ -320,7 +320,6 @@ class Fun(commands.Cog):
     @memes.command(name='overload')
     async def memes_overload(self, ctx, count: int = 5):
         """MOAR MEMES!"""
-        random.seed()
         selected_images = []
         uploading = await ctx.send(f"Uploading {count} images... This may take a while.")
         str(uploading)
@@ -368,7 +367,7 @@ class Fun(commands.Cog):
               await ctx.send('[̲̅$̲̅(̲̅ ͡° ͜ʖ ͡°̲̅)̲̅$̲̅]')
             elif Type.lower() == 'list':
               color = discord.Color(value=0x00ff00)
-              em = discord.Embed(color=color, title='List of Textfaces')
+              em = libneko.embeds.Embed(color=color, title='List of Textfaces')
               em.description = 'Choose from the following: lenny, tableflip, shrug, bignose, iwant, musicdude, wot, bomb, orlly, money. Type *textface [face].'
               em.set_footer(text="Don't you dare question my names for the textfaces.")
               await ctx.send(embed=em)
@@ -376,9 +375,11 @@ class Fun(commands.Cog):
               await ctx.send('That is NOT one of the dank textfaces in here yet. Use *textface list to see a list of the textfaces.')
 
     @commands.command()
-    async def hack(self, ctx, user: discord.Member):
+    async def hack(self, ctx, user: libneko.converters.InsensitiveMemberConverter = None):
         """Hack someone's account! Try it!"""
-        random.seed()
+        if user is None:
+            user = ctx.message.author
+        
         gifs = [
             "https://thumbs.gfycat.com/LightheartedObviousBlowfish-size_restricted.gif",
             "https://media3.giphy.com/media/115BJle6N2Av0A/giphy.gif",
@@ -387,7 +388,7 @@ class Fun(commands.Cog):
             "https://media1.tenor.com/images/3d190af70cfeea404f796f869f46a3c3/tenor.gif",
             "https://media1.tenor.com/images/505ddb5e0b0e8c3e96b66e1469ef47c1/tenor.gif",
             ]
-        gifemb = discord.Embed()
+        gifemb = libneko.embeds.Embed()
         gifemb.set_image(url=random.choice(gifs))
         msg = await ctx.send(embed=gifemb,content=f"Hacking! Target: {user}")
         await asyncio.sleep(2)
@@ -587,7 +588,7 @@ class Fun(commands.Cog):
               await msg.edit(content="Mmm it's a ORANGE JUICE")             
             elif Type.lower() == 'list':
               color = discord.Color(value=0x00ff00)
-              em=discord.Embed(color=color, title="Current List of Awesome Animations:")
+              em=libneko.embeds.Embed(color=color, title="Current List of Awesome Animations:")
               em.description = "wtf (anim wtf), mom (anim mom), gethelp (anim gethelp), sike (anim sike), gitgud (anim gitgud), clock (anim clock), mate (anim mate), oj (anim oj)."
               em.set_footer(text="We will always be adding new animations!")
               await ctx.send(embed=em)
@@ -626,7 +627,6 @@ class Fun(commands.Cog):
                 "Very doubtful",
             ],
         }
-        random.seed()
         choice = random.choice(random.choice(list(ps.values())))
 
         if choice in ps["psbad"]:
@@ -636,7 +636,7 @@ class Fun(commands.Cog):
         elif choice in ps["psgood"]:
             color = discord.Color(0x26D934)
 
-        eightball = discord.Embed(color=color)
+        eightball = libneko.embeds.Embed(color=color)
         eightball.add_field(name="Question:", value=question.capitalize(), inline=False)
         eightball.add_field(name="Answer:", value=f"{choice}.")
         eightball.set_author(
@@ -653,7 +653,7 @@ class Fun(commands.Cog):
         """
         Never gonna give you up...
         """
-        rick = discord.Embed()
+        rick = libneko.embeds.Embed()
         rick.set_image(url="https://i.kym-cdn.com/photos/images/original/000/041/494/1241026091_youve_been_rickrolled.gif")
         await ctx.send(embed=rick)
 
@@ -680,7 +680,7 @@ class Fun(commands.Cog):
         r = requests.get("https://api.thecatapi.com/v1/images/search").json()
         url = r[0]["url"]
         color = ctx.author.color
-        embed = discord.Embed(description="Here's a cute kitty :D", color=color)
+        embed = libneko.embeds.Embed(description="Here's a cute kitty :D", color=color)
         embed.set_image(url=url)
         await ctx.send(embed=embed)
         await ctx.message.delete()
@@ -693,7 +693,7 @@ class Fun(commands.Cog):
         r = requests.get("https://api.thedogapi.com/v1/images/search").json()
         url = r[0]["url"]
         color = ctx.author.color
-        embed = discord.Embed(description="Here's a cute doggo!! :D", color=color)
+        embed = libneko.embeds.Embed(description="Here's a cute doggo!! :D", color=color)
         embed.set_image(url=url)
         await ctx.send(embed=embed)
         await ctx.message.delete()
@@ -703,7 +703,7 @@ class Fun(commands.Cog):
         """Search Google the fun way ;)"""
         result = f"http://lmgtfy.com/?q={query}"
         final = result.replace(" ", "+")
-        gugel = discord.Embed(
+        gugel = libneko.embeds.Embed(
             title=f"Searching for: **{query}**", description=f"[Click Here]({final})"
         )
         gugel.set_image(
@@ -714,7 +714,7 @@ class Fun(commands.Cog):
     @commands.command(aliases=["succ"])
     async def zucc(self, ctx):
         """Gives you the zucc"""
-        zuccy = discord.Embed()
+        zuccy = libneko.embeds.Embed()
         zuccy.set_image(
             url="https://pics.me.me/he-protec-he-attac-but-most-importantly-he-zucc-28716903.png"
         )
@@ -831,7 +831,7 @@ class Fun(commands.Cog):
                     xkcd = await response.json()
     
             # Build Embed
-            embed = discord.Embed()
+            embed = libneko.embeds.Embed()
             embed.title = xkcd["title"] + " (" + xkcd["day"] + "/" + xkcd["month"] + "/" + xkcd["year"] + ")"
             embed.url = "https://xkcd.com/" + str(i)
             embed.description = xkcd["alt"]
@@ -898,7 +898,7 @@ class Fun(commands.Cog):
         else:
             shipColor = 0x3be801
 
-        emb = (discord.Embed(color=shipColor, \
+        emb = (libneko.embeds.Embed(color=shipColor, \
                              title="Love test for:", \
                              description="**{0}** and **{1}** {2}".format(name1, name2, random.choice([
                                                                                                         ":sparkling_heart:", 
@@ -951,7 +951,7 @@ class Fun(commands.Cog):
                                        "THE SOCKS ARE OFF", 
                                        "HELLA GAY"])
             gayColor = 0xFF00FF
-        emb = discord.Embed(description=f"Gayness for **{user}**", color=gayColor)
+        emb = libneko.embeds.Embed(description=f"Gayness for **{user}**", color=gayColor)
         emb.add_field(name="Gayness:", value=f"{gayness}% gay")
         emb.add_field(name="Comment:", value=f"{gayStatus} :kiss_mm:")
         emb.set_author(name="Gay-Scanner™", icon_url="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/ICA_flag.svg/2000px-ICA_flag.svg.png")
@@ -983,7 +983,7 @@ class Fun(commands.Cog):
     async def timecards(self, ctx):
         """Send Spongebob's Timecards"""
         tipe = "pics"
-        random.seed()
+        
         slash = get_filesystem_slash()
         upload = await ctx.send("Uploading, Please Wait!")
         str(upload)
@@ -997,7 +997,7 @@ class Fun(commands.Cog):
     @timecards.command(name="audio", aliases=["Sound"], brief="Send the audio version")
     async def timecards_audio(self, ctx):
         tipe = "sound"
-        random.seed()
+        
         slash = get_filesystem_slash()
         upload = await ctx.send("Uploading, Please Wait!")
         str(upload)
@@ -1047,6 +1047,14 @@ class Fun(commands.Cog):
                 await ctx.send(f'```{e}```')
         else:
             await ctx.send('Write something, reee!', delete_after=3.0)
+
+    @commands.command(aliases=["topics"])
+    async def topic(self, ctx):
+        """Kept running out of topic to talk about? This command might help you!"""
+        choice = str(random.choice(topics.questions))
+        embed_quote = libneko.embeds.Embed(title="Here is a question...", description=f"{choice}",timestamp = datetime.utcnow())
+        embed_quote.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
+        await ctx.send(embed=embed_quote)
 
 def setup(bot):
     bot.add_cog(Fun(bot))

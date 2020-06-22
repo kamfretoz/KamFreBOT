@@ -8,8 +8,9 @@ import psutil
 import bs4
 import lxml
 import time
-from discord.ext import commands
+import libneko
 from libneko import pag
+from discord.ext import commands
 
 import config
 
@@ -81,7 +82,7 @@ class Information(commands.Cog):
         for guild in self.bot.guilds:
             channel_count += len(guild.channels)
         try:
-            em = discord.Embed(title="System Status", color=0x32441C)
+            em = libneko.embeds.Embed(title="System Status", color=0x32441C)
             
             em.add_field(
                 name=":desktop: CPU Usage",
@@ -114,14 +115,15 @@ class Information(commands.Cog):
                 inline=False
             )
             em.add_field(
+                name="⏲️ Last System Boot Time", 
+                value=sysboot, 
+                inline=False
+            )
+            em.add_field(
                 name="\u2694 Servers", 
                 value=str(len(self.bot.guilds)), 
                 inline=False
             )
-            em.add_field(
-                name="⏲️ Last System Boot Time", 
-                value=sysboot, 
-                inline=False)
             em.add_field(
                 name="\ud83d\udcd1 Channels", 
                 value=str(channel_count), 
@@ -179,7 +181,7 @@ class Information(commands.Cog):
         voice_channels = len(guild.channels) - text_channels
         member_by_status = Counter(str(m.status) for m in guild.members)
 
-        server = discord.Embed(
+        server = libneko.embeds.Embed(
             color=ctx.message.author.color, timestamp=datetime.utcnow()
         )
         server.title = f"Information about {guild.name}"
@@ -288,7 +290,7 @@ class Information(commands.Cog):
         Show the icon of this server.
         """
         link_frmt = ""
-        icon = discord.Embed(title=f"Server icon for {ctx.guild.name}", color=ctx.message.author.color)
+        icon = libneko.embeds.Embed(title=f"Server icon for {ctx.guild.name}", color=ctx.message.author.color)
 
         if ctx.guild.is_icon_animated() is True:
             icon.set_image(url=ctx.guild.icon_url_as(format="gif", size=4096))
@@ -308,13 +310,13 @@ class Information(commands.Cog):
         link_frmt = f"[png]({ctx.guild.banner_url_as(format='png',size=4096)}) | [jpg]({ctx.guild.banner_url_as(format='jpg',size=4096)}) | [webp]({ctx.guild.banner_url_as(format='webp',size=4096)})"
 
         if "BANNER" in ctx.guild.features:
-            bannerembed = discord.Embed(title=f"Server Banner for **{ctx.guild.name}**")
+            bannerembed = libneko.embeds.Embed(title=f"Server Banner for **{ctx.guild.name}**")
             bannerembed.add_field(name="Full image link", value=link_frmt)
             bannerembed.set_image(url=ctx.guild.banner_url_as(format="png", size=4096))
             await ctx.send(embed=bannerembed, content=None)
             
         else:
-            nobanner = discord.Embed(description="This server doesn't have the Boost level Required to set a banner.")
+            nobanner = libneko.embeds.Embed(description="This server doesn't have the Boost level Required to set a banner.")
             await ctx.send(embed=nobanner)
 
 
@@ -334,7 +336,7 @@ class Information(commands.Cog):
             else:
                 members += 1
                 total += 1
-        count = discord.Embed(
+        count = libneko.embeds.Embed(
             color=ctx.message.author.color, title=f"{ctx.guild.name} Member Count"
         )
         count.add_field(name="User Count", value=f"{members}", inline=False)
@@ -423,7 +425,7 @@ class Information(commands.Cog):
         else:
             perms = perms.strip(", ")
 
-        em = discord.Embed(colour=color)
+        em = libneko.embeds.Embed(colour=color)
         em.set_author(name=role.name)
         em.add_field(name="Users", value=len(role.members))
         em.add_field(name="Mentionable", value=role.mentionable)
@@ -444,11 +446,11 @@ class Information(commands.Cog):
         Show the list of users on a particular role.
         """
         if role is None:
-            await ctx.send(discord.Embed(description="⚠ Please specify the role."))
+            await ctx.send(libneko.embeds.Embed(description="⚠ Please specify the role."))
         else:
             @pag.embed_generator(max_chars=2048)
             def det_embed(paginator, page, page_index):
-                embed = discord.Embed(description=page, title=f"Members on {role.name} role ({str(len(role.members))}):")
+                embed = libneko.embeds.Embed(description=page, title=f"Members on {role.name} role ({str(len(role.members))}):")
                 return embed
 
 
@@ -469,7 +471,7 @@ class Information(commands.Cog):
         Shows the owner of this server
         """
         await ctx.send(
-            embed=discord.Embed(
+            embed=libneko.embeds.Embed(
                 description=f"{ctx.guild.owner} ({ctx.guild.owner.mention}) owns this server!"
             )
         )
@@ -480,7 +482,7 @@ class Information(commands.Cog):
         """
         Shows when this server was created.
         """
-        create = discord.Embed(description=f"**{ctx.guild.name}** was created on `{ctx.guild.created_at.strftime('%B %d, %Y at %I:%M %p')}`")
+        create = libneko.embeds.Embed(description=f"**{ctx.guild.name}** was created on `{ctx.guild.created_at.strftime('%B %d, %Y at %I:%M %p')}`")
         await ctx.send(embed = create)
 
     @serverinfo.command(name="administrators", aliases=["admin", "admins"], brief="Check which admins are online on current server")
@@ -511,7 +513,7 @@ class Information(commands.Cog):
         if offline:
             admins += f"⚫ {', '.join(offline)}\n"
 
-        emb = discord.Embed(title=f"Admins in `{ctx.guild.name}`", description=f"```{admins}```")
+        emb = libneko.embeds.Embed(title=f"Admins in `{ctx.guild.name}`", description=f"```{admins}```")
         await ctx.send(embed=emb)
 
     @serverinfo.command(name="moderators", aliases=["moderator", "mod","mods"], brief="Check which mods are online on current server")
@@ -543,7 +545,7 @@ class Information(commands.Cog):
         if offline:
             mods += f"⚫ {', '.join(offline)}\n"
 
-        emb = discord.Embed(title=f"Moderators in `{ctx.guild.name}`", description=f"```{mods}```")
+        emb = libneko.embeds.Embed(title=f"Moderators in `{ctx.guild.name}`", description=f"```{mods}```")
         await ctx.send(embed=emb)
 
     @commands.guild_only()
@@ -554,7 +556,7 @@ class Information(commands.Cog):
         """
         @pag.embed_generator(max_chars=2048)
         def main_embed(paginator, page, page_index):
-            boost = discord.Embed(title=f"Nitro Booster on **{ctx.guild.name}**.",description = page, color=0x00FF00)
+            boost = libneko.embeds.Embed(title=f"Nitro Booster on **{ctx.guild.name}**.",description = page, color=0x00FF00)
             boost.set_footer(text=f"{len(ctx.guild.premium_subscribers)} Users in total")
             return boost
 
@@ -601,19 +603,19 @@ class Information(commands.Cog):
         link_frmt = f"[png]({ctx.guild.splash_url_as(format='png',size=4096)}) | [jpg]({ctx.guild.splash_url_as(format='jpg',size=4096)}) | [webp]({ctx.guild.splash_url_as(format='webp',size=4096)})"
 
         if "INVITE_SPLASH" in ctx.guild.features and ctx.guild.splash is not None:
-            splashembed = discord.Embed(title=f"{ctx.guild.name}'s Splash Image.")
+            splashembed = libneko.embeds.Embed(title=f"{ctx.guild.name}'s Splash Image.")
             splashembed.add_field(name="Full image link", value=link_frmt)
             splashembed.set_image(url=ctx.guild.splash_url_as(format="png", size=4096))
             await ctx.send(embed=splashembed, content=None)
         else:
-            nosplash = discord.Embed(description="This server doesn't have the required boost lever or has no splash image configured.")
+            nosplash = libneko.embeds.Embed(description="This server doesn't have the required boost lever or has no splash image configured.")
             await ctx.send(embed=nosplash)
 
 
     @commands.group(invoke_without_command=True,aliases=["user", "ui"])
     @commands.guild_only()
-    async def userinfo(self, ctx, user: discord.Member = None):
-        """Show info about the user. If not specified, the command invoker info will be shown instead."""
+    async def userinfo(self, ctx, user: libneko.converters.InsensitiveUserConverter = None):
+        """Show info about the user. If not specified, the command caller info will be shown instead."""
         if user is None:
             user = ctx.author
 
@@ -625,7 +627,7 @@ class Information(commands.Cog):
         else:
             boost_stats = user.premium_since.strftime("%d-%m-%Y at %H:%M:%S")
 
-        member = discord.Embed(timestamp=datetime.utcnow())
+        member = libneko.embeds.Embed(timestamp=datetime.utcnow())
         roles = [role.name.replace("@", "@\u200b") for role in user.roles]
         shared = sum(1 for m in self.bot.get_all_members() if m.id == user.id)
         voice = user.voice
@@ -721,7 +723,7 @@ class Information(commands.Cog):
 
     @userinfo.command(name="avatar", aliases=["pfp", "pp"], brief="View the avatar of a member.")
     @commands.guild_only()
-    async def userinfo_avatar(self, ctx, *, user: libneko.converters.InsensitiveMemberConverter = None):
+    async def userinfo_avatar(self, ctx, *, user: libneko.converters.InsensitiveUserConverter = None):
         """View the avatar of a member.\nYou can either use Discord ID or ping them instead"""
         pic_frmt = None
         link_frmt = None
@@ -738,7 +740,7 @@ class Information(commands.Cog):
 
         try:
             if user is None:  # This will be executed when no argument is provided
-                pfp = discord.Embed(
+                pfp = libneko.embeds.Embed(
                     description=f"{ctx.message.author.name}'s profile picture",
                     title="Avatar Viewer",
                     color=ctx.author.color,
@@ -748,7 +750,7 @@ class Information(commands.Cog):
                 pfp.set_image(url=ctx.message.author.avatar_url_as(format=pic_frmt, size=4096))
                 await ctx.send(embed=pfp)
             else:  # This is what normally executed.
-                pfp = discord.Embed(
+                pfp = libneko.embeds.Embed(
                     description=f"{user.name}'s profile picture",
                     title="Avatar Viewer",
                     timestamp=datetime.utcnow(),
@@ -762,12 +764,12 @@ class Information(commands.Cog):
             await ctx.message.add_reaction("❌")
 
     @userinfo.command(name="id", brief="Mention the user to get their ID")
-    async def userinfo_id(self, ctx, user: libneko.converters.InsensitiveMemberConverter = None):
+    async def userinfo_id(self, ctx, user: libneko.converters.InsensitiveUserConverter = None):
         """Ping the user to get their ID, you can also type their username instead."""
         if user is None:
             user = ctx.message.author
         await ctx.send(
-            embed=discord.Embed(
+            embed=libneko.embeds.Embed(
                 description=f"The User ID of **{user.mention}** are `{user.id}`"
             )
         )
@@ -779,7 +781,7 @@ class Information(commands.Cog):
             member = ctx.message.author
 
         roles = [role.name.replace("@", "@\u200b") for role in member.roles]
-        memrole = discord.Embed(title=f"Role Viewer.")
+        memrole = libneko.embeds.Embed(title=f"Role Viewer.")
         memrole.add_field(
             name=f"{member}'s Roles", value=", ".join(roles))
         memrole.set_footer(text=f"{len(roles)} roles in total!", icon_url=member.avatar_url)

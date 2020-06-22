@@ -4,6 +4,7 @@ logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 import asyncio
 import youtube_dl
 import discord
+import libneko
 from discord.ext import commands
 from .core.ytpy.ytpy.youtube import YoutubeService
 from random import shuffle, random
@@ -99,7 +100,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
     def create_embed(self):
         """Embed for now_playing command."""
 
-        embed = discord.Embed(
+        embed = libneko.embeds.Embed(
             title=":musical_note: Now Playing :musical_note:",
             colour=discord.Colour(value=11735575).orange(),
         )
@@ -147,14 +148,14 @@ class GuildVoiceState:
         """Get embedded current queue state"""
 
         if self.channel is None:
-            embed = discord.Embed(
+            embed = libneko.embeds.Embed(
                 title=":x: | Queue is empty.".format(),
                 description="Prefix: do. | max_search_limit: 7",
                 colour=discord.Colour(value=11735575).orange(),
             )
             return embed
 
-        embed = discord.Embed(
+        embed = libneko.embeds.Embed(
             title="{}'s voice state".format(self.channel.guild.name),
             description="Prefix: do. | max_search_limit: 7",
             colour=discord.Colour(value=11735575).orange(),
@@ -281,7 +282,7 @@ class GuildVoiceState:
         """
 
         await self.voice_client.disconnect()
-        embed = discord.Embed(
+        embed = libneko.embeds.Embed(
             title="Done playing music.", colour=discord.Colour(value=11735575).orange()
         )
         await self.channel.send(embed=embed, delete_after=15)
@@ -311,7 +312,7 @@ class GuildVoiceState:
     def create_embed(self):
         """Embed for now_playing command."""
 
-        embed = discord.Embed(
+        embed = libneko.embeds.Embed(
             title=":musical_note: Now Playing :musical_note:",
             colour=discord.Colour(value=11735575).orange(),
         )
@@ -345,7 +346,7 @@ class VoiceEntry(GuildVoiceState):
     def create_embed(self):
         """Embed for now_playing command."""
 
-        embed = discord.Embed(
+        embed = libneko.embeds.Embed(
             title=":musical_note: Now Playing :musical_note:",
             colour=discord.Colour(value=11735575).orange(),
         )
@@ -531,7 +532,7 @@ class Music(commands.Cog):
             None, lambda: ys.search(keyword)
         )
         # build embed
-        embed = discord.Embed(
+        embed = libneko.embeds.Embed(
             title="Song Selection | Reply the song number to continue",
             description="prefix: n> | search_limit: 7",
             color=discord.Colour(value=11735575).orange(),

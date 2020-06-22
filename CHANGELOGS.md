@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## v0.1.4
+
+Changes since v0.1.3:
+
+* Fixed a typo in `README.md`
+* Added more commands
+* Added aliases to converter commands
+* Added more checks to the exception handler
+* Start using Libneko's converters for lookup
+* Also migrate from Discord's Embed to Libneko's Embed
+* Added safety measures to `pingstorm` commands
+* Integrated the list of timezones into the time command
+* Adjusted the `random.seed()` function
+* Adjusted the formatting of `servlist` command
+* Removed some unused commands
+
 ## v0.1.3
 
 Changes since v0.1.2:

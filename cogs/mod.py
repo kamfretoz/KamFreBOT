@@ -25,6 +25,7 @@ import asyncio
 import json
 import os
 import discord
+import libneko
 from discord.ext import commands
 
 
@@ -34,7 +35,7 @@ class Mod(commands.Cog):
 
     async def format_mod_embed(self, ctx, user, success, method, duration = None):
         """Helper func to format an embed to prevent extra code"""
-        emb = discord.Embed(timestamp = ctx.message.created_at)
+        emb = libneko.embeds.Embed(timestamp = ctx.message.created_at)
         try:
             emb.set_author(name = method.title())
             emb.set_footer(text = f"User ID: {user.id}")
@@ -60,7 +61,7 @@ class Mod(commands.Cog):
     @commands.has_permissions(kick_members=True)
     @commands.command()
     async def kick(
-        self, ctx, member: discord.Member, *, reason = "Please write a reason!"
+        self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, reason: str = "Please write a reason!"
     ):
         """Kick someone from the server."""
         try:
@@ -76,7 +77,7 @@ class Mod(commands.Cog):
 
     @commands.has_permissions(ban_members=True)
     @commands.command()
-    async def ban(self, ctx, member: discord.Member, *, reason = "Please write a reason!"):
+    async def ban(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, reason: str = "Please write a reason!"):
         """Ban someone from the server."""
         try:
             await ctx.guild.ban(member, reason = reason)
@@ -91,7 +92,7 @@ class Mod(commands.Cog):
 
     @commands.has_permissions(ban_members=True)
     @commands.command()
-    async def unban(self, ctx, userid: discord.User, *, reasons = None):
+    async def unban(self, ctx, userid: discord.User, *, reasons: str = None):
         """Unban someone from the server."""
         ban = await ctx.guild.fetch_ban(userid)
 
@@ -118,10 +119,10 @@ class Mod(commands.Cog):
     @commands.cooldown(rate=1, per=5.0)
     @commands.has_permissions(manage_messages=True)
     @commands.command(aliases = ["del", "p", "prune"])
-    async def purge(self, ctx, amount: int, member: discord.Member = None):
+    async def purge(self, ctx, amount: int, member: libneko.converters.InsensitiveMemberConverter = None):
         """Clean a number of messages"""
         if amount <= 500:
-            await ctx.author.send(embed=discord.Embed(description="The Great *Purge* is processing..."), delete_after=10)
+            await ctx.author.send(embed=libneko.embeds.Embed(description="The Great *Purge* is processing..."), delete_after=10)
             if member is None:
                 await ctx.channel.purge(limit = amount + 1)
             else:
@@ -129,9 +130,9 @@ class Mod(commands.Cog):
                     if message.author is member:
                         await message.delete()
         elif amount is 0:
-            await ctx.send(discord.Embed(description="⚠ Please Specify the amount of messages to be deleted!"))
+            await ctx.send(libneko.embeds.Embed(description="⚠ Please Specify the amount of messages to be deleted!"))
         else:
-            await ctx.send(discord.Embed(description="❌ Maximum amount of purging reached. You can only purge 500 messages at a time"))
+            await ctx.send(libneko.embeds.Embed(description="❌ Maximum amount of purging reached. You can only purge 500 messages at a time"))
 
 
 
@@ -144,7 +145,7 @@ class Mod(commands.Cog):
         except:
             return await ctx.send("You dont have the perms to see bans.")
 
-        em = discord.Embed(title = f"List of Banned Members ({len(bans)}):")
+        em = libneko.embeds.Embed(title = f"List of Banned Members ({len(bans)}):")
         em.description = ", ".join([str(b.user) for b in bans])
         await ctx.send(embed = em)
 
@@ -153,7 +154,7 @@ class Mod(commands.Cog):
     async def baninfo(self, ctx, *, userid: discord.User):
         """Check the reason of a ban from the audit logs."""
         ban = await ctx.guild.fetch_ban(userid)
-        em = discord.Embed()
+        em = libneko.embeds.Embed()
         em.set_author(name=str(ban.user), icon_url=ban.user.avatar_url)
         em.add_field(name="Reason", value=ban.reason or "None")
         em.set_thumbnail(url=ban.user.avatar_url)
@@ -163,7 +164,7 @@ class Mod(commands.Cog):
 
     @commands.has_permissions(manage_roles=True)
     @commands.command()
-    async def addrole(self, ctx, member: discord.Member, *, role: discord.Role):
+    async def addrole(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, role: libneko.converters.RoleConverter):
         """Add a role to someone else."""
         if not role:
             return await ctx.send("That role does not exist.")
@@ -197,7 +198,7 @@ class Mod(commands.Cog):
         
     @commands.has_permissions(manage_roles=True)
     @commands.command()
-    async def removerole(self, ctx, member: discord.Member, *, rolename: str):
+    async def removerole(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, rolename: libneko.converters.RoleConverter):
         """Remove a role from someone else."""
         role = discord.utils.find(
             lambda m: rolename.lower() in m.name.lower(), ctx.message.guild.roles
@@ -210,6 +211,7 @@ class Mod(commands.Cog):
         except:
             await ctx.send("I don't have the perms to add that role.")
 
+    @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
     @commands.has_permissions(ban_members=True)
     @commands.command()
     async def hackban(self, ctx, userid: int, *, reason = None):
@@ -232,7 +234,7 @@ class Mod(commands.Cog):
 
     @commands.has_permissions(kick_members=True)
     @commands.command()
-    async def mute(self, ctx, member: discord.Member, duration, *, reason = None):
+    async def mute(self, ctx, member: libneko.converters.InsensitiveMemberConverter, duration, *, reason: str = None):
         """Denies someone from chatting in all text channels and talking in voice channels for a specified duration"""
         unit = duration[-1]
         if unit == "s":
@@ -248,7 +250,7 @@ class Mod(commands.Cog):
             await ctx.send("Invalid Unit! Use `s`, `m`, or `h`.")
             return
 
-        progress = await ctx.send("Muting user!")
+        progress = await ctx.send(embed=libneko.embeds.Embed(description=f"Muting {member}!"))
         try:
             for channel in ctx.guild.text_channels:
                 await channel.set_permissions(
@@ -282,9 +284,9 @@ class Mod(commands.Cog):
 
     @commands.has_permissions(kick_members=True)
     @commands.command()
-    async def unmute(self, ctx, member: discord.Member, *, reason = None):
+    async def unmute(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, reason: str = None):
         """Removes channel overrides for specified member"""
-        progress = await ctx.send(embed=discord.Embed(description=f"Unmuting user!"))
+        progress = await ctx.send(embed=libneko.embeds.Embed(description=f"Unmuting {member}!"))
         try:
             for channel in ctx.message.guild.channels:
                 await channel.set_permissions(member, overwrite = None, reason = reason)
@@ -294,7 +296,7 @@ class Mod(commands.Cog):
             success = True
 
         emb = await self.format_mod_embed(ctx, member, success, "unmute")
-        progress.delete()
+        await progress.delete()
         await ctx.send(embed = emb)
 
     @commands.has_permissions(manage_nicknames=True)
@@ -306,18 +308,18 @@ class Mod(commands.Cog):
         if newname is None:
             await guild.me.edit(nick=None)
             await ctx.send(
-                embed=discord.Embed(description=f"Successfully reset my nickname.")
+                embed=libneko.embeds.Embed(description=f"Successfully reset my nickname.")
             )
         elif len(newname) > 32:
             await ctx.send(
-                embed=discord.Embed(
+                embed=libneko.embeds.Embed(
                     description=f":warning: The new nickname must be 32 or fewer in length."
                 )
             )
         else:
             await guild.me.edit(nick=newname)
             await ctx.send(
-                embed=discord.Embed(
+                embed=libneko.embeds.Embed(
                     description=f"Successfully changed my nickname to **{newname}**!"
                 )
             )
@@ -325,31 +327,31 @@ class Mod(commands.Cog):
     @commands.bot_has_permissions(manage_nicknames=True)
     @commands.command(aliases=["changenick", "nick"])
     @commands.guild_only()
-    async def nickname(self, ctx, member: discord.Member, *, newname: str = None):
+    async def nickname(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, newname: str = None):
         """Change other user's nickname, if omitted, removes it instead."""
         try:
             if newname is None:
                 await member.edit(nick=None)
                 await ctx.send(
-                    embed=discord.Embed(
+                    embed=libneko.embeds.Embed(
                         description=f"Successfully reset the nickname of **{member.name}**"
                     )
                 )
             elif len(newname) > 32:
                 await ctx.send(
-                    embed=discord.Embed(
+                    embed=libneko.embeds.Embed(
                         description=f":warning: The new nickname must be 32 or fewer in length."
                     )
                 )
             else:
                 await member.edit(nick=newname)
                 await ctx.send(
-                    embed=discord.Embed(
+                    embed=libneko.embeds.Embed(
                         description=f"Successfully changed the nickname of **{member.name}** to **{newname}**"
                     )
                 )
         except discord.Forbidden:
-                await ctx.send(embed=discord.Embed(description="⚠ I don't have permission to change their nickname!"))
+                await ctx.send(embed=libneko.embeds.Embed(description="⚠ I don't have permission to change their nickname!"))
 
     @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
