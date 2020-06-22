@@ -38,6 +38,7 @@ import PyDictionary
 import qrcode
 from io import BytesIO
 
+import libneko
 from libneko import pag, converters
 import discord
 from discord.ext import commands
