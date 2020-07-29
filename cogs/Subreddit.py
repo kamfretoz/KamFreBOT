@@ -14,6 +14,7 @@ async def getSub(self, ctx, sub):
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://www.reddit.com/r{sub}/hot.json?limit=100") as response:
                 request = await response.json()
+                await session.close()
 
         attempts = 1
         while attempts < 5:
@@ -23,6 +24,7 @@ async def getSub(self, ctx, sub):
                 async with aiohttp.ClientSession() as session:
                     async with session.get(f"https://www.reddit.com/r/{sub}/hot.json?limit=100") as response:
                         request = await response.json()
+                        await session.close()
                 attempts += 1
             else:
                 index = 0
@@ -38,24 +40,25 @@ async def getSub(self, ctx, sub):
                         if accepted:
                             if url not in memeHistory:
                                 memeHistory.append(url)  #add the url to the history, so it won't be posted again
-                                if len(memeHistory) > 63: #limit size
+                                if len(memeHistory) > 64: #limit size
                                     memeHistory.popleft() #remove the oldest
-
                                 break #done with this loop, can send image
                 await ctx.send(memeHistory[len(memeHistory) - 1]) #send the last image
                 return
         await ctx.send(f"_{str(request['message'])}! ({str(request['error'])})_")
 
-class SubredditFetcher(commands.Cog):
+class Subreddit(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command()
-    async def memesub(self, ctx):
+    async def meme(self, ctx):
         """Memes from various subreddits (excluding r/me_irl. some don't understand those memes)"""
+        await ctx.trigger_typing()
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://www.reddit.com/r/{random.choice(memeSubreddits)}/hot.json?limit=100") as response:
                 request = await response.json()
+                await session.close()
 
         attempts = 1
         while attempts < 5:
@@ -65,6 +68,7 @@ class SubredditFetcher(commands.Cog):
                 async with aiohttp.ClientSession() as session:
                     async with session.get("https://www.reddit.com/r/{(random.choice(memeSubreddits)}/hot.json?limit=100") as response:
                         request = await response.json()
+                        await session.close()
                 attempts += 1
             else:
                 index = 0
@@ -80,7 +84,7 @@ class SubredditFetcher(commands.Cog):
                         if accepted:
                             if url not in memeHistory:
                                 memeHistory.append(url)  
-                                if len(memeHistory) > 63: 
+                                if len(memeHistory) > 64: 
                                     memeHistory.popleft() 
 
                                 break 
@@ -90,9 +94,11 @@ class SubredditFetcher(commands.Cog):
     
     @commands.command()
     async def showerthought(self, ctx):
+        await ctx.trigger_typing()
         async with aiohttp.ClientSession() as session:
             async with session.get("https://www.reddit.com/r/showerthoughts/hot.json?limit=100") as response:
                 request = await response.json()
+                await session.close()
 
         attempts = 1
         while attempts < 5:
@@ -102,6 +108,7 @@ class SubredditFetcher(commands.Cog):
                 async with aiohttp.ClientSession() as session:
                     async with session.get("https://www.reddit.com/r/showerthoughts/hot.json?limit=100") as response:
                         request = await response.json()
+                        await session.close()
                 attempts += 1
             else:
                 index = 0
@@ -114,6 +121,8 @@ class SubredditFetcher(commands.Cog):
                         if url == "What Is A Showerthought?":
                             accepted = False
                         elif url == "Showerthoughts is looking for new moderators!":
+                            accepted = False
+                        elif url == "IMPORTANT PSA: No, you did not win a gift card.":
                             accepted = False
                         else:
                             accepted = True
@@ -131,16 +140,27 @@ class SubredditFetcher(commands.Cog):
     
     @commands.command(aliases=['dankmeme', 'dank'])
     async def dankmemes(self, ctx):
+        await ctx.trigger_typing()
         await getSub(self, ctx, 'dankmemes')
         
     @commands.command()
     async def me_irl(self, ctx):
+        await ctx.trigger_typing()
         await getSub(self, ctx, 'me_irl')
 
     @commands.command()
     async def programmerhumor(self, ctx):
+        await ctx.trigger_typing()
         await getSub(self, ctx, 'ProgrammerHumor')
+
+    @commands.command()
+    async def sub(self, ctx, subreddit):
+        try:
+            await ctx.trigger_typing()
+            await getSub(self, ctx, subreddit)
+        except:
+            await ctx.send("An Error occured. Make sure the subreddit name were correct!")
 
 def setup(bot):
     print("Subreddit Module has been Loaded.")
-    bot.add_cog(SubredditFetcher(bot))
+    bot.add_cog(Subreddit(bot))

@@ -5,11 +5,11 @@ import asyncio
 import youtube_dl
 import discord
 from discord.ext import commands
-from .core.ytpy.ytpy.youtube import YoutubeService
+from .core.ytpy.youtube import YoutubeService
 from random import shuffle, random
 
-# if not discord.opus.is_loaded():
-#    discord.opus.load_opus('libopus.so')
+#if not discord.opus.is_loaded():
+#   discord.opus.load_opus('libopus.so')
 
 ys = YoutubeService()
 

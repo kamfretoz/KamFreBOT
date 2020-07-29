@@ -44,7 +44,7 @@ class Information(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(aliases=["status"], pass_context=True)
+    @commands.command(aliases=["status"])
     async def stats(self, ctx):
         """Bot stats."""
 
@@ -77,6 +77,7 @@ class Information(commands.Cog):
             )
         else:
             time = "%s hours, %s minutes, and %s seconds" % (hours, minutes, seconds)
+            
         channel_count = 0
         for guild in self.bot.guilds:
             channel_count += len(guild.channels)
@@ -143,8 +144,10 @@ class Information(commands.Cog):
     @commands.guild_only()
     async def serverinfo(self, ctx):
         """This command will show some informations about this server"""
+        await ctx.trigger_typing()
+
         guild = ctx.guild
-        roles = [role.name.replace("@", "@\u200b") for role in guild.roles]
+        roles = [role.mention for role in guild.roles]
 
         booster_amount = None
 
@@ -152,7 +155,7 @@ class Information(commands.Cog):
             booster_amount = "This server is not boosted"
         else:
             booster_amount = (
-                f"{guild.premium_subscription_count} user(s) has boosted this server!"
+                f"This server has been boosted {guild.premium_subscription_count} time(s)!"
             )
             
         # we're going to duck type our way here
@@ -245,7 +248,8 @@ class Information(commands.Cog):
         server.add_field(
             name="》 2FA Level", 
             value=guild.mfa_level, 
-            inline=False)
+            inline=False
+        )
         server.add_field(
             name="》 Verification Level", 
             value=guild.verification_level, 
@@ -267,7 +271,7 @@ class Information(commands.Cog):
             inline=False
         )
         server.add_field(
-            name="》 Nitro Boost Status", 
+            name="》 Server Boost Status", 
             value=booster_amount, 
             inline=False
         )
@@ -277,7 +281,7 @@ class Information(commands.Cog):
             inline=False
         )
         server.set_footer(
-            text=f"Requested by {ctx.message.author.name}#{ctx.message.author.discriminator}",
+            text=f"Requested by {ctx.message.author}",
             icon_url=f"{ctx.message.author.avatar_url}",
         )
         await ctx.send(embed=server, content=None)
@@ -308,14 +312,14 @@ class Information(commands.Cog):
         """
         link_frmt = f"[png]({ctx.guild.banner_url_as(format='png',size=4096)}) | [jpg]({ctx.guild.banner_url_as(format='jpg',size=4096)}) | [webp]({ctx.guild.banner_url_as(format='webp',size=4096)})"
 
-        if "BANNER" in ctx.guild.features:
+        if "BANNER" in ctx.guild.features and ctx.guild.banner_url is not None:
             bannerembed = discord.Embed(title=f"Server Banner for **{ctx.guild.name}**")
             bannerembed.add_field(name="Full image link", value=link_frmt)
             bannerembed.set_image(url=ctx.guild.banner_url_as(format="png", size=4096))
             await ctx.send(embed=bannerembed, content=None)
             
         else:
-            nobanner = discord.Embed(description="This server doesn't have the Boost level Required to set a banner.")
+            nobanner = discord.Embed(description="This server either doesn't have the Boost level Required to set a banner or no splash image have been set.")
             await ctx.send(embed=nobanner)
 
 
@@ -444,23 +448,35 @@ class Information(commands.Cog):
         """
         Show the list of users on a particular role.
         """
-        if role is None:
-            await ctx.send(discord.Embed(description="⚠ Please specify the role."))
+        if str(role.colour) is "#000000":
+            colour = "default"
+            color = "#%06x" % random.randint(0, 0xFFFFFF)
+            color = int(colour[1:], 16)
         else:
-            @pag.embed_generator(max_chars=2048)
-            def det_embed(paginator, page, page_index):
-                embed = discord.Embed(description=page, title=f"Members on {role.name} role ({str(len(role.members))}):")
-                return embed
+            colour = str(role.colour).upper()
+            color = role.colour
+
+        try:
+            if role is None:
+                await ctx.send(discord.Embed(description="⚠ Please specify the role."))
+            else:
+                @pag.embed_generator(max_chars=2048)
+                def det_embed(paginator, page, page_index):
+                    embed = discord.Embed(description=page, title=f"Members on {role.name} role:", color=colour)
+                    embed.set_footer(text=f"{str(len(role.members))} Members in Total.")
+                    return embed
 
 
-            lst = pag.EmbedNavigatorFactory(factory=det_embed, max_lines=10)
-            
-            members = ""
-            for user in role.members:
-                members += f"{user.mention}:({user.name})\n "
+                lst = pag.EmbedNavigatorFactory(factory=det_embed)
 
-            lst += members
-            lst.start(ctx)
+                members = ""
+                for user in role.members:
+                    members += f"{user}\n"
+
+                lst += members
+                lst.start(ctx)
+        except:
+            await ctx.send(embed=discord.Embed(description="⚠ Role Cannot be found or I don't have permission!"))
 
 
     @serverinfo.command(name="owner", aliases=["own"], brief="Shows the owner of this server")
@@ -471,7 +487,8 @@ class Information(commands.Cog):
         """
         await ctx.send(
             embed=discord.Embed(
-                description=f"{ctx.guild.owner} ({ctx.guild.owner.mention}) owns this server!"
+                description=f"{ctx.guild.owner} ({ctx.guild.owner.mention}) owns this server!",
+                color=ctx.guild.owner.colour
             )
         )
 
@@ -490,7 +507,7 @@ class Information(commands.Cog):
         """ Check which admins are online on current guild """
         admins = ""
         online, idle, dnd, offline = [], [], [], []
-        ctx.trigger_typing()
+        await ctx.trigger_typing()
 
         for user in ctx.guild.members:
             if ctx.channel.permissions_for(user).administrator:
@@ -521,7 +538,7 @@ class Information(commands.Cog):
         """ Check which mods are online on current guild """
         mods = ""
         online, idle, dnd, offline = [], [], [], []
-        ctx.trigger_typing()
+        await ctx.trigger_typing()
 
         for user in ctx.guild.members:
             if ctx.channel.permissions_for(user).kick_members or \
@@ -559,7 +576,7 @@ class Information(commands.Cog):
             boost.set_footer(text=f"{len(ctx.guild.premium_subscribers)} Users in total")
             return boost
 
-        navi = pag.EmbedNavigatorFactory(factory=main_embed, max_lines=10)
+        navi = pag.EmbedNavigatorFactory(factory=main_embed)
 
         boosters = ""
         for x in ctx.guild.premium_subscribers:
@@ -611,23 +628,24 @@ class Information(commands.Cog):
             await ctx.send(embed=nosplash)
 
 
-    @commands.group(invoke_without_command=True,aliases=["user", "ui"])
+    @commands.group(invoke_without_command=True,aliases=["user", "ui", "profile"])
     @commands.guild_only()
-    async def userinfo(self, ctx, user: libneko.converters.InsensitiveUserConverter = None):
+    async def userinfo(self, ctx, user: libneko.converters.InsensitiveMemberConverter = None):
         """Show info about the user. If not specified, the command caller info will be shown instead."""
+        await ctx.trigger_typing()
+
         if user is None:
             user = ctx.author
 
         boost_stats = None
-        nitro_stats = None
 
         if user.premium_since is None:
-            boost_stats = "This user is not boosting this server."
+            boost_stats = "The user are not boosting this server."
         else:
-            boost_stats = user.premium_since.strftime("%d-%m-%Y at %H:%M:%S")
+            boost_stats = user.premium_since.strftime('%B %d, %Y at %I:%M %p')
 
         member = discord.Embed(timestamp=datetime.utcnow())
-        roles = [role.name.replace("@", "@\u200b") for role in user.roles]
+        roles = [role.mention for role in user.roles]
         shared = sum(1 for m in self.bot.get_all_members() if m.id == user.id)
         voice = user.voice
         if voice is not None:
@@ -641,20 +659,21 @@ class Information(commands.Cog):
         else:
             voice = "Not connected."
 
-        member.set_author(name=f"Info for {str(user)}")
+        member.set_author(name=f"Information of {str(user)}")
 
         member.add_field(
             name="》 Display Name", 
             value=user.display_name, 
-            inline=False)
+            inline=False
+        )
         member.add_field(
             name="》 Discriminator/Tag", 
             value=f"#{user.discriminator}", 
             inline=False
         )
         member.add_field(
-            name="》 Member since",
-            value=f'{user.joined_at.strftime("%B %d, %Y at %I:%M %p")}',
+            name="》 Created",
+            value=user.created_at.strftime("%B %d, %Y at %I:%M %p"),
             inline=False,
         )
         member.add_field(
@@ -673,14 +692,14 @@ class Information(commands.Cog):
             inline=False
         )
         member.add_field(
+            name="》 Member since",
+            value=f'{user.joined_at.strftime("%B %d, %Y at %I:%M %p")}',
+            inline=False,
+        )
+        member.add_field(
             name="》 Shared Servers", 
             value=f"{shared} shared", 
             inline=False
-        )
-        member.add_field(
-            name="》 Created",
-            value=user.created_at.strftime("%B %d, %Y at %I:%M %p"),
-            inline=False,
         )
         member.add_field(
             name="》 Current Activity/Status", 
@@ -696,7 +715,7 @@ class Information(commands.Cog):
             value=voice, 
             inline=False)
         member.add_field(
-            name="》 Has Boosted the server since", 
+            name="》 Nitro Stats", 
             value=boost_stats, 
             inline=False
         )   
@@ -707,14 +726,17 @@ class Information(commands.Cog):
         )
         member.add_field(
             name="》 Top Role", 
-            value=user.top_role, 
-            inline=False)
+            value=user.top_role.mention, 
+            inline=False
+        )
+        
         member.colour = user.colour
 
         member.set_footer(
             text=f"Requested by {ctx.message.author.name}#{ctx.message.author.discriminator}",
             icon_url=f"{ctx.message.author.avatar_url}",
         )
+
         if user.avatar:
             member.set_thumbnail(url=user.avatar_url)
 
@@ -740,7 +762,7 @@ class Information(commands.Cog):
         try:
             if user is None:  # This will be executed when no argument is provided
                 pfp = discord.Embed(
-                    description=f"{ctx.message.author.name}'s profile picture",
+                    description=f"**{ctx.message.author.name}**'s profile picture",
                     title="Avatar Viewer",
                     color=ctx.author.color,
                     timestamp=datetime.utcnow(),
@@ -752,6 +774,7 @@ class Information(commands.Cog):
                 pfp = discord.Embed(
                     description=f"{user.name}'s profile picture",
                     title="Avatar Viewer",
+                    color=user.colour,
                     timestamp=datetime.utcnow(),
                 )
                 pfp.add_field(name="Full avatar link", value=link_frmt)
@@ -769,7 +792,8 @@ class Information(commands.Cog):
             user = ctx.message.author
         await ctx.send(
             embed=discord.Embed(
-                description=f"The User ID of **{user.mention}** are `{user.id}`"
+                description=f"The User ID of **{user.mention}** are `{user.id}`",
+                color=user.colour
             )
         )
 
@@ -779,10 +803,9 @@ class Information(commands.Cog):
         if member is None:
             member = ctx.message.author
 
-        roles = [role.name.replace("@", "@\u200b") for role in member.roles]
-        memrole = discord.Embed(title=f"Role Viewer.")
-        memrole.add_field(
-            name=f"{member}'s Roles", value=", ".join(roles))
+        roles = [role.mention for role in member.roles]
+        memrole = discord.Embed(title=f"Role Viewer.", color=member.colour)
+        memrole.add_field(name=f"{member}'s Roles", value=", ".join(roles))
         memrole.set_footer(text=f"{len(roles)} roles in total!", icon_url=member.avatar_url)
         await ctx.send(embed=memrole)
 

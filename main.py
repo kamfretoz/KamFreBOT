@@ -63,7 +63,7 @@ setattr(bot, "logger", logging.getLogger("main.py"))
 # Getting the bot basic data from an external file so that it can be shared easily without having to always
 # black it out
 print("\nLoading the TOKEN...[Success]")
-with open("coin.json") as json_fp:
+with open("data/coin.json") as json_fp:
     classified = json.load(json_fp)  # Loading data from the json file
     TOKEN = classified["token"]  # Getting the token
 
@@ -102,6 +102,7 @@ async def on_resumed():
 
 @bot.event
 async def on_ready():
+    bot.loop.create_task(change_activities())
     creator = (await bot.application_info()).owner
     setattr(bot, "creator", creator)
     print(
@@ -125,11 +126,9 @@ async def on_ready():
     for x in bot.guilds:
         print(f"{x.name} (ID: {x.id}) (Membert Count: {x.member_count})")
     print("===========================")
-    bot.loop.create_task(change_activities())
 
 async def change_activities():
     """Quite self-explanatory. It changes the bot activities"""
-    random.seed()
     statuses = (discord.Status.online, discord.Status.idle, discord.Status.dnd)
     while True:  # Infinite loop
         game = discord.Game(name=config.playing_status)  # Pick a choice from 'playopt'.
@@ -137,7 +136,7 @@ async def change_activities():
         # For more help refer to the Python Docs.
         watch = discord.Activity(
             type=discord.ActivityType.watching,
-            name=config.playing_status
+            name=config.watching_status
         )  # Pick a choice from 'watchopt'
         stream = discord.Streaming(url=config.streaming_url, name=config.streaming_status)  # Pick a choice from 'streamopt'
         listen = discord.Activity(
@@ -181,7 +180,7 @@ async def on_command_error(ctx, error):
 
     elif isinstance(error, commands.errors.BotMissingPermissions):
         missperm = discord.Embed(description=f"**:warning: I don't have required permission to complete that command. \nI am missing these permissions: ```{error.missing_perms}```**")
-        missperm.set_image(url="https://http.cat/403.jpg")
+        missperm.set_image(url="https://http.cat/423.jpg")
         await ctx.send(embed=missperm, content=None, delete_after=10)
 
     elif isinstance(error, commands.errors.TooManyArguments):
@@ -191,17 +190,17 @@ async def on_command_error(ctx, error):
 
     elif isinstance(error, commands.errors.DisabledCommand):
         ded = discord.Embed(description=f"**:warning: This command are disabled.**")
-        ded.set_image(url="https://http.cat/410.jpg")
+        ded.set_image(url="https://http.cat/503.jpg")
         await ctx.send(embed=ded, content=None, delete_after=10)
 
     elif isinstance(error, discord.Forbidden):
         missaccess = discord.Embed(description=f"**:no_entry_sign: I'm not allowed to do that!**")
-        missaccess.set_image(url="https://http.cat/401.jpg")
+        missaccess.set_image(url="https://http.cat/403.jpg")
         await ctx.send(embed=missaccess, content=None, delete_after=10)
 
     elif isinstance(error, commands.errors.NotOwner):
         notowner = discord.Embed(description=f"**:warning: You are not my owner!**")
-        notowner.set_image(url="https://http.cat/400.jpg")
+        notowner.set_image(url="https://http.cat/401.jpg")
         await ctx.send(embed=notowner, content=None, delete_after=10)
 
     elif isinstance(error, discord.NotFound):
@@ -221,7 +220,7 @@ async def on_command_error(ctx, error):
 
     elif isinstance(error, commands.errors.MaxConcurrencyReached):
         conv = discord.Embed(description=f"**:warning: This command is currently rate-limited! You can use it only {error.number} time(s) at once until it is completed.**")
-        conv.set_image(url="https://http.cat/404.jpg")
+        conv.set_image(url="https://http.cat/429.jpg")
         await ctx.send(embed=conv, content=None, delete_after=10)
 
     else:
@@ -235,10 +234,12 @@ async def on_command_error(ctx, error):
             await bot.get_channel(config.home).send(content=f"{random.choice(quotes.errors)}", embed=errormsg)
             await ctx.send(content=f"'{random.choice(quotes.errors)}'", embed=errormsg)
             await bot.get_channel(config.home).send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```")
-            await ctx.send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```", delete_after=10)
+            #await ctx.send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```", delete_after=10)
         except discord.HTTPException:
             fuckeduperr = discord.Embed(title="💥 An error occurred while displaying the previous error.")
             fuckeduperr.set_image(url="https://http.cat/500.jpg")
+            trace = traceback.format_exception(type(error), error, error.__traceback__)
+            print("".join(trace))
             await ctx.send(embed=fuckeduperr, delete_after=5)
 
 
@@ -314,7 +315,7 @@ async def loadcog(ctx, name):
         except Exception as e:
             await ctx.send(f"```py\n{traceback.format_exc()}\n```")
         else:
-            await ctx.send(f":gear: Successfully Loaded {name} Module!")
+            await ctx.send(f":gear: Successfully Loaded **{name}** Module!")
 
 
 @bot.command(hidden=True, aliases=["unload"])

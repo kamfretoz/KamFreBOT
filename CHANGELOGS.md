@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## v0.1.6
+
+* Added love meter to ship command
+* Added Many new commands like `weather` command!
+* Make sure to close session when the request was completed
+* Moved from `requests` to `aiohttp`
+* The `slowmode` command now uses the same time formatting as `mute` command
+* Renamed `SubredditFetcher` module to `Subreddit` 
+* Many bugfixes
+
+Changes since v0.1.5:
+
+## v0.1.5
+
+Changes since v0.1.4:
+
+* Added more restriction to pingstorm command
+* Added paginator to `bans` command and fixed text cut-offs on some of them
+* Added more questions to the `topic` command!
+* Made the user role viewer colorful!
+* Added `discriminator` command
+* Fixes the `poll` command where it conflict with the prefix
+* Removed `Pokedex` module
+
 ## v0.1.4
 
 Changes since v0.1.3:

@@ -6,9 +6,9 @@ import config
 import quotes
 import discord
 import libneko
-import requests
 import os
 import topics
+from collections import deque
 from datetime import datetime
 from random import randint, sample
 from discord.ext import commands
@@ -144,7 +144,7 @@ class Fun(commands.Cog):
         self.jynxed = {}
 
     @commands.command(aliases=["talk", "speak","s"])
-    # @commands.bot_has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def say(self, ctx, *, text: str = None):
         """Say whatever you typed in"""
         try:
@@ -155,8 +155,13 @@ class Fun(commands.Cog):
                 await ctx.trigger_typing()
                 await ctx.send(text)
                 await ctx.message.delete()
-        except:
-            pass
+        except discord.Forbidden:
+            await ctx.author.send(":no_entry_sign: I'm not allowed to send message here!", delete_after=5)
+        except discord.NotFound:
+            await ctx.send(discord.Embed(description=":grey_exclamation: ERROR: Original message not found! (404 UNKNOWN MESSAGE)"), delete_after=5)
+        except discord.ext.commands.BotMissingPermissions:
+            await ctx.send(discord.Embed(description="I don't have permission to delete the original message!"), delete_after=5.0,)
+
 
     # Say to all members command
     @commands.command(aliases=["stoall"], hidden=True)
@@ -198,7 +203,7 @@ class Fun(commands.Cog):
             except discord.ext.commands.BotMissingPermissions:
                 await ctx.send(discord.Embed(description="I don't have permission to delete the original message!"), delete_after=5.0,)
 
-    @commands.command(aliases=["embedsay","syd"])
+    @commands.command(aliases=["embedsay","syd","emb"])
     @commands.bot_has_permissions(embed_links=True)
     @commands.guild_only()
     async def sayembed(self, ctx, *, message: str = None):
@@ -275,18 +280,12 @@ class Fun(commands.Cog):
 
 
     @commands.group(invoke_without_command=True, aliases=["qt"])
-    async def quote(self, ctx):
+    async def bobertquote(self, ctx):
         """Send a random Bobert Quote!"""
         choice = str(random.choice(quotes.bobert))
         embed_quote = discord.Embed(title="Bobert said...", description=f"{choice}")
         embed_quote.set_thumbnail(url="https://i.imgur.com/zcVN4q1.png")
         await ctx.send(embed=embed_quote)
-
-    @quote.command(aliases=["qtchk"])
-    async def quote_check(self,ctx):
-        """checks the amount of quotes available."""
-        amount = discord.Embed(title="Bobert's Quote Checker", description=f"There are {str(quotes.bobert)} available quotes that are randomly chosen!")
-        await ctx.send(embed=amount)
 
     @commands.command()
     async def dance(self, ctx):
@@ -295,8 +294,8 @@ class Fun(commands.Cog):
         bdance.set_image(url="https://i.imgur.com/1DEtTrQ.gif")
         await ctx.send(embed=bdance)
 
-    @commands.group(invoke_without_command=True, aliases=["meme"])
-    async def memes(self, ctx):
+    @commands.group(invoke_without_command=True, aliases=["sendmeme"])
+    async def sendmemes(self, ctx):
         """send memes!"""
         upload = await ctx.send("Uploading, Please Wait!")
         str(upload)
@@ -311,13 +310,13 @@ class Fun(commands.Cog):
     @commands.command()
     async def f(self, ctx, *, text: commands.clean_content = None):
         """ Press F to pay respect """
-        hearts = ['❤', '💛', '💚', '💙', '💜']
+        hearts = ['🏳‍🌈', '💛', '💚', '💙', '💜','♥']
         reason = f"for **{text}** " if text else ""
         await ctx.send(f"**{ctx.author.name}** has paid their respect {reason}{random.choice(hearts)}")
 
 
     @commands.cooldown(rate=2,per=900.0, type=commands.BucketType.user)
-    @memes.command(name='overload')
+    @sendmemes.command(name='overload')
     async def memes_overload(self, ctx, count: int = 5):
         """MOAR MEMES!"""
         selected_images = []
@@ -410,9 +409,9 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=['animation', 'a'])
     async def anim(self, ctx, Type):
-        """Animations! Usage: anim [type]. For a list, use anim list."""
+        """Animations! Usage: anim [type]. For a list, use [p]anim list."""
         if Type is None:
-            await ctx.send('Probably a really cool animation, but we have not added them yet! But hang in there! You never know... For a current list, type anim list')
+            await ctx.send('Probably a really cool animation, but we have not added them yet! But hang in there! You never know... For a current list, type [p]anim list')
         else:
             if Type.lower() == 'wtf':
               msg = await ctx.send("```W```")
@@ -677,10 +676,18 @@ class Fun(commands.Cog):
         """
         Send cute cat pics.
         """
-        r = requests.get("https://api.thecatapi.com/v1/images/search").json()
-        url = r[0]["url"]
+        await ctx.trigger_typing()
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://api.thecatapi.com/v1/images/search') as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+                await session.close()
+
+        url = data[0]["url"]
         color = ctx.author.color
-        embed = discord.Embed(description="Here's a cute kitty :D", color=color)
+        embed = discord.Embed(description="Here's a cute kitty :D", color=color, timestamp=datetime.utcnow())
+        embed.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
         embed.set_image(url=url)
         await ctx.send(embed=embed)
         await ctx.message.delete()
@@ -690,13 +697,150 @@ class Fun(commands.Cog):
         """
         Send cute cat pics.
         """
-        r = requests.get("https://api.thedogapi.com/v1/images/search").json()
-        url = r[0]["url"]
+        await ctx.trigger_typing()
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://api.thedogapi.com/v1/images/search') as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+                await session.close()
+
+        url = data[0]["url"]
         color = ctx.author.color
-        embed = discord.Embed(description="Here's a cute doggo!! :D", color=color)
+        embed = discord.Embed(description="Here's a cute doggo!! :D", color=color, timestamp=datetime.utcnow())
+        embed.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
         embed.set_image(url=url)
         await ctx.send(embed=embed)
         await ctx.message.delete()
+
+    @commands.command(aliases=["foxes"])
+    async def fox(self, ctx):
+        """
+        Send cute fox pics.
+        """
+        await ctx.trigger_typing()
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://randomfox.ca/floof/') as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+                await session.close()
+
+        image = data["image"]
+        emb = discord.Embed(description="Here's a cute fox!! :D", color=ctx.author.color, timestamp=datetime.utcnow())
+        emb.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
+        emb.set_image(url=image)
+        await ctx.send(embed=emb)
+        await ctx.message.delete()
+
+    @commands.command()
+    async def shibe(self, ctx):
+        """
+        Send cute shibe pics.
+        """
+        await ctx.trigger_typing()
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://shibe.online/api/shibes') as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+                await session.close()
+
+        img = data[0]
+        emb = discord.Embed(description="Here's a cute shibe!! :D", color=ctx.author.color, timestamp=datetime.utcnow())
+        emb.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
+        emb.set_image(url=img)
+        await ctx.send(embed=emb)
+        await ctx.message.delete()
+        
+
+
+    @commands.command(aliases=["catfact"])
+    async def catfacts(self, ctx):
+        """
+        Get a random cat facts!
+        """
+        await ctx.trigger_typing()
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://cat-fact.herokuapp.com/facts/random') as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+                await session.close()
+
+        fact = data["text"]
+
+        emb = discord.Embed(description=fact, color=ctx.author.color, timestamp=datetime.utcnow())
+        emb.set_image(url="https://i.imgur.com/9RGJ5Ea.png")
+
+        await ctx.send(embed=emb)
+
+    @commands.command(aliases=["randquote", "inspire"])
+    async def quote(self, ctx):
+        """
+        Get a random quote!
+        """
+        await ctx.trigger_typing()
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://quote-garden.herokuapp.com/api/v2/quotes/random') as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+                await session.close()
+
+        quote = data["quote"]["quoteText"]
+        author = data["quote"]["quoteAuthor"]
+
+        emb = discord.Embed(description=quote, color=ctx.author.color, timestamp=datetime.utcnow())
+        emb.set_footer(text=f"Quote by: {author}")
+
+        await ctx.send(embed=emb)
+    
+    @commands.command(aliases=["daddyjokes","dadjoke"])
+    async def dadjokes(self, ctx):
+        """
+        Send Dad Jokes
+        """
+        await ctx.trigger_typing()
+        header = { "Accept": "application/json",
+                   "User-Agent": "KamFreBOT(Discord.py) https://github.com/kamfretoz"
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://icanhazdadjoke.com/', headers=header) as resp:
+                session.post
+                resp.raise_for_status()
+                data = await resp.json()
+                await session.close()
+
+        jokes = data["joke"]
+        joke_id = data["id"]
+
+        emb = discord.Embed(title="Dad Joke!", description=jokes, timestamp=datetime.utcnow(), color=ctx.author.color)
+        emb.set_thumbnail(url="https://i.ibb.co/6WjYXsP/dad.jpg")
+
+        await ctx.send(embed=emb)
+
+    @commands.command(aliases=["chnorris","chnr"])
+    async def chucknorris(self, ctx):
+        """
+        You Didn't run this command, Chuck Norris throw this command on your face.
+        """
+
+        await ctx.trigger_typing()
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://api.chucknorris.io/jokes/random') as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+                await session.close()
+
+        joke = data["value"]
+        icon = data["icon_url"]
+
+        emb = discord.Embed(description=joke, timestamp=datetime.utcnow(), color=0x8B0000)
+        emb.set_thumbnail(url=icon)
+
+        await ctx.send(embed=emb)
 
     @commands.command(aliases=["googleit", "searchit"])
     async def lmgtfy(self, ctx, *, query: str):
@@ -722,7 +866,7 @@ class Fun(commands.Cog):
 
     @commands.cooldown(rate=1, per=15, type=commands.BucketType.guild)
     @commands.command(name="curse", aliases=("oppugno", "jynx", "kutuk", "santet"))
-    async def emoji_curse(self, ctx, user: discord.Member, emoji: discord.Emoji, *, text: str = None):
+    async def emoji_curse(self, ctx, user: discord.Member, emoji: discord.Emoji):
         emoji = (
             self.bot.get_emoji(int(emoji.split(":")[2].strip(">")))
             if "<:" in emoji or "<a:" in emoji
@@ -760,19 +904,11 @@ class Fun(commands.Cog):
                     )
                     start = time.monotonic()
                     while time.monotonic() - start < 1800:
-                        if text is None:
-                            msg = await self.bot.wait_for("message", check=check)
-                            try:
-                                await msg.add_reaction(emoji)
-                            except:
-                                pass
-                        else:
-                            msg = await self.bot.wait_for("message", check=check)
-                            try:
-                                await msg.add_reaction(emoji)
-                                await ctx.send(f"<@{user.id}> {text}")
-                            except:
-                                pass
+                        msg = await self.bot.wait_for("message", check=check)
+                        try:
+                            await msg.add_reaction(emoji)
+                        except:
+                            pass
                             
                     del self.jynxed[f"{user.id}@{ctx.guild.id}"]
 
@@ -811,37 +947,49 @@ class Fun(commands.Cog):
     @commands.bot_has_permissions(embed_links=True, add_reactions=True)
     async def xkcd(self, ctx, *, entry_number=None):
         """Post a random xkcd"""
-        async with ctx.typing:
-            # Creates random number between 0 and 2190 (number of xkcd comics at time of writing) and queries xkcd
-            headers = {"content-type": "application/json"}
-            url = "https://xkcd.com/info.0.json"
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers) as response:
-                    xkcd_latest = await response.json()
-                    xkcd_max = xkcd_latest.get("num") + 1
-    
-            if entry_number is not None and int(entry_number) > 0 and int(entry_number) < xkcd_max:
-                i = int(entry_number)
-            else:
-                i = randint(0, xkcd_max)
-            headers = {"content-type": "application/json"}
-            url = "https://xkcd.com/" + str(i) + "/info.0.json"
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers) as response:
-                    xkcd = await response.json()
-    
-            # Build Embed
-            embed = discord.Embed()
-            embed.title = xkcd["title"] + " (" + xkcd["day"] + "/" + xkcd["month"] + "/" + xkcd["year"] + ")"
-            embed.url = "https://xkcd.com/" + str(i)
-            embed.description = xkcd["alt"]
-            embed.set_image(url=xkcd["img"])
-            embed.set_footer(text="Powered by xkcd")
-            await ctx.send(embed=embed)
+        await ctx.trigger_typing()
+        # Creates random number between 0 and 2190 (number of xkcd comics at time of writing) and queries xkcd
+        headers = {"content-type": "application/json"}
+        url = "https://xkcd.com/info.0.json"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as response:
+                xkcd_latest = await response.json()
+                xkcd_max = xkcd_latest.get("num") + 1
+                await session.close()
 
-    @commands.command()
-    async def ship(self, ctx, name1 : commands.clean_content, name2 : commands.clean_content):
+        if entry_number is not None and int(entry_number) > 0 and int(entry_number) < xkcd_max:
+            i = int(entry_number)
+        else:
+            i = randint(0, xkcd_max)
+        headers = {"content-type": "application/json"}
+        url = "https://xkcd.com/" + str(i) + "/info.0.json"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as response:
+                xkcd = await response.json()
+                await session.close()
+
+        # Build Embed
+        embed = discord.Embed()
+        embed.title = xkcd["title"] + " (" + xkcd["day"] + "/" + xkcd["month"] + "/" + xkcd["year"] + ")"
+        embed.url = "https://xkcd.com/" + str(i)
+        embed.description = xkcd["alt"]
+        embed.set_image(url=xkcd["img"])
+        embed.set_footer(text="Powered by xkcd")
+        await ctx.send(embed=embed)
+
+    @commands.command(aliases=["love"])
+    async def ship(self, ctx, name1: str = None, name2: str = None):
+        """Sunk or Sail?"""
+        if name1 is None or name2 is None:
+            await ctx.send(embed=discord.Embed(description="Who are you gonna ship?"))
+            return
+
         shipnumber = random.randint(0,100)
+        
+        #A Small Easter Egg for a server
+        if name1 == "mixtape" and name2 == "calliope":
+            shipnumber = random.randint(95,100)
+
         if 0 <= shipnumber <= 10:
             status = "Really low! {}".format(random.choice(["Friendzone ;(", 
                                                             'Just "friends"', 
@@ -891,6 +1039,30 @@ class Fun(commands.Cog):
                                                            "Love is truely in the air!", 
                                                            "Love is most definitely in the air!"]))
 
+        meter = "⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛"
+
+        if shipnumber <= 10:
+            meter = "❤⬛⬛⬛⬛⬛⬛⬛⬛⬛"
+        elif shipnumber <= 20:
+            meter = "❤❤⬛⬛⬛⬛⬛⬛⬛⬛"
+        elif shipnumber <= 30:
+            meter = "❤❤❤⬛⬛⬛⬛⬛⬛⬛"
+        elif shipnumber <= 40:
+            meter = "❤❤❤❤⬛⬛⬛⬛⬛⬛"
+        elif shipnumber <= 50:
+            meter = "❤❤❤❤❤⬛⬛⬛⬛⬛"
+        elif shipnumber <= 60:
+            meter = "❤❤❤❤❤❤⬛⬛⬛⬛"
+        elif shipnumber <= 70:
+            meter = "❤❤❤❤❤❤❤⬛⬛⬛"
+        elif shipnumber <= 80:
+            meter = "❤❤❤❤❤❤❤❤⬛⬛"
+        elif shipnumber <= 90:
+            meter = "❤❤❤❤❤❤❤❤❤⬛"
+        else:
+            meter = "❤❤❤❤❤❤❤❤❤❤"
+
+
         if shipnumber <= 33:
             shipColor = 0xE80303
         elif 33 < shipnumber < 66:
@@ -900,6 +1072,7 @@ class Fun(commands.Cog):
 
         emb = (discord.Embed(color=shipColor, \
                              title="Love test for:", \
+                             timestamp=datetime.utcnow(), \
                              description="**{0}** and **{1}** {2}".format(name1, name2, random.choice([
                                                                                                         ":sparkling_heart:", 
                                                                                                         ":heart_decoration:", 
@@ -913,13 +1086,14 @@ class Fun(commands.Cog):
                                                                                                         ":revolving_hearts:", 
                                                                                                         ":yellow_heart:", 
                                                                                                         ":two_hearts:"]))))
+        emb.set_author(name="Shipping", icon_url="http://moziru.com/images/kopel-clipart-heart-6.png")
         emb.add_field(name="Results:", value=f"{shipnumber}%", inline=True)
         emb.add_field(name="Status:", value=(status), inline=False)
-        emb.set_author(name="Shipping", icon_url="http://moziru.com/images/kopel-clipart-heart-6.png")
+        emb.add_field(name="Love Meter:", value=meter, inline=False)
         await ctx.send(embed=emb)
 
     @commands.command(aliases=['gay-scanner', 'gayscanner', 'gay','homo'])
-    async def gay_scanner(self, ctx,* ,user: commands.clean_content=None):
+    async def gay_scanner(self, ctx,* , user: str = None):
         """very mature command yes haha"""
         if not user:
             user = ctx.author.name
@@ -951,10 +1125,35 @@ class Fun(commands.Cog):
                                        "THE SOCKS ARE OFF", 
                                        "HELLA GAY"])
             gayColor = 0xFF00FF
+
+        meter = "⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛"
+
+        if gayness <= 10:
+            meter = "🏳‍🌈⬛⬛⬛⬛⬛⬛⬛⬛⬛"
+        elif gayness <= 20:
+            meter = "🏳‍🌈🏳‍🌈⬛⬛⬛⬛⬛⬛⬛⬛"
+        elif gayness <= 30:
+            meter = "🏳‍🌈🏳‍🌈🏳‍🌈⬛⬛⬛⬛⬛⬛⬛"
+        elif gayness <= 40:
+            meter = "🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈⬛⬛⬛⬛⬛⬛"
+        elif gayness <= 50:
+            meter = "🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈⬛⬛⬛⬛⬛"
+        elif gayness <= 60:
+            meter = "🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈⬛⬛⬛⬛"
+        elif gayness <= 70:
+            meter = "🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈⬛⬛⬛"
+        elif gayness <= 80:
+            meter = "🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈⬛⬛"
+        elif gayness <= 90:
+            meter = "🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈⬛"
+        else:
+            meter = "🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈"
+
         emb = discord.Embed(description=f"Gayness for **{user}**", color=gayColor)
         emb.add_field(name="Gayness:", value=f"{gayness}% gay")
         emb.add_field(name="Comment:", value=f"{gayStatus} :kiss_mm:")
-        emb.set_author(name="Gay-Scanner™", icon_url="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/ICA_flag.svg/2000px-ICA_flag.svg.png")
+        emb.add_field(name="Gay Meter:", value=meter, inline=False)
+        emb.set_author(name="Gay-O-Meter™", icon_url="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/ICA_flag.svg/2000px-ICA_flag.svg.png")
         await ctx.send(embed=emb)
 
     def zalgoify(self, text, amount=3):
@@ -1052,9 +1251,14 @@ class Fun(commands.Cog):
     async def topic(self, ctx):
         """Kept running out of topic to talk about? This command might help you!"""
         choice = str(random.choice(topics.questions))
-        embed_quote = discord.Embed(title="Here is a question...", description=f"{choice}",timestamp = datetime.utcnow())
-        embed_quote.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
-        await ctx.send(embed=embed_quote)
+        if choice not in topics.usedTopics:
+            topics.usedTopics.append(choice)
+            embed_quote = discord.Embed(title="Here is a question...", description=f"{choice}",timestamp = datetime.utcnow())
+            embed_quote.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
+            await ctx.send(embed=embed_quote)
+        if len(topics.usedTopics) > 63:
+            topics.usedTopics.popleft()
+        return
 
 def setup(bot):
     bot.add_cog(Fun(bot))

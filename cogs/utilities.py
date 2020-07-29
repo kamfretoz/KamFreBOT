@@ -19,6 +19,8 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import asyncio
+import aiohttp
+import config
 import inspect
 import re
 import unicodedata
@@ -34,18 +36,85 @@ from pytz import timezone
 from datetime import datetime
 import safygiphy
 import urbandict
+import pytemperature
 import PyDictionary
 import qrcode
 from io import BytesIO
+from collections import deque
+import string
+import json
 
 import libneko
 from libneko import pag, converters
 import discord
 from discord.ext import commands
 
+morseAlphabet = {
+    "A": ".-",
+    "B": "-...",
+    "C": "-.-.",
+    "D": "-..",
+    "E": ".",
+    "F": "..-.",
+    "G": "--.",
+    "H": "....",
+    "I": "..",
+    "J": ".---",
+    "K": "-.-",
+    "L": ".-..",
+    "M": "--",
+    "N": "-.",
+    "O": "---",
+    "P": ".--.",
+    "Q": "--.-",
+    "R": ".-.",
+    "S": "...",
+    "T": "-",
+    "U": "..-",
+    "V": "...-",
+    "W": ".--",
+    "X": "-..-",
+    "Y": "-.--",
+    "Z": "--..",
+    " ": "/",
+    "1" : ".----",
+    "2" : "..---",
+    "3" : "...--",
+    "4" : "....-",
+    "5" : ".....",
+    "6" : "-....",
+    "7" : "--...",
+    "8" : "---..",
+    "9" : "----.",
+    "0" : "-----",
+    ".": ".-.-.-",
+    ",": "--..--",
+    ":": "---...",
+    "?": "..--..",
+    "'": ".----.",
+    "-": "-....-",
+    "/": "-..-.",
+    "@": ".--.-.",
+    "=": "-...-"
+}
+
+inverseMorseAlphabet = dict((v, k) for (k, v) in morseAlphabet.items())
+
 def to_emoji(c):
     base = 0x1f1e6
     return chr(base + c)
+
+def fahrenheit2celcius(temp):
+    celsius = (temp - 32) * 5/9
+    return celsius
+
+def celcius2fahrenheit(temp):
+    fahrenheit = (temp * 9/5) + 32
+    return fahrenheit
+
+class DictObject(dict):
+    def __getattr__(self, item):
+        return self[item]
 
 class Utilities(commands.Cog):
     def __init__(self, bot):
@@ -54,7 +123,6 @@ class Utilities(commands.Cog):
         self.lock = asyncio.Lock()
         self.user2context = {}
         self.dictionary = PyDictionary.PyDictionary()
-
 
     @commands.command()
     async def code(self, ctx, *, msg):
@@ -83,13 +151,14 @@ class Utilities(commands.Cog):
         """Shows a list of servers that the bot is in along with member count"""
         @pag.embed_generator(max_chars=2048)
         def main_embed(paginator, page, page_index):
-            servlist = discord.Embed(title=f"Servers that I am in. ({len(self.bot.guilds)} Servers in total)", description=page, color=0x00FF00)
+            servlist = discord.Embed(title=f"Servers that I am in", description=page, color=0x00FF00)
+            servlist.set_footer(text=f"{len(self.bot.guilds)} Servers in total.")
             return servlist
         
-        navi = pag.EmbedNavigatorFactory(factory=main_embed, max_lines=10)
+        navi = pag.EmbedNavigatorFactory(factory=main_embed)
         servers = ""
         for guild in self.bot.guilds:
-                servers += f'{guild.id} \t|\t {guild.name} \t|\t ({guild.member_count})\n'
+                servers += f'{guild.name}\n'
 
         navi += servers
         navi.start(ctx)
@@ -130,7 +199,7 @@ class Utilities(commands.Cog):
         """Convert to unicode emoji if possible. Ex: [p]uni :eyes:"""
         await ctx.send("`" + msg.replace("`", "") + "`")
 
-    @commands.command(aliases=["yt"])
+    @commands.command(aliases=["yt"], disabled = True, hidden = True)
     async def youtube(self, ctx, *, query):
         """Search YouTube video from the given query"""
         query_string = urllib.parse.urlencode({"search_query": query})
@@ -143,9 +212,9 @@ class Utilities(commands.Cog):
         await ctx.send("http://www.youtube.com/watch?v=" + search_results[0])
 
     # pingstorm command
-    @commands.cooldown(rate=3, per=1800.0, type=commands.BucketType.guild)
+    @commands.cooldown(rate=2, per=1800.0, type=commands.BucketType.guild)
+    @commands.max_concurrency(number=1, per=commands.BucketType.guild, wait=False)
     @commands.command(hidden=True, aliases=["pingmachine", "pingspam"], enabled=True)
-    @commands.max_concurrency(number=1, per=commands.BucketType.guild)
     @commands.guild_only()
     async def pingstorm(self, ctx, user: discord.Member, amount: int = 5):
         """Ping specified user number of times, 5 if no amount specified, Maximum amount is 200. (Cooldown: 1 use per 60 mins, Use wisely.)"""
@@ -209,15 +278,18 @@ class Utilities(commands.Cog):
     # time command
     # ~~Scrapped for now until~~ i can figure out how to do the customizeable timezone. EDIT: I DID IT! HURRAHH!
     @commands.group(invoke_without_command=True, aliases=["time","date","now"])
-    async def clock(self, ctx, location: str = "UTC"):
-        """Show current time. [p]time <timezone>\nFor timezone list, use [p]clock list"""
+    async def clock(self, ctx, * ,location: str = "UTC"):
+        """
+        Show current time. [p]time <timezone>
+        For timezone list, use [p]clock list
+        """
 
-        location.replace(" ", "_")
+        loc = location.replace(" ", "_")
         time_fmt = "%I:%M:%S %p"
         date_fmt = "%A, %d %B %Y"
         
         try:
-            now = datetime.now(timezone(location))
+            now = datetime.now(timezone(loc))
 
             time = now.strftime(time_fmt)
             date = now.strftime(date_fmt)
@@ -225,13 +297,13 @@ class Utilities(commands.Cog):
             clock = discord.Embed(color=0xC0C0C0)
             clock.add_field(name="🕓 Current Time", value=time, inline=False)
             clock.add_field(name="📆 Current Date", value=date, inline=False)
-            clock.add_field(name="🌐 Timezone", value=location, inline=False)
+            clock.add_field(name="🌐 Timezone", value=loc.title(), inline=False)
             await ctx.send(embed=clock, content=f"⏰ Tick.. Tock..")
         except:
             err = discord.Embed(title="⚠ **Warning!** An Error Occured.", description="Make sure that the timezone format is correct and is also available.\nThe Correct format is for example: `America/New_York` \nFor timezone list, use [p]clock list")
             await ctx.send(embed = err)
 
-    @clock.command(name="list", aliases=["timezone","timezones"], brief="Vew the list of available timezones")
+    @clock.command(name="list", aliases=["timezone","timezones","lists"], brief="Vew the list of available timezones")
     async def clock_list(self, ctx):
         """Shows the list of available timezones"""
         @pag.embed_generator(max_chars=2048)
@@ -242,7 +314,7 @@ class Utilities(commands.Cog):
         with open("cogs/data/timezones.txt") as tzs:
             lists = tzs.read()
         
-        navi = pag.EmbedNavigatorFactory(factory=emb, max_lines=25)
+        navi = pag.EmbedNavigatorFactory(factory=emb)
         navi += lists
         navi.start(ctx)
 
@@ -259,7 +331,7 @@ class Utilities(commands.Cog):
             await ctx.send(random.choice(options))
 
     @commands.command()
-    async def gif(self, ctx, *, query):
+    async def gif(self, ctx, *, query: str):
         """find a gif
         Usage: gif <query>"""
         g = safygiphy.Giphy()
@@ -272,33 +344,30 @@ class Utilities(commands.Cog):
             await ctx.send("Unable to send the messages, make sure i have access to embed.")
 
 #      DISABLED FOR NOW AS THERE IS A BUG WHERE IT ONLY SHOWS FEW WORDS AT MOST.
-#
-#    @commands.command(aliases=["ud"], disabled=True)
-#    async def urban(self, ctx, *, word: str):
-#        "Browse Urban Dictionary."
-#        try:
-#            defi = urbandict.define(word)
-#            definition = defi[0]["def"]
-#            example = defi[0]["example"]
-#            ud = discord.Embed(title=f":mag: {word}", description=definition, color=0x25332)
-#            ud.add_field(name=":bulb: Example", value=example, inline=False)
-#            ud.set_footer(
-#                text="Urban Dictionary API",
-#                icon_url="https://vignette.wikia.nocookie.net/logopedia/images/a/a7/UDAppIcon.jpg/revision/latest?cb=20170422211150",
-#            )
-#            ud.set_thumbnail(
-#                url="https://vignette.wikia.nocookie.net/logopedia/images/a/a7/UDAppIcon.jpg/revision/latest?cb=20170422211150"
-#            )
-#            await ctx.send(embed=ud, content=None)
-#
-#        except urllib.error.HTTPError:
-#            await ctx.send(
-#            embed=discord.Embed(
-#                description=f":mag_right: No Definition Found."
-#            )
-#        )
 
-    @commands.command(name="define", aliases=["def"])
+    @commands.command(aliases=["ud","urbandict"], disabled=True)
+    async def urban(self, ctx, *, word: str):
+        "Browse Urban Dictionary."
+        try:
+            defi = urbandict.define(word)
+            definition = defi[0]["def"]
+            #example = defi[0]["example"]
+            ud = discord.Embed(title=f":mag: {word}", description=definition, color=0x25332)
+            #ud.add_field(name=":bulb: Example", value=example, inline=False)
+            ud.set_footer(
+                text="Urban Dictionary API",
+                icon_url="https://vignette.wikia.nocookie.net/logopedia/images/a/a7/UDAppIcon.jpg/revision/latest?cb=20170422211150",
+            )
+            await ctx.send(embed=ud, content=None)
+
+        except urllib.error.HTTPError:
+            await ctx.send(
+            embed=discord.Embed(
+                description=f":mag_right: No Definition Found."
+            )
+        )
+
+    @commands.command(name="define", aliases=["def","defi"])
     async def _define(self, ctx, *, term: str):
         """Defines a word."""
         formatted = f"**Definition of `{term}`**\n"
@@ -385,6 +454,43 @@ class Utilities(commands.Cog):
         await ctx.send(content=f"**{ctx.guild.name}'s Member List**", file=discord.File(data, filename=f"{ctx.guild.name}_Member_Lists.txt"))
         await loading.delete()
 
+    @commands.command(aliases=["discriminator","tagnum","tag"])
+    @commands.guild_only()
+    async def discrim(self, ctx, tag: str = None):
+        """Allows you to see whose member has the certain Discriminator/Tag!"""
+
+        if tag is None:
+            await ctx.send(embed=discord.Embed(description="⚠ Please enter the desired tag number!"))
+            return
+
+        elif len(tag) is not 4 or tag.isdigit() is False:
+            await ctx.send(embed=discord.Embed(description="⚠ Please enter the correct format!"))
+            return
+
+        else:
+        
+            member_list = ""
+    
+            @pag.embed_generator(max_chars=2048)
+            def main_embed(paginator, page, page_index):
+                emb = discord.Embed(title=f"Users who has Tag Number: #**{tag}**", description = page, color=0x00FF00)
+                return emb
+    
+            page = pag.EmbedNavigatorFactory(factory=main_embed)
+            
+            duplicates = deque()
+            for x in self.bot.get_all_members():
+                if x.discriminator == tag:
+                    if x.id not in duplicates:
+                        duplicates.append(x.id)
+                        member_list += f"{str(x)}\n"
+                    
+            if member_list is not "":
+                page += member_list
+                page.start(ctx)
+            else:
+                await ctx.send(embed=discord.Embed(description="ℹ No user found!"))
+
     @commands.command(aliases=["allrole","roles"])
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
@@ -418,7 +524,7 @@ class Utilities(commands.Cog):
             return m.author == ctx.author and m.channel == ctx.channel and len(m.content) <= 100
 
         for i in range(20):
-            messages.append(await ctx.send(f'Say poll option or {ctx.prefix}cancel to publish poll.'))
+            messages.append(await ctx.send(f'Say poll option or type `cancel` to publish poll.'))
 
             try:
                 entry = await self.bot.wait_for('message', check=check, timeout=60.0)
@@ -427,7 +533,7 @@ class Utilities(commands.Cog):
 
             messages.append(entry)
 
-            if entry.clean_content.startswith(f'{ctx.prefix}cancel'):
+            if entry.clean_content.startswith(f'cancel'):
                 break
 
             answers.append((to_emoji(i), entry.clean_content))
@@ -489,8 +595,9 @@ class Utilities(commands.Cog):
             em.description = random.randint(a,b)
             await ctx.send(embed=em)
 
-    @commands.cooldown(rate=1, per=500, type=commands.BucketType.guild)
     @commands.command(aliases=["cd","timer"])
+    @commands.cooldown(rate=2, per=600, type=commands.BucketType.guild)
+    @commands.max_concurrency(number=1, per=commands.BucketType.guild, wait=False)
     async def countdown(self, ctx, timer: int = None):
         """Create a timer with the given time."""
         if timer is None:
@@ -511,7 +618,7 @@ class Utilities(commands.Cog):
             elif timer > 1000:
                 await ctx.send(
                     embed=discord.Embed(
-                        description=":octagonal_sign: That time is too big! It must be between 1 and 1001",
+                        description=":octagonal_sign: That time is too big! It must be between 1 and 1000",
                         color=discord.Colour.red(),
                     )
                 )
@@ -538,7 +645,7 @@ class Utilities(commands.Cog):
                     await msg.delete()
                 for t in range(timer, 0, -1):
                     mins, secs = divmod(t, 60)
-                    loop.create_task(
+                    ctx.bot.loop.create_task(
                         msg.edit(
                             embed=discord.Embed(
                                 description=f"**{mins:,}:{secs:02}**",
@@ -597,7 +704,7 @@ class Utilities(commands.Cog):
 
     @commands.command(aliases=["whoisplaying"])
     @commands.guild_only()
-    async def whosplaying(self, ctx, *, game: libneko.converters.GameConverter):
+    async def whosplaying(self, ctx, *, game: str):
         """Shows who's playing a specific game"""
         if len(game) <= 1:
             await ctx.send("```The game should be at least 2 characters long...```", delete_after=5.0)
@@ -781,13 +888,14 @@ class Utilities(commands.Cog):
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
     @commands.command()
+    @commands.is_owner()
     async def nickscan(self, ctx):
         @pag.embed_generator(max_chars=2048)
         def main_embed(paginator, page, page_index):
             embed = discord.Embed(title=f'Servers I Have Nicknames In', description=page)
             return embed
 
-        nicks = pag.EmbedNavigatorFactory(factory=main_embed, max_lines=10)
+        nicks = pag.EmbedNavigatorFactory(factory=main_embed)
 
         message = ""
         for guild in self.bot.guilds:
@@ -796,6 +904,193 @@ class Utilities(commands.Cog):
                 
         nicks += message
         nicks.start(ctx)
+
+
+    @commands.command(aliases=["ipinfo","ipaddr"])
+    async def ip(self, ctx, ip: str = None):
+        """
+        Find out the information of an IP Address
+        API Provided by: https://ipapi.co/
+        """
+        if ip is None:
+            await ctx.send(embed=discord.Embed(description="⚠ Please Specify the IP Address!"))
+            return
+
+        if ip == "0.0.0.0" or ip == "127.0.0.1":
+            await ctx.send(embed=discord.Embed(description="You have played yourself. Wait... You can't!"))
+            return
+
+        await ctx.trigger_typing()
+
+        try:
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f'https://ipapi.co/{ip}/json/') as resp:
+                    resp.raise_for_status()
+                    data = await resp.json()
+                    await session.close()
+
+            ipaddr = data["ip"]
+            city = data["city"]
+            region = data["region"]
+            region_code = data["region_code"]
+            country = data["country"]
+            country_name = data["country_name"]
+            country_code_iso3 = data["country_code_iso3"]
+            continent_code = data["continent_code"]
+            in_eu = data["in_eu"]
+            postal = data["postal"]
+            latitude = data["latitude"]
+            longitude = data["longitude"]
+            country_timezone = data["timezone"]
+            utc_offset = data["utc_offset"]
+            dial_code = data["country_calling_code"]
+            currency = data["currency"]
+            languages = data["languages"]
+            organization = data["org"]
+            asn = data["asn"]
+
+            embd = discord.Embed(title="IP Information", color=ctx.author.color, timestamp=datetime.utcnow())
+            embd.add_field(name="IP Address:", value=ipaddr, inline=False)
+            embd.add_field(name="ISP Name/Organization:", value=organization, inline=False)
+            embd.add_field(name="City:", value=city, inline=False)
+            embd.add_field(name="Regional Area:", value=region)
+            embd.add_field(name="Region Code:", value=region_code, inline=False)
+            embd.add_field(name="Country:", value=country, inline=False)
+            embd.add_field(name="Country Name:", value=country_name, inline=False)
+            embd.add_field(name="Country Code (ISO):", value=country_code_iso3, inline=False)
+            embd.add_field(name="Language Spoken:", value=languages, inline=False)
+            embd.add_field(name="Continent Code:", value=continent_code, inline=False)
+            embd.add_field(name="Is country a member of European Union (EU)?", value=in_eu, inline=False)
+            embd.add_field(name="Postal Code:", value=postal, inline=False)
+            embd.add_field(name="Latitude Coordinate:", value=latitude, inline=False)
+            embd.add_field(name="Longitude Coordinate:", value=longitude, inline=False)
+            embd.add_field(name="Timezone:", value=country_timezone, inline=False)
+            embd.add_field(name="UTC Offset:", value=utc_offset, inline=False)
+            embd.add_field(name="Country Dial Code:", value=dial_code, inline=False)
+            embd.add_field(name="Currency:", value=currency, inline=False)
+            embd.add_field(name="Autonomous System Number:", value=asn, inline=False)
+            embd.set_footer(text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
+
+            await ctx.send(embed=embd)
+        except:
+            await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! Make sure the IP and the formatting are correct!"))
+
+    @commands.group(invoke_without_command=True)
+    async def morse(self, ctx):
+        await ctx.send(embed=discord.Embed(description="ℹ To use this command, Run: `[p]morse <type> <text>`"))
+
+    @morse.command(name="m2a")
+    async def morse2ascii(self, ctx, text:str = None):
+        if text is None:
+            await ctx.send(embed=discord.Embed(description="⚠ Please specify the input."))
+            return
+
+        messageSeparated = text.split(' ')
+        decodeMessage = ''
+        for char in messageSeparated:
+            if char in inverseMorseAlphabet:
+                decodeMessage += inverseMorseAlphabet[char]
+            else:
+                # CNF = Character not found
+                decodeMessage += '<CNF>'
+        print(decodeMessage)
+        await ctx.send(embed=discord.Embed(title="Morse to ASCII Conversion:", description=decodeMessage, timestamp=datetime.utcnow()))
+
+    @morse.command(name="a2m")
+    async def ascii2morse(self, ctx, text: str = None):
+        encodedMessage = ""
+        for char in text[:]:
+            if char.upper() in morseAlphabet:
+                encodedMessage += morseAlphabet[char.upper()] + " "
+            else:
+                encodedMessage += '<CNF>'
+
+        await ctx.send(embed=discord.Embed(title="ASCII to Morse Conversion:", description=encodedMessage, timestamp=datetime.utcnow()))
+
+    @commands.command(aliases=["nationalize"])
+    async def nationality(self, ctx, name: str = None):
+        """
+        This command predicts the nationality of a person given their name.
+        API Provided by: `https://nationalize.io/`
+        """
+        await ctx.trigger_typing()
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f'https://api.nationalize.io/?name={name}') as resp:
+                resp.raise_for_status()
+                data = json.loads(await resp.read(), object_hook=DictObject)
+                await session.close()
+        try:
+            answer = data["name"]
+            country = data.country[0].country_id
+            probability = data.country[0].probability
+        except IndexError:
+            await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! Cannot determine the result."))
+            return
+
+
+        emb = discord.Embed(description="Predict the nationality of a name!", color = ctx.author.color, timestamp = datetime.utcnow())
+        emb.add_field(name="Name", value=answer.title())
+        emb.add_field(name="Country", value=country)
+        emb.add_field(name="Probability", value=probability)
+        emb.set_footer(text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
+
+        await ctx.send(embed=emb)
+
+    @commands.command()
+    async def weather(self, ctx, *, city: str = None):
+        """
+        A command to check weather status
+        API Provided by: OpenWeatherMap
+        """
+        await ctx.trigger_typing()
+
+        with open("cogs/data/weather_api_key.json") as json_fp:
+            classified = json.load(json_fp)
+            key = classified["key"]
+
+        locate = city.replace(" ", "+")
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"http://api.openweathermap.org/data/2.5/weather?q={locate}&appid={key}") as resp:
+                resp.raise_for_status()
+                data = json.loads(await resp.read(), object_hook=DictObject)
+                await session.close()
+
+        cityname = data.name
+        countryid = data.sys.country
+        status = data.weather[0].main
+        description = data.weather[0].description
+        lon = data.coord.lon
+        lat = data.coord.lat
+        temp = int(pytemperature.k2c(data.main.temp))
+        feels = int(pytemperature.k2c(data.main.feels_like))
+        t_min = int(pytemperature.k2c(data.main.temp_min))
+        t_max = int(pytemperature.k2c(data.main.temp_max))
+        pressure = data.main.pressure
+        humidity = data.main.humidity
+
+        icon = f"http://openweathermap.org/img/wn/{data.weather[0].icon}@2x.png"
+
+
+        embed = discord.Embed(title="Weather Information", timestamp=datetime.utcnow(), color=ctx.author.color)
+        embed.set_thumbnail(url=icon)
+
+        embed.add_field(name="City Name", value=cityname, inline=False)
+        embed.add_field(name="Country ID", value=countryid, inline=False)
+        embed.add_field(name="Weather Status", value=status, inline=False)
+        embed.add_field(name="Description", value=description.title(), inline=False)
+        embed.add_field(name="Longitude", value=lon, inline=True)
+        embed.add_field(name="Latitude", value=lat, inline=True)
+        embed.add_field(name="Temperature", value=f"{temp}°C", inline=True)
+        embed.add_field(name="Feels Like", value=f"{feels}°C", inline=True)
+        embed.add_field(name="Min Temperature", value=f"{t_min}°C", inline=True)
+        embed.add_field(name="Max Temperature", value=f"{t_max}°C", inline=True)
+        embed.add_field(name="Pressure", value=f"{pressure} atm", inline=True)
+        embed.add_field(name="Humidity", value=f"{humidity}%", inline=True)
+
+        await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(Utilities(bot))

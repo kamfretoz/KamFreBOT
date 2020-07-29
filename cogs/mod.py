@@ -22,10 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import asyncio
-import json
 import os
 import discord
 import libneko
+from libneko import pag
 from discord.ext import commands
 
 
@@ -121,18 +121,20 @@ class Mod(commands.Cog):
     @commands.command(aliases = ["del", "p", "prune"])
     async def purge(self, ctx, amount: int, member: libneko.converters.InsensitiveMemberConverter = None):
         """Clean a number of messages"""
-        if amount <= 500:
-            await ctx.author.send(embed=discord.Embed(description="The Great *Purge* is processing..."), delete_after=10)
-            if member is None:
-                await ctx.channel.purge(limit = amount + 1)
+        try:
+            if amount <= 500:
+                if member is None:
+                    await ctx.channel.purge(limit = amount + 1)
+                else:
+                    async for message in ctx.channel.history(limit = amount + 1):
+                        if message.author is member:
+                            await message.delete()
+            elif amount is 0:
+                await ctx.send(discord.Embed(description="⚠ Please Specify the amount of messages to be deleted!"))
             else:
-                async for message in ctx.channel.history(limit = amount + 1):
-                    if message.author is member:
-                        await message.delete()
-        elif amount is 0:
-            await ctx.send(discord.Embed(description="⚠ Please Specify the amount of messages to be deleted!"))
-        else:
-            await ctx.send(discord.Embed(description="❌ Maximum amount of purging reached. You can only purge 500 messages at a time"))
+                await ctx.send(discord.Embed(description="❌ Maximum amount of purging reached. You can only purge 500 messages at a time"))
+        except:
+            await ctx.send(embed=discord.Embed(description="⚠ An error has occured! Please make sure that i have the correct permission!"))
 
 
 
@@ -145,9 +147,22 @@ class Mod(commands.Cog):
         except:
             return await ctx.send("You dont have the perms to see bans.")
 
-        em = discord.Embed(title = f"List of Banned Members ({len(bans)}):")
-        em.description = ", ".join([str(b.user) for b in bans])
-        await ctx.send(embed = em)
+        banned = ""
+
+        @pag.embed_generator(max_chars=2048)
+        def det_embed(paginator, page, page_index):
+            em = discord.Embed(title = f"List of Banned Members:", description=page)
+            em.set_footer(text=f"{len(bans)} Members in Total.")
+            return em
+
+        page = pag.EmbedNavigatorFactory(factory=det_embed)
+
+        for users in bans:
+            banned += f"{users.user}\n"
+
+        page += banned
+        page.start(ctx)
+    
 
     @commands.has_permissions(ban_members=True, view_audit_log=True)
     @commands.command()
@@ -168,11 +183,8 @@ class Mod(commands.Cog):
         """Add a role to someone else."""
         if not role:
             return await ctx.send("That role does not exist.")
-        try:
-            await member.add_roles(role)
-            await ctx.send(f"Added: `{role.name}` to {member}")
-        except:
-            await ctx.send("I don't have the perms to add that role.")
+        await member.add_roles(role)
+        await ctx.send(f"Added: `{role.name}` to `{member}`")
 
 #    DISABLED FOR NOW
 #    @commands.has_permissions(administrator=True)
@@ -200,16 +212,10 @@ class Mod(commands.Cog):
     @commands.command()
     async def removerole(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, rolename: libneko.converters.RoleConverter):
         """Remove a role from someone else."""
-        role = discord.utils.find(
-            lambda m: rolename.lower() in m.name.lower(), ctx.message.guild.roles
-        )
-        if not role:
+        if not rolename:
             return await ctx.send("That role does not exist.")
-        try:
-            await member.remove_roles(role)
-            await ctx.send(f"Removed: `{role.name}` from {member}")
-        except:
-            await ctx.send("I don't have the perms to add that role.")
+        await member.remove_roles(rolename)
+        await ctx.send(f"Removed: `{rolename}` from `{member}`")
 
     @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
     @commands.has_permissions(ban_members=True)
@@ -356,21 +362,36 @@ class Mod(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
     @commands.command(aliases=['slowmo'])
-    async def slowmode(self, ctx, seconds: int=0):
-        if seconds > 120:
-            return await ctx.send(":no_entry: Amount can't be over 120 seconds")
-        if seconds is 0:
-            await ctx.channel.edit(slowmode_delay=seconds)
-            a = await ctx.send("**Slowmode is off for this channel**")
-            await a.add_reaction("👌")
+    async def slowmode(self, ctx, seconds: str = "0s"):
+        """Set the slowmode for this"""
+
+        unit = seconds[-1]
+        if unit == "s":
+            time = int(seconds[:-1])
+            longunit = "seconds"
+        elif unit == "m":
+            time = int(seconds[:-1]) * 60
+            longunit = "minutes"
+        elif unit == "h":
+            time = int(seconds[:-1]) * 60 * 60
+            longunit = "hours"
         else:
-            if seconds is 1:
-                numofsecs = "second"
-            else:    
-                numofsecs = "seconds"
-            await ctx.channel.edit(slowmode_delay=seconds)
-            confirm = await ctx.send(f"**Set the channel slow mode delay to `{seconds}` {numofsecs}\nTo turn this off, run the command without any value**")
-            await confirm.add_reaction("👌")
+            await ctx.send("Invalid Unit! Use `s`, `m`, or `h`.")
+            return
+
+        if time > 21600:
+            await ctx.send(embed=discord.Embed(description="⛔ duration can't be over than 6 hours!"))
+            return
+
+        if seconds == "0s":
+            await ctx.channel.edit(slowmode_delay=time)
+            a = await ctx.send(embed=discord.Embed(description="ℹ **Slowmode is off for this channel**"))
+            await a.add_reaction("⏱")
+            return
+        else:
+            await ctx.channel.edit(slowmode_delay=time)
+            confirm = await ctx.send(embed=discord.Embed(description=f"**Set the channel slow mode delay to `{str(seconds[:-1])} {longunit}` \nTo turn this off, run the command without any value**"))
+            await confirm.add_reaction("⏱")
 
 
 def setup(bot):

@@ -8,7 +8,9 @@ pytz
 datetime
 safygiphy
 youtube-dl
+urbandict
 bs4
 google-api-python-client
 PyDictionary
+pytemperature
 qrcode[pil]

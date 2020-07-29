@@ -87,7 +87,7 @@ class Emoji(commands.Cog):
         name = "emoji.png"
         return name, url, "N/A", "Official"
 
-    @commands.group(aliases=["emote","em"], invoke_without_command=True)
+    @commands.group(aliases=["emote","em","e"], invoke_without_command=True)
     async def emoji(self, ctx, *, msg):
         """
         View, copy, add or remove emoji.
@@ -97,6 +97,8 @@ class Emoji(commands.Cog):
         3) [p]emoji add <url> - Add a new emoji to the current server if you have the permissions.
         4) [p]emoji remove <emoji> - Remove an emoji from the current server if you have the permissions
         """
+        await ctx.trigger_typing()
+        
         emojis = msg.split()
         if msg.startswith("s "):
             emojis = emojis[1:]
@@ -270,7 +272,7 @@ class Emoji(commands.Cog):
         tot = len(animated) + len(static)
         await ctx.send(
             f'Check your DMs. You looted {tot} emoji{"s" if tot - 1 else ""}!',
-            delete_after=7.5,
+            delete_after=8,
         )
         try:
             await ctx.message.delete()
