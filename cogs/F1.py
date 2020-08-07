@@ -175,3 +175,4 @@ class F1MotorSport(commands.Cog):
 def setup(bot):
     print("F1 Module has been Loaded.")
     bot.add_cog(F1MotorSport(bot))
+    

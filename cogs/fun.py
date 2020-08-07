@@ -863,7 +863,7 @@ class Fun(commands.Cog):
     @commands.command(aliases=["chnorris","chnr","cn","chuck"])
     async def chucknorris(self, ctx):
         """
-        You Didn't run this command, Chuck Norris throw this command on your face.
+        You Didn't run this command, Chuck Norris throw this command at your face.
         """
 
         await ctx.trigger_typing()

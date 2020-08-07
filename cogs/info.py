@@ -643,6 +643,58 @@ class Information(commands.Cog):
             nosplash = discord.Embed(description="This server doesn't have the required boost lever or has no splash image configured.")
             await ctx.send(embed=nosplash)
 
+    @commands.command(invoke_without_command=True,aliases=["uins"])
+    async def userinspect(self, ctx, user: libneko.converters.InsensitiveUserConverter = None):
+        """Show info about a user. If not specified, the command caller info will be shown instead. This command will works accross servers!"""
+        await ctx.trigger_typing()
+
+        if user is None:
+            user = ctx.author
+
+        usr = discord.Embed(timestamp=datetime.utcnow())
+        shared = sum(1 for m in self.bot.get_all_members() if m.id == user.id)
+
+        usr.set_author(name=f"Information of {str(user)}")
+
+        usr.add_field(
+            name="》 Display Name", 
+            value=user.display_name, 
+            inline=False
+        )
+        usr.add_field(
+            name="》 Discriminator/Tag", 
+            value=f"#{user.discriminator}", 
+            inline=False
+        )
+        usr.add_field(
+            name="》 Created",
+            value=user.created_at.strftime("%B %d, %Y at %I:%M %p"),
+            inline=False,
+        )
+        usr.add_field(
+            name="》 User ID", 
+            value=user.id, 
+            inline=False
+        )
+        usr.add_field(
+            name="》 Mention", 
+            value=user.mention, 
+            inline=False
+        )
+        usr.add_field(
+            name="》 Shared Servers", 
+            value=f"{shared} shared", 
+            inline=False
+        )
+        usr.set_footer(
+            text=f"Requested by {ctx.message.author}",
+            icon_url=f"{ctx.message.author.avatar_url}",
+        )
+
+        if user.avatar:
+            usr.set_thumbnail(url=user.avatar_url)
+
+        await ctx.send(embed=usr)
 
     @commands.group(invoke_without_command=True,aliases=["user", "ui", "profile"])
     @commands.guild_only()
@@ -655,10 +707,13 @@ class Information(commands.Cog):
 
         boost_stats = None
 
-        if user.premium_since is None:
-            boost_stats = "The user are not boosting this server."
-        else:
-            boost_stats = f"Boosting the server since {user.premium_since.strftime('%B %d, %Y at %I:%M %p')}"
+        try:
+            if user.premium_since is None:
+                boost_stats = "The user are not boosting this server."
+            else:
+                boost_stats = f"Boosting the server since {user.premium_since.strftime('%B %d, %Y at %I:%M %p')}"
+        except AttributeError:
+            boost_stats = "Information Unavailable"
 
         member = discord.Embed(timestamp=datetime.utcnow())
         roles = [role.mention for role in user.roles]

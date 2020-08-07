@@ -157,13 +157,15 @@ class Subreddit(commands.Cog):
         await getSub(self, ctx, 'ProgrammerHumor')
 
     @commands.command()
-    async def sub(self, ctx, subreddit: str = None):
+    async def sub(self, ctx, * ,subreddit: str = None):
         if subreddit is None:
             await ctx.send(embed=discord.Embed(description="Please specify the subreddit!"))
             return
+        sub = subreddit.replace(" ","_")
+
         try:
             await ctx.trigger_typing()
-            await getSub(self, ctx, subreddit)
+            await getSub(self, ctx, sub)
         except:
             await ctx.send("An Error occured. Make sure the subreddit name were correct!")
 
