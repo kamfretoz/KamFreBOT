@@ -9,8 +9,9 @@ acceptableImageFormats = [".png",".jpg",".jpeg",".gif",".gifv",".webm",".mp4","i
 memeHistory = deque()
 memeSubreddits = ["BikiniBottomTwitter", "memes", "2meirl4meirl", "deepfriedmemes", "MemeEconomy"]
 
-async def getSub(self, ctx, sub):
+async def getSub(self, ctx, query: str):
         """Get stuff from requested sub"""
+        sub = query.replace(" ","_")
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://www.reddit.com/r{sub}/hot.json?limit=100") as response:
                 request = await response.json()
@@ -19,8 +20,8 @@ async def getSub(self, ctx, sub):
         attempts = 1
         while attempts < 5:
             if 'error' in request:
-                print(f"failed request {attempts}")
-                await asyncio.sleep(2)
+                #print(f"failed request {attempts}")
+                await asyncio.sleep(3)
                 async with aiohttp.ClientSession() as session:
                     async with session.get(f"https://www.reddit.com/r/{sub}/hot.json?limit=100") as response:
                         request = await response.json()
@@ -124,6 +125,8 @@ class Subreddit(commands.Cog):
                             accepted = False
                         elif url == "IMPORTANT PSA: No, you did not win a gift card.":
                             accepted = False
+                        elif url == "Black lives matter. Registering to vote and how to vote by mail.":
+                            accepted = False
                         else:
                             accepted = True
                         if accepted:
@@ -154,7 +157,10 @@ class Subreddit(commands.Cog):
         await getSub(self, ctx, 'ProgrammerHumor')
 
     @commands.command()
-    async def sub(self, ctx, subreddit):
+    async def sub(self, ctx, subreddit: str = None):
+        if subreddit is None:
+            await ctx.send(embed=discord.Embed(description="Please specify the subreddit!"))
+            return
         try:
             await ctx.trigger_typing()
             await getSub(self, ctx, subreddit)

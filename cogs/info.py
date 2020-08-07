@@ -5,13 +5,14 @@ from datetime import datetime
 import discord
 import libneko
 import psutil
+import platform
 import bs4
 import lxml
 import time
 from libneko import pag
 from discord.ext import commands
 
-import config
+import data.config as config
 
 
 def format_seconds(time_seconds):
@@ -92,6 +93,11 @@ class Information(commands.Cog):
             em.add_field(
                 name=":gear: CPU Frequency",
                 value=f"{psutil.cpu_freq().current} MHz",
+                inline=False,
+            )
+            em.add_field(
+                name=":dna: Kernel Version",
+                value=f"{platform.platform()} {platform.version()}",
                 inline=False,
             )
             em.add_field(
@@ -213,13 +219,6 @@ class Information(commands.Cog):
             value=", ".join(roles) if len(roles) < 10 else f"{len(roles)} roles",
             inline=False,
         )
-        fmt = (
-            f'🟢 Online: {member_by_status["online"]}\n'
-            f'🟡 Idle: {member_by_status["idle"]}\n'
-            f'🔴 Do Not Disturb: {member_by_status["dnd"]}\n'
-            f'⚫ Offline: {member_by_status["offline"]}\n'
-            f"➕ Total: {guild.member_count}"
-        )
         server.add_field(
             name="》 Created",
             value=guild.created_at.strftime("%B %d, %Y at %I:%M %p"),
@@ -275,6 +274,13 @@ class Information(commands.Cog):
             value=booster_amount, 
             inline=False
         )
+        fmt = (
+            f'🟢 Online: {member_by_status["online"]}\n'
+            f'🟡 Idle: {member_by_status["idle"]}\n'
+            f'🔴 Do Not Disturb: {member_by_status["dnd"]}\n'
+            f'⚫ Offline: {member_by_status["offline"]}\n'
+            f"➕ Total: {guild.member_count}"
+        )
         server.add_field(
             name="》 Members", 
             value=f"```{fmt}```",
@@ -323,12 +329,21 @@ class Information(commands.Cog):
             await ctx.send(embed=nobanner)
 
 
-    @serverinfo.command(name="membercount", aliases=["count", "memcount"], brief="shows the amount of members on this server.")
+    @serverinfo.command(name="membercount", aliases=["count", "memcount", "members", "member"], brief="shows the amount of members on this server.")
     @commands.guild_only()
     async def serverinfo_membercount(self, ctx):
         """
         shows the amount of members on this server.
         """
+        guild = ctx.guild
+        member_by_status = Counter(str(m.status) for m in guild.members)
+        fmt = (
+            f'🟢 Online: {member_by_status["online"]}\n'
+            f'🟡 Idle: {member_by_status["idle"]}\n'
+            f'🔴 Do Not Disturb: {member_by_status["dnd"]}\n'
+            f'⚫ Offline: {member_by_status["offline"]}\n'
+            f"➕ Total: {guild.member_count}"
+        )
         bots = 0
         members = 0
         total = 0
@@ -345,6 +360,7 @@ class Information(commands.Cog):
         count.add_field(name="User Count", value=f"{members}", inline=False)
         count.add_field(name="Bot Count", value=f"{bots}", inline=False)
         count.add_field(name="Total", value=f"{total}", inline=False)
+        count.add_field(name="Status", value=f"```{fmt}```", inline=False)
         await ctx.send(embed=count, content=None)
 
     @serverinfo.command(aliases=["rl", "role"], no_pm=True, name="roleinfo", brief="Shows information about a role")
@@ -355,7 +371,7 @@ class Information(commands.Cog):
 
         since_created = (ctx.message.created_at - role.created_at).days
         role_created = role.created_at.strftime("%d %b %Y %H:%M")
-        created_on = "{} ({} days ago!)".format(role_created, since_created)
+        created_on = f"{role_created} ({since_created} days ago!)"
 
         if str(role.colour) is "#000000":
             colour = "default"
@@ -642,7 +658,7 @@ class Information(commands.Cog):
         if user.premium_since is None:
             boost_stats = "The user are not boosting this server."
         else:
-            boost_stats = user.premium_since.strftime('%B %d, %Y at %I:%M %p')
+            boost_stats = f"Boosting the server since {user.premium_since.strftime('%B %d, %Y at %I:%M %p')}"
 
         member = discord.Embed(timestamp=datetime.utcnow())
         roles = [role.mention for role in user.roles]
@@ -733,7 +749,7 @@ class Information(commands.Cog):
         member.colour = user.colour
 
         member.set_footer(
-            text=f"Requested by {ctx.message.author.name}#{ctx.message.author.discriminator}",
+            text=f"Requested by {ctx.message.author}",
             icon_url=f"{ctx.message.author.avatar_url}",
         )
 
@@ -746,6 +762,8 @@ class Information(commands.Cog):
     @commands.guild_only()
     async def userinfo_avatar(self, ctx, *, user: libneko.converters.InsensitiveUserConverter = None):
         """View the avatar of a member.\nYou can either use Discord ID or ping them instead"""
+        await ctx.trigger_typing()
+
         pic_frmt = None
         link_frmt = None
 
@@ -762,23 +780,25 @@ class Information(commands.Cog):
         try:
             if user is None:  # This will be executed when no argument is provided
                 pfp = discord.Embed(
-                    description=f"**{ctx.message.author.name}**'s profile picture",
+                    description=f"**{ctx.message.author.mention}**'s profile picture",
                     title="Avatar Viewer",
                     color=ctx.author.color,
                     timestamp=datetime.utcnow(),
                 )
                 pfp.add_field(name="Full avatar link", value=link_frmt)
                 pfp.set_image(url=ctx.message.author.avatar_url_as(format=pic_frmt, size=4096))
+                pfp.set_footer(text=f"User: {ctx.message.author} {ctx.message.author.id}")
                 await ctx.send(embed=pfp)
             else:  # This is what normally executed.
                 pfp = discord.Embed(
-                    description=f"{user.name}'s profile picture",
+                    description=f"{user.mention}'s profile picture",
                     title="Avatar Viewer",
                     color=user.colour,
                     timestamp=datetime.utcnow(),
                 )
                 pfp.add_field(name="Full avatar link", value=link_frmt)
                 pfp.set_image(url=user.avatar_url_as(format=pic_frmt, size=4096))
+                pfp.set_footer(text=f"User: {user} ({user.id})")
                 pfp.colour = user.colour
                 await ctx.send(embed=pfp)
         except discord.InvalidArgument:
@@ -811,7 +831,7 @@ class Information(commands.Cog):
 
 
     @userinfo.command(name="mention", brief="Mention a user.")
-    async def userinfo_mention(self, ctx, target: libneko.converters.InsensitiveMemberConverter = None):
+    async def userinfo_mention(self, ctx, target: libneko.converters.InsensitiveUserConverter = None):
         """
         Mention a user.
         """

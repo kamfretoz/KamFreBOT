@@ -238,7 +238,7 @@ class Emoji(commands.Cog):
         and/or muscle memory with other commands.
 
         I get all custom emojis in the message and send them to your inbox with links; this
-        way, you can download them or add them to your stamp collection or whatever the hell
+        way, you can download them or add them to your stamp collection or whatever the hell 
         you do for fun.
 
         Teach those Nitro users no more big government. Break their hearts out. FINISH THEM.
@@ -266,18 +266,20 @@ class Emoji(commands.Cog):
             paginator.add_line(
                 f" ⚝ {name}: https://cdn.discordapp.com/emojis/{id}.gif <animated>"
             )
-        async with ctx.typing():
-            for page in paginator.pages:
-                await ctx.author.send(page)
-        tot = len(animated) + len(static)
-        await ctx.send(
-            f'Check your DMs. You looted {tot} emoji{"s" if tot - 1 else ""}!',
-            delete_after=8,
-        )
         try:
+            async with ctx.typing():
+                for page in paginator.pages:
+                    await ctx.author.send(page)
+            tot = len(animated) + len(static)
+            await ctx.send(
+                f'Check your DMs. You looted {tot} emoji{"s" if tot - 1 else ""}!',
+                delete_after=8,
+            )
             await ctx.message.delete()
-        except:
-            pass
+        except discord.Forbidden:
+            await ctx.author.send(f"⛔ {ctx.message.author.name}, Your DM are disabled!", delete_after=5)
+        except discord.ext.commands.BotMissingPermissions:
+            return
 
     @staticmethod
     def transform_mute(emojis):

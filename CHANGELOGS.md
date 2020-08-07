@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## v0.1.7
+
+* Added New `F1` Submodule and commands!
+* Added `anime` command along with a few subcommands!
+* Added more information to `weather` command
+* Added more checks to `sub` command
+* Decreased the pingstorm limit from 200 to 100.
+* Fixed `morse` command only accepting the first character
+* The `stats` command now shows Kernel version as well
+* Restructured the data files
+* Bug fixes on the `ship` command
+
 ## v0.1.6
 
 * Added love meter to ship command

@@ -20,7 +20,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import asyncio
 import aiohttp
-import config
+import data.config as config
 import inspect
 import re
 import unicodedata
@@ -32,6 +32,7 @@ import io
 import functools
 import os
 import operator
+from bs4 import BeautifulSoup
 from pytz import timezone
 from datetime import datetime
 import safygiphy
@@ -39,6 +40,7 @@ import urbandict
 import pytemperature
 import PyDictionary
 import qrcode
+import requests
 from io import BytesIO
 from collections import deque
 import string
@@ -103,14 +105,6 @@ inverseMorseAlphabet = dict((v, k) for (k, v) in morseAlphabet.items())
 def to_emoji(c):
     base = 0x1f1e6
     return chr(base + c)
-
-def fahrenheit2celcius(temp):
-    celsius = (temp - 32) * 5/9
-    return celsius
-
-def celcius2fahrenheit(temp):
-    fahrenheit = (temp * 9/5) + 32
-    return fahrenheit
 
 class DictObject(dict):
     def __getattr__(self, item):
@@ -199,18 +193,6 @@ class Utilities(commands.Cog):
         """Convert to unicode emoji if possible. Ex: [p]uni :eyes:"""
         await ctx.send("`" + msg.replace("`", "") + "`")
 
-    @commands.command(aliases=["yt"], disabled = True, hidden = True)
-    async def youtube(self, ctx, *, query):
-        """Search YouTube video from the given query"""
-        query_string = urllib.parse.urlencode({"search_query": query})
-        html_content = urllib.request.urlopen(
-            "http://www.youtube.com/results?" + query_string
-        )
-        search_results = re.findall(
-            'href=\\"\\/watch\\?v=(.{11})', html_content.read().decode()
-        )
-        await ctx.send("http://www.youtube.com/watch?v=" + search_results[0])
-
     # pingstorm command
     @commands.cooldown(rate=2, per=1800.0, type=commands.BucketType.guild)
     @commands.max_concurrency(number=1, per=commands.BucketType.guild, wait=False)
@@ -229,9 +211,9 @@ class Utilities(commands.Cog):
                 async def ping_task(self):
                     ping = 0
                     while ping < int(amount):
-                        if amount > 200:
+                        if amount > 100:
                             await ctx.send(
-                                "**WARNING:** **Maximum allowed amount is 200.**"
+                                "**WARNING:** **Maximum allowed amount is 100.**"
                             )
                             await ctx.message.add_reaction("❌")
                             break
@@ -303,7 +285,7 @@ class Utilities(commands.Cog):
             err = discord.Embed(title="⚠ **Warning!** An Error Occured.", description="Make sure that the timezone format is correct and is also available.\nThe Correct format is for example: `America/New_York` \nFor timezone list, use [p]clock list")
             await ctx.send(embed = err)
 
-    @clock.command(name="list", aliases=["timezone","timezones","lists"], brief="Vew the list of available timezones")
+    @clock.command(name="list", aliases=["timezone","timezones","lists","tz","tzs"], brief="Vew the list of available timezones")
     async def clock_list(self, ctx):
         """Shows the list of available timezones"""
         @pag.embed_generator(max_chars=2048)
@@ -331,29 +313,39 @@ class Utilities(commands.Cog):
             await ctx.send(random.choice(options))
 
     @commands.command()
-    async def gif(self, ctx, *, query: str):
+    async def gif(self, ctx, *, query: str = "rickroll"):
         """find a gif
         Usage: gif <query>"""
-        g = safygiphy.Giphy()
-        gif = g.random(tag=query)
-        em = discord.Embed()
-        em.set_image(url=str(gif.get("data", {}).get("image_original_url")))
         try:
+            g = safygiphy.Giphy()
+            gif = g.random(tag=query)
+            em = discord.Embed()
+            em.set_image(url=str(gif.get("data", {}).get("image_original_url")))
             await ctx.send(embed=em)
+        except AttributeError:
+            await ctx.send("An Error Occured! Please try again later.")
+            return
         except discord.HTTPException:
             await ctx.send("Unable to send the messages, make sure i have access to embed.")
+            return
 
 #      DISABLED FOR NOW AS THERE IS A BUG WHERE IT ONLY SHOWS FEW WORDS AT MOST.
 
     @commands.command(aliases=["ud","urbandict"], disabled=True)
-    async def urban(self, ctx, *, word: str):
+    async def urban(self, ctx, *, word: str = None):
         "Browse Urban Dictionary."
+        if word is None:
+            await ctx.send(embed=discord.Embed(description="Please specify the word to define!"))
+            return
+
+        await ctx.trigger_typing()
+
         try:
             defi = urbandict.define(word)
             definition = defi[0]["def"]
-            #example = defi[0]["example"]
-            ud = discord.Embed(title=f":mag: {word}", description=definition, color=0x25332)
-            #ud.add_field(name=":bulb: Example", value=example, inline=False)
+            example = defi[0]["example"]
+            ud = discord.Embed(title=f":mag: {word}", description=f"```{definition}```", color=0x25332)
+            ud.add_field(name=":bulb: Example", value=f"```{example}```", inline=False)
             ud.set_footer(
                 text="Urban Dictionary API",
                 icon_url="https://vignette.wikia.nocookie.net/logopedia/images/a/a7/UDAppIcon.jpg/revision/latest?cb=20170422211150",
@@ -375,7 +367,7 @@ class Utilities(commands.Cog):
         async with ctx.typing():
             definition = self.dictionary.meaning(term)
             if definition is None:
-                await ctx.send(":no_entry_sign: No definition found for that term.")
+                await ctx.send("⛔ No definition found for that term.")
             else:
                 for t in definition:
                     formatted += f"{t}:\n```css\n"
@@ -975,13 +967,21 @@ class Utilities(commands.Cog):
             await ctx.send(embed=embd)
         except:
             await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! Make sure the IP and the formatting are correct!"))
+        finally:
+            await session.close()
 
-    @commands.group(invoke_without_command=True)
+    @commands.group(invoke_without_command=True, aliases=["mrs"])
     async def morse(self, ctx):
-        await ctx.send(embed=discord.Embed(description="ℹ To use this command, Run: `[p]morse <type> <text>`"))
+        """
+        Converts ASCII Characters to Morse code and Vice Versa.
+        """
+        mainemb = discord.Embed(description="This command can help you translate morse codes.\nHere are the available command:")
+        mainemb.add_field(name="ASCII to Morse conversion", value="`[p]morse a2m [text]`")
+        mainemb.add_field(name="Morse to ASCII conversion", value="`[p]morse m2a [text]`")
+        await ctx.send(embed=mainemb)
 
-    @morse.command(name="m2a")
-    async def morse2ascii(self, ctx, text:str = None):
+    @morse.command(name="m2a", brief = "Convert Morse code to ASCII", aliases=["morse2ascii"])
+    async def morse2ascii(self, ctx, * , text:str = None):
         if text is None:
             await ctx.send(embed=discord.Embed(description="⚠ Please specify the input."))
             return
@@ -993,31 +993,35 @@ class Utilities(commands.Cog):
                 decodeMessage += inverseMorseAlphabet[char]
             else:
                 # CNF = Character not found
-                decodeMessage += '<CNF>'
-        print(decodeMessage)
+                decodeMessage += '<CHARACTER NOT FOUND>'
         await ctx.send(embed=discord.Embed(title="Morse to ASCII Conversion:", description=decodeMessage, timestamp=datetime.utcnow()))
 
-    @morse.command(name="a2m")
-    async def ascii2morse(self, ctx, text: str = None):
+    @morse.command(name="a2m", brief = "Convert ASCII into Morse Code", aliases=["ascii2morse"])
+    async def ascii2morse(self, ctx, * ,text: str = None):
+        if text is None:
+            await ctx.send(embed=discord.Embed(description="⚠ Please specify the input."))
+            return
+
         encodedMessage = ""
         for char in text[:]:
             if char.upper() in morseAlphabet:
                 encodedMessage += morseAlphabet[char.upper()] + " "
             else:
-                encodedMessage += '<CNF>'
-
+                encodedMessage += '<CHARACTER NOT FOUND>'
         await ctx.send(embed=discord.Embed(title="ASCII to Morse Conversion:", description=encodedMessage, timestamp=datetime.utcnow()))
 
     @commands.command(aliases=["nationalize"])
-    async def nationality(self, ctx, name: str = None):
+    async def nationality(self, ctx, * ,name: str = None):
         """
         This command predicts the nationality of a person given their name.
         API Provided by: `https://nationalize.io/`
         """
         await ctx.trigger_typing()
 
+        fin_name = name.replace(" ","+")
+
         async with aiohttp.ClientSession() as session:
-            async with session.get(f'https://api.nationalize.io/?name={name}') as resp:
+            async with session.get(f'https://api.nationalize.io/?name={fin_name}') as resp:
                 resp.raise_for_status()
                 data = json.loads(await resp.read(), object_hook=DictObject)
                 await session.close()
@@ -1028,6 +1032,8 @@ class Utilities(commands.Cog):
         except IndexError:
             await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! Cannot determine the result."))
             return
+        finally:
+            await session.close()
 
 
         emb = discord.Embed(description="Predict the nationality of a name!", color = ctx.author.color, timestamp = datetime.utcnow())
@@ -1044,6 +1050,11 @@ class Utilities(commands.Cog):
         A command to check weather status
         API Provided by: OpenWeatherMap
         """
+
+        if city is None:
+            await ctx.send(embed=discord.Embed(description="Please provide the city name!"))
+            return
+
         await ctx.trigger_typing()
 
         with open("cogs/data/weather_api_key.json") as json_fp:
@@ -1052,27 +1063,40 @@ class Utilities(commands.Cog):
 
         locate = city.replace(" ", "+")
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"http://api.openweathermap.org/data/2.5/weather?q={locate}&appid={key}") as resp:
-                resp.raise_for_status()
-                data = json.loads(await resp.read(), object_hook=DictObject)
-                await session.close()
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"http://api.openweathermap.org/data/2.5/weather?q={locate}&appid={key}") as resp:
+                    resp.raise_for_status()
+                    data = json.loads(await resp.read(), object_hook=DictObject)
+                    await session.close()
 
-        cityname = data.name
-        countryid = data.sys.country
-        status = data.weather[0].main
-        description = data.weather[0].description
-        lon = data.coord.lon
-        lat = data.coord.lat
-        temp = int(pytemperature.k2c(data.main.temp))
-        feels = int(pytemperature.k2c(data.main.feels_like))
-        t_min = int(pytemperature.k2c(data.main.temp_min))
-        t_max = int(pytemperature.k2c(data.main.temp_max))
-        pressure = data.main.pressure
-        humidity = data.main.humidity
-
-        icon = f"http://openweathermap.org/img/wn/{data.weather[0].icon}@2x.png"
-
+            cityname = data.name
+            countryid = data.sys.country
+            status = data.weather[0].main
+            description = data.weather[0].description
+            lon = data.coord.lon
+            lat = data.coord.lat
+            temp = int(pytemperature.k2c(data.main.temp))
+            feels = int(pytemperature.k2c(data.main.feels_like))
+            t_min = int(pytemperature.k2c(data.main.temp_min))
+            t_max = int(pytemperature.k2c(data.main.temp_max))
+            pressure = data.main.pressure
+            humidity = data.main.humidity
+            vis = data.visibility
+            wind = data.wind.speed
+            wind_degree = data.wind.deg
+            icon = f"http://openweathermap.org/img/wn/{data.weather[0].icon}@2x.png"
+        except IndexError:
+            await ctx.send(embed=discord.Embed(description="⚠ An Error Occured while parsing the data."))
+            return
+        except KeyError:
+            await ctx.send(embed=discord.Embed(description="⚠ An Error Occured while parsing the data."))
+            return
+        except aiohttp.client_exceptions.ClientResponseError:
+            await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! That City cannot be found."))
+            return
+        finally:
+            await session.close()
 
         embed = discord.Embed(title="Weather Information", timestamp=datetime.utcnow(), color=ctx.author.color)
         embed.set_thumbnail(url=icon)
@@ -1089,8 +1113,12 @@ class Utilities(commands.Cog):
         embed.add_field(name="Max Temperature", value=f"{t_max}°C", inline=True)
         embed.add_field(name="Pressure", value=f"{pressure} atm", inline=True)
         embed.add_field(name="Humidity", value=f"{humidity}%", inline=True)
+        embed.add_field(name="Visibility", value=f"{vis} m", inline=True)
+        embed.add_field(name="Wind", value=f"{wind} m/sec", inline=True)
+        embed.add_field(name="Wind Direction", value=f"{wind_degree}°", inline=True)
 
         await ctx.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(Utilities(bot))

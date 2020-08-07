@@ -3,11 +3,11 @@
 import time
 import asyncio
 import discord
-import quotes
+import data.quotes as quotes
 import json
 import os
 import logging
-import config
+import data.config as config
 import sys
 import subprocess
 import traceback
@@ -223,6 +223,11 @@ async def on_command_error(ctx, error):
         conv.set_image(url="https://http.cat/429.jpg")
         await ctx.send(embed=conv, content=None, delete_after=10)
 
+    elif isinstance(error, commands.errors.CheckFailure):
+        conv = discord.Embed(description=f"**:warning: Command Check Failure, You are not authorized to use this command!**")
+        conv.set_image(url="https://http.cat/401.jpg")
+        await ctx.send(embed=conv, content=None, delete_after=10)
+        
     else:
         try:
             now = datetime.now()
@@ -275,7 +280,7 @@ async def restart(ctx):
     await ctx.bot.logout()
     sys.exit()
 
-@bot.command(hidden=True, aliases=["poweroff", "shutdown"])
+@bot.command(hidden=True, aliases=["poweroff", "shutdown","kms","altf4","fuckmylife","fml"])
 @commands.is_owner()
 async def poweroof(ctx):
     """Turn the bot Off"""
@@ -288,22 +293,20 @@ async def poweroof(ctx):
 @commands.is_owner()
 async def runningcog(ctx):
     """See what cogs are currently running"""
-    cogslist = bot.cogs
-    for cogs in cogslist:
-        print(cogs)
+    running = ""
+    for cogs in bot.cogs:
+        running += cogs
 
-    await ctx.send(bot.cogs)
+    await ctx.send(f"```{running}```")
 
 
 # This one is for testing error messages only
-@bot.command(hidden=True, aliases=["dummy"])
+@bot.command(hidden=True, aliases=["dummy","error"])
 @commands.is_owner()
 async def crash(ctx):
     """Use to generate an error message for debugging purpose"""
     await ctx.send("Generating an Error Message..")
     raise ValueError('This is an Exception that are manually generated.')
-
-
 
 # Bot and System control command
 @bot.command(hidden=True, aliases=["load"])
