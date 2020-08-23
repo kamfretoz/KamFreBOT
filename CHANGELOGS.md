@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## v0.1.8
+
+* `snipe` command is now working!
+* Fixed Regression in `myanimelist` command
+* Updated `README`
+* Removed potentially offensive line from The Truth database
+* Switched from `Bot` client to `AutoShardedBot` client
+* Few Bugfixes for `MyAnimeList` command
+* Bug fixed and new addition
+* Attempt a fix in `topic`,`truth`,`dare` commands
+* Prettified the output of `myanimelist` and `weather` commands
+* Added more information to `weather` commands
+
 ## v0.1.7
 
 * Added New `F1` Submodule and commands!
@@ -19,7 +32,7 @@
 * Make sure to close session when the request was completed
 * Moved from `requests` to `aiohttp`
 * The `slowmode` command now uses the same time formatting as `mute` command
-* Renamed `SubredditFetcher` module to `Subreddit` 
+* Renamed `SubredditFetcher` module to `Subreddit`
 * Many bugfixes
 
 Changes since v0.1.5:

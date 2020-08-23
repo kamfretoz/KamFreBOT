@@ -21,20 +21,21 @@ print("Importing Modules....[Success]")
 
 # bootup logo, use the bootup_logo.txt to modify it
 def bootsplash():
-    try:
-        bootlogo = open("bootup_logo.txt", "r")
-        while True:
-            logo = bootlogo.readline()
-            print(logo, end="")
-            time.sleep(0.10)
-            if not logo:
-                bootlogo.close()
-                break
-    except:
-        print("Unable to display the bootsplash sequence!")
-        pass
-    finally:
-        bootlogo.close()
+    if config.bootsplash is True:
+        try:
+            bootlogo = open("bootup_logo.txt", "r")
+            while True:
+                logo = bootlogo.readline()
+                print(logo, end="")
+                time.sleep(0.10)
+                if not logo:
+                    bootlogo.close()
+                    break
+        except:
+            print("Unable to display the bootsplash sequence!")
+            pass
+        finally:
+            bootlogo.close()
 
 print(f"Starting {config.botname}!")
 bootsplash()
@@ -47,7 +48,7 @@ def get_prefix(bot, message):
     return commands.when_mentioned_or(*prefix)(bot, message)
 
 # Bot client initialization
-bot = commands.Bot(command_prefix=get_prefix, description=config.desc, case_insensitive=True)
+bot = commands.AutoShardedBot(command_prefix=get_prefix, description=config.desc, case_insensitive=True)
 
 # Setting up logging
 print("\nSetting Log files to system.log ...[Success]")
@@ -145,7 +146,7 @@ async def change_activities():
         kind = random.choice(
             [game, watch, listen, stream]
         )  # Pick a choice from all the possibilities: "Playing", "Watching", "Streaming", "Listening"
-        for s in statuses:
+        for s in statuses: # actually changes the status of the bots every (n) of a second
             await bot.change_presence(activity=kind, status=s)
             await asyncio.sleep(config.status_timeout)
 
@@ -164,7 +165,7 @@ async def on_command_error(ctx, error):
         await ctx.send(content=None, embed=nopermission, delete_after=10)
 
     elif isinstance(error, commands.errors.MissingRequiredArgument):
-        missingargs = discord.Embed(description="**:warning: You are missing required arguments.**")
+        missingargs = discord.Embed(description="**:warning: You are missing required arguments, please refer to the help menu for more information.**")
         missingargs.set_image(url="https://http.cat/410.jpg")
         await ctx.send(content=None, embed=missingargs, delete_after=10)
 
@@ -286,8 +287,7 @@ async def poweroof(ctx):
     """Turn the bot Off"""
     await ctx.send("Goodbye Cruel World...")
     await ctx.bot.logout()
-    exit(0)
-
+    exit()
 
 @bot.command(hidden=True)
 @commands.is_owner()

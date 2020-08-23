@@ -22,17 +22,13 @@ import asyncio
 import aiohttp
 import data.config as config
 import inspect
-import re
 import unicodedata
 import urllib
 import time
 import random
 import math
-import io
-import functools
 import os
 import operator
-from bs4 import BeautifulSoup
 from pytz import timezone
 from datetime import datetime
 import safygiphy
@@ -115,17 +111,108 @@ class Utilities(commands.Cog):
         self.bot = bot
         self.pingeries = {}
         self.lock = asyncio.Lock()
-        self.user2context = {}
         self.dictionary = PyDictionary.PyDictionary()
+        self.delsniped = {}
+        self.editsniped = {}
 
-    @commands.command()
+    #Delete Snipe Listener (Setter)
+    @commands.Cog.listener()
+    async def on_message_delete(self, message):
+        if not message.author.bot:
+            srvid = message.guild.id
+            chid = message.channel.id
+            author = message.author.mention
+            content = message.content
+            #print(f"server:{srvid}, channel:{chid}, author:{author}, content:{content}") #PRINTS ALL DELETED MESSAGES INTO THE CONSOLE (CAN BE SPAMMY)
+            self.delsniped.update({
+                srvid : {
+                    chid : {
+                        'Sender':author,
+                        'Content':content
+                    }
+                }
+            })
+
+    #Edit Snipe Listener (Setter)
+    @commands.Cog.listener()
+    async def on_message_edit(self, before, after):
+        if not before.author.bot:
+            srvid = before.guild.id
+            chid = before.channel.id
+            author = before.author.mention
+            msg_before = before.content
+            msg_after = after.content
+            #print(f"server:{srvid}, channel:{chid}, author:{author}, before:{msg_before}, after:{msg_after}")
+            self.editsniped.update({
+                srvid : {
+                    chid : {
+                        'Sender':author,
+                        'Before':msg_before,
+                        'After':msg_after
+                    }
+                }
+            })
+
+    @commands.command(aliases=["sniped","snipe","delsnipe","dsnipe","ds"])
+    @commands.guild_only()
+    async def deletesnipe(self, ctx):
+        """
+        Allows you to see recently deleted message in the current channel.
+        But you need to be quick because the deleted message won't last long!
+        """
+        try:
+            author = self.delsniped[ctx.guild.id][ctx.channel.id]["Sender"]
+            msg = self.delsniped[ctx.guild.id][ctx.channel.id]["Content"]
+            if msg:
+                emb = discord.Embed(title="Sniped!")
+                emb.add_field(name="Author:", value=author, inline=False)
+                emb.add_field(name="Message:", value=msg)
+                await ctx.send(embed=emb)
+            else:
+                emb = discord.Embed(title="Sniped!")
+                emb.add_field(name="Author:", value=author, inline=False)
+                emb.add_field(name="Message:", value="Empty Message. (User probably sending image without providing message.)")
+                await ctx.send(embed=emb)
+            self.delsniped.popitem()
+        except KeyError:
+            await ctx.send(embed=discord.Embed(description="⚠ No Message found! Perhaps you're too slow?"))
+            return
+
+    @commands.command(aliases=["esnipe","esniped","es"])
+    @commands.guild_only()
+    async def editsnipe(self, ctx):
+        """
+        Similar to deletesnipe, this command allows you to see edited message.
+        """
+        try:
+            author = self.editsniped[ctx.guild.id][ctx.channel.id]["Sender"]
+            before = self.editsniped[ctx.guild.id][ctx.channel.id]["Before"]
+            after = self.editsniped[ctx.guild.id][ctx.channel.id]["After"]
+            if before and after:
+                emb = discord.Embed(title="Sniped!")
+                emb.add_field(name="Author:", value=author, inline=False)
+                emb.add_field(name="Before:", value=before)
+                emb.add_field(name="After:", value=after)
+                await ctx.send(embed=emb)
+            else:
+                emb = discord.Embed(title="Sniped!")
+                emb.add_field(name="Author:", value=author, inline=False)
+                emb.add_field(name="Before:", value="Empty Message.")
+                emb.add_field(name="After:", value="Empty Message.")
+                await ctx.send(embed=emb)
+            self.editsniped.popitem()
+        except KeyError:
+            await ctx.send(embed=discord.Embed(description="⚠ No Message found! Perhaps you're too slow?"))
+            return
+    
+    @commands.command(aliases=["codeblock"])
     async def code(self, ctx, *, msg):
         """Write text in code format."""
         await ctx.message.delete()
         await ctx.send("```" + msg.replace("`", "") + "```")
 
 
-    @commands.command()
+    @commands.command(aliases=["char"])
     async def charinfo(self, ctx, *, char: str):
         """Shows you information about a number of characters."""
         if len(char) > 15:
@@ -304,13 +391,14 @@ class Utilities(commands.Cog):
     @commands.command()
     async def pick(self, ctx, *options: converters.clean_content):
         """
+        Picks between multiple options!
         Options are separated by spaces; to include spaces in an option,
         you should put quotes around the option.
         """
         if not options or len(options) == 1:
             await ctx.send("Provide two or more options")
         else:
-            await ctx.send(random.choice(options))
+            await ctx.send(f"I pick **{random.choice(options)}**!")
 
     @commands.command()
     async def gif(self, ctx, *, query: str = "rickroll"):
@@ -666,18 +754,18 @@ class Utilities(commands.Cog):
         )
         qr.add_data(data)
         img = qr.make_image(fill_color="black", back_color="white")
-        img.save("qrcodes/QR.png")
+        img.save("data/qrcodes/QR.png")
         await ctx.send(f"{ctx.author.mention}", file=discord.File("qrcodes/QR.png"))
-        os.remove("qrcodes/QR.png") #Feel free to disable the removal
+        os.remove("data/qrcodes/QR.png") #Feel free to disable the removal
 
-    @commands.command()
+    @commands.command(aliases=["qrinv"])
     @commands.guild_only()
     @commands.has_permissions(create_instant_invite=True)
     async def qrinvite(self, ctx, age: int = 86400, uses: int = 0, temp: bool = False):
         """
         Allows you to create a QR Code of the invite link of this server
         Make sure to adjust the available options to suite your need!
-        Set the `age` (defaults to 1 day) and `uses` argument to 0 to make a permanent link
+        Set the `age` (defaults to 1 day) and `uses` argument to 0 to make a permanent link (default behavior)
         """
         qr = qrcode.QRCode(
             version=1,
@@ -777,7 +865,7 @@ class Utilities(commands.Cog):
             await ctx.send(embed=em)
 
     @commands.command(aliases=['drunkify'])
-    async def mock(self, ctx, *, txt):
+    async def mock(self, ctx, *, txt: commands.clean_content):
         lst = [str.upper, str.lower]
         newText = await commands.clean_content().convert(ctx, ''.join(random.choice(lst)(c) for c in txt))
         if len(newText) <= 512:
@@ -820,7 +908,7 @@ class Utilities(commands.Cog):
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
     @commands.command(aliases=["ascii2hex"])
-    async def texttohex(self, ctx, *, txt):
+    async def texttohex(self, ctx, *, txt: str):
         try:
             hexoutput = await commands.clean_content().convert(ctx, (" ".join("{:02x}".format(ord(c)) for c in txt)))
         except Exception as e:
@@ -840,6 +928,7 @@ class Utilities(commands.Cog):
             cleanS = await commands.clean_content().convert(ctx, bytearray.fromhex(txt).decode())
         except Exception as e:
             await ctx.send(f"**Error: `{e}`. This probably means the text is malformed. Sorry, you can always try here: http://www.unit-conversion.info/texttools/hexadecimal/#data**")
+            return
         if len(cleanS) <= 479:
             await ctx.send(f"```{cleanS}```")
         else:
@@ -855,6 +944,7 @@ class Utilities(commands.Cog):
             cleanS = await commands.clean_content().convert(ctx, ' '.join(format(ord(x), 'b') for x in txt))
         except Exception as e:
             await ctx.send(f"**Error: `{e}`. This probably means the text is malformed. Sorry, you can always try here: http://www.unit-conversion.info/texttools/convert-text-to-binary/#data**")
+            return
         if len(cleanS) <= 479:
             await ctx.send(f"```fix\n{cleanS}```")
         else:
@@ -870,6 +960,7 @@ class Utilities(commands.Cog):
             cleanS = await commands.clean_content().convert(ctx, ''.join([chr(int(txt, 2)) for txt in txt.split()]))
         except Exception as e:
             await ctx.send(f"**Error: `{e}`. This probably means the text is malformed. Sorry, you can always try here: http://www.unit-conversion.info/texttools/convert-text-to-binary/#data**")
+            return
         if len(cleanS) <= 479:
             await ctx.send(f"```{cleanS}```")
         else:
@@ -879,7 +970,7 @@ class Utilities(commands.Cog):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def nickscan(self, ctx):
         @pag.embed_generator(max_chars=2048)
@@ -899,6 +990,7 @@ class Utilities(commands.Cog):
 
 
     @commands.command(aliases=["ipinfo","ipaddr"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def ip(self, ctx, ip: str = None):
         """
         Find out the information of an IP Address
@@ -915,7 +1007,6 @@ class Utilities(commands.Cog):
         await ctx.trigger_typing()
 
         try:
-
             async with aiohttp.ClientSession() as session:
                 async with session.get(f'https://ipapi.co/{ip}/json/') as resp:
                     resp.raise_for_status()
@@ -965,7 +1056,7 @@ class Utilities(commands.Cog):
             embd.set_footer(text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
 
             await ctx.send(embed=embd)
-        except:
+        except IndexError:
             await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! Make sure the IP and the formatting are correct!"))
         finally:
             await session.close()
@@ -975,7 +1066,7 @@ class Utilities(commands.Cog):
         """
         Converts ASCII Characters to Morse code and Vice Versa.
         """
-        mainemb = discord.Embed(description="This command can help you translate morse codes.\nHere are the available command:")
+        mainemb = discord.Embed(description="This command can help you translate morse codes.\nHere are the available commands:")
         mainemb.add_field(name="ASCII to Morse conversion", value="`[p]morse a2m [text]`")
         mainemb.add_field(name="Morse to ASCII conversion", value="`[p]morse m2a [text]`")
         await ctx.send(embed=mainemb)
@@ -1011,6 +1102,7 @@ class Utilities(commands.Cog):
         await ctx.send(embed=discord.Embed(title="ASCII to Morse Conversion:", description=encodedMessage, timestamp=datetime.utcnow()))
 
     @commands.command(aliases=["nationalize"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def nationality(self, ctx, * ,name: str = None):
         """
         This command predicts the nationality of a person given their name.
@@ -1044,11 +1136,12 @@ class Utilities(commands.Cog):
 
         await ctx.send(embed=emb)
 
-    @commands.command()
+    @commands.command(aliases=["wth"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def weather(self, ctx, *, city: str = None):
         """
         A command to check weather status
-        API Provided by: OpenWeatherMap
+        API Provided by: OpenWeatherMap.org
         """
 
         if city is None:
@@ -1063,28 +1156,42 @@ class Utilities(commands.Cog):
 
         locate = city.replace(" ", "+")
 
+        def degToCompass(deg):
+            val = int((deg/22.5)+.5)
+            arr = ["N","NNE","NE","ENE","E","ESE", "SE", "SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"]
+            return arr[(val % 16)]
+
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(f"http://api.openweathermap.org/data/2.5/weather?q={locate}&appid={key}") as resp:
+                async with session.get(f"http://api.openweathermap.org/data/2.5/weather?q={locate}&appid={key}&units=metric") as resp:
                     resp.raise_for_status()
                     data = json.loads(await resp.read(), object_hook=DictObject)
                     await session.close()
 
             cityname = data.name
             countryid = data.sys.country
+            country_flags = f":flag_{countryid.lower()}:"
             status = data.weather[0].main
             description = data.weather[0].description
+            sunrise = datetime.fromtimestamp(data.sys.sunrise)
+            sunset = datetime.fromtimestamp(data.sys.sunset)
+            clouds = data.clouds.all
             lon = data.coord.lon
             lat = data.coord.lat
-            temp = int(pytemperature.k2c(data.main.temp))
-            feels = int(pytemperature.k2c(data.main.feels_like))
-            t_min = int(pytemperature.k2c(data.main.temp_min))
-            t_max = int(pytemperature.k2c(data.main.temp_max))
+            temp_c = data.main.temp
+            feels_c = data.main.feels_like
+            t_min_c = data.main.temp_min
+            t_max_c = data.main.temp_max
+            temp_f =  float(pytemperature.c2f(temp_c))
+            feels_f = float(pytemperature.c2f(feels_c))
+            t_min_f = float(pytemperature.c2f(t_min_c))
+            t_max_f = float(pytemperature.c2f(t_max_c))
             pressure = data.main.pressure
             humidity = data.main.humidity
             vis = data.visibility
             wind = data.wind.speed
             wind_degree = data.wind.deg
+            wind_direction = degToCompass(wind_degree)
             icon = f"http://openweathermap.org/img/wn/{data.weather[0].icon}@2x.png"
         except IndexError:
             await ctx.send(embed=discord.Embed(description="⚠ An Error Occured while parsing the data."))
@@ -1101,21 +1208,24 @@ class Utilities(commands.Cog):
         embed = discord.Embed(title="Weather Information", timestamp=datetime.utcnow(), color=ctx.author.color)
         embed.set_thumbnail(url=icon)
 
-        embed.add_field(name="City Name", value=cityname, inline=False)
-        embed.add_field(name="Country ID", value=countryid, inline=False)
-        embed.add_field(name="Weather Status", value=status, inline=False)
-        embed.add_field(name="Description", value=description.title(), inline=False)
-        embed.add_field(name="Longitude", value=lon, inline=True)
-        embed.add_field(name="Latitude", value=lat, inline=True)
-        embed.add_field(name="Temperature", value=f"{temp}°C", inline=True)
-        embed.add_field(name="Feels Like", value=f"{feels}°C", inline=True)
-        embed.add_field(name="Min Temperature", value=f"{t_min}°C", inline=True)
-        embed.add_field(name="Max Temperature", value=f"{t_max}°C", inline=True)
-        embed.add_field(name="Pressure", value=f"{pressure} atm", inline=True)
-        embed.add_field(name="Humidity", value=f"{humidity}%", inline=True)
-        embed.add_field(name="Visibility", value=f"{vis} m", inline=True)
-        embed.add_field(name="Wind", value=f"{wind} m/sec", inline=True)
-        embed.add_field(name="Wind Direction", value=f"{wind_degree}°", inline=True)
+        embed.add_field(name="🏙 City Name", value=cityname, inline=False)
+        embed.add_field(name="🏳 Country ID", value=f"{countryid} {country_flags}", inline=False)
+        embed.add_field(name="🌻 Weather Status", value=status, inline=False)
+        embed.add_field(name="ℹ Condition", value=description.title(), inline=False)
+        embed.add_field(name="🌄 Sunrise", value=f"{sunrise} (UTC)", inline=True)
+        embed.add_field(name="🌇 Sunset", value=f"{sunset} (UTC)", inline=True)
+        embed.add_field(name="🌐 Longitude", value=lon, inline=True)
+        embed.add_field(name="🌐 Latitude", value=lat, inline=True)
+        embed.add_field(name="🌡 Current Temperature", value=f"{temp_c} °C ({temp_f} °F)", inline=True)
+        embed.add_field(name="🌡 Feels Like", value=f"{feels_c} °C ({feels_f} °F)", inline=True)
+        embed.add_field(name="🌡 Min Temperature", value=f"{t_min_c} °C ({t_min_f} °F)", inline=True)
+        embed.add_field(name="🌡 Max Temperature", value=f"{t_max_c} °C ({t_max_f} °F)", inline=True)
+        embed.add_field(name="☁ Cloudiness", value=f"{clouds}%", inline=True)
+        embed.add_field(name="🍃Pressure", value=f"{pressure} hPa", inline=True)
+        embed.add_field(name="🌬 Humidity", value=f"{humidity}%", inline=True)
+        embed.add_field(name="👀 Visibility", value=f"{vis} meter", inline=True)
+        embed.add_field(name="💨 Wind", value=f"{wind} m/sec", inline=True)
+        embed.add_field(name="🧭 Wind Direction", value=f"{wind_degree}° {wind_direction}", inline=True)
 
         await ctx.send(embed=embed)
 

@@ -15,3 +15,4 @@ PyDictionary
 pytemperature
 qrcode[pil]
 ciso8601
+python-benedict

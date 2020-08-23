@@ -59,6 +59,7 @@ class Mod(commands.Cog):
         return emb
 
     @commands.has_permissions(kick_members=True)
+    @commands.guild_only()
     @commands.command()
     async def kick(
         self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, reason: str = "Please write a reason!"
@@ -76,6 +77,7 @@ class Mod(commands.Cog):
         await ctx.send(embed = emb)
 
     @commands.has_permissions(ban_members=True)
+    @commands.guild_only()
     @commands.command()
     async def ban(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, reason: str = "Please write a reason!"):
         """Ban someone from the server."""
@@ -92,6 +94,7 @@ class Mod(commands.Cog):
 
     @commands.has_permissions(ban_members=True)
     @commands.command()
+    @commands.guild_only()
     async def unban(self, ctx, userid: discord.User, *, reasons: str = None):
         """Unban someone from the server."""
         ban = await ctx.guild.fetch_ban(userid)
@@ -118,6 +121,7 @@ class Mod(commands.Cog):
 
     @commands.cooldown(rate=1, per=5.0)
     @commands.has_permissions(manage_messages=True)
+    @commands.guild_only()
     @commands.command(aliases = ["del", "p", "prune"])
     async def purge(self, ctx, amount: int, member: libneko.converters.InsensitiveMemberConverter = None):
         """Clean a number of messages"""
@@ -139,6 +143,7 @@ class Mod(commands.Cog):
 
 
     @commands.has_permissions(ban_members=True)
+    @commands.guild_only()
     @commands.command(aliases=["banlist"])
     async def bans(self, ctx):
         """See a list of banned users in the guild"""
@@ -165,6 +170,7 @@ class Mod(commands.Cog):
     
 
     @commands.has_permissions(ban_members=True, view_audit_log=True)
+    @commands.guild_only()
     @commands.command()
     async def baninfo(self, ctx, *, userid: discord.User):
         """Check the reason of a ban from the audit logs."""
@@ -178,6 +184,7 @@ class Mod(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.has_permissions(manage_roles=True)
+    @commands.guild_only()
     @commands.command()
     async def addrole(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, role: libneko.converters.RoleConverter):
         """Add a role to someone else."""
@@ -209,6 +216,7 @@ class Mod(commands.Cog):
 #            print("Completed!")
         
     @commands.has_permissions(manage_roles=True)
+    @commands.guild_only()
     @commands.command()
     async def removerole(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, rolename: libneko.converters.RoleConverter):
         """Remove a role from someone else."""
@@ -219,6 +227,7 @@ class Mod(commands.Cog):
 
     @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
     @commands.has_permissions(ban_members=True)
+    @commands.guild_only()
     @commands.command()
     async def hackban(self, ctx, userid: int, *, reason = None):
         """Ban someone not in the server"""
@@ -239,6 +248,7 @@ class Mod(commands.Cog):
         await ctx.send(embed = emb)
 
     @commands.has_permissions(kick_members=True)
+    @commands.guild_only()
     @commands.command()
     async def mute(self, ctx, member: libneko.converters.InsensitiveMemberConverter, duration, *, reason: str = None):
         """Denies someone from chatting in all text channels and talking in voice channels for a specified duration"""
@@ -289,6 +299,7 @@ class Mod(commands.Cog):
             pass
 
     @commands.has_permissions(kick_members=True)
+    @commands.guild_only()
     @commands.command()
     async def unmute(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, reason: str = None):
         """Removes channel overrides for specified member"""
@@ -380,7 +391,7 @@ class Mod(commands.Cog):
             return
 
         if time > 21600:
-            await ctx.send(embed=discord.Embed(description="⛔ duration can't be over than 6 hours!"))
+            await ctx.send(embed=discord.Embed(description="⛔ Duration can't be over than 6 hours!"))
             return
 
         if seconds == "0s":

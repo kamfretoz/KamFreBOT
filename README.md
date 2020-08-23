@@ -2,10 +2,12 @@
 
 ## A simple Discord bot made by me for some of my private Discord servers
 
-This Frankenstein abomination of a bot is something i have made few years ago. The resulting accumulation of me copying some codes from another GitHub repo (only some, not the entire repo)
+This Frankenstein abomination of a bot is something i have made few years ago.
 Feel free to explore it by yourself
+**Warning: TERRIBLE CODE AHEAD**
+You have been warned.
 
-![Bootup Screen](/screenshot/bootup.png)
+![Bootup Screen](/screenshot/splash_bootup.gif)
 
 ## Installation
 
@@ -18,6 +20,7 @@ Feel free to explore it by yourself
 
 ## Customization
 
+> All configuration files has been moved to `/data` folder
 > For configuration, see `config.py` file.
 
 * This Bot has a custom boot/loading screen
@@ -42,6 +45,7 @@ Open up `config.py` and put your desired channel ID on `home` variable
 You will need to provide your own Token.
 Put the token on `coin.json` file
 And your YouTube API v3 Key on `/cogs/core/config.py`
+Also add your own OpenWeather API v3 Key to `/cogs/data/weather_api_key.json`
 
 ## Libraries used
 
@@ -50,9 +54,33 @@ And your YouTube API v3 Key on `/cogs/core/config.py`
 
 ## Credit
 
+Feel free to take any code you like! i don't mind :D
 I've tried to put the credit as much as i can on the code. If i'm missing anyone, let me know!
 
 * Discord.py [https://github.com/Rapptz/discord.py]
 * Libneko    [https://gitlab.com/koyagami/libneko/tree/master/]
+* Nekoka/Espy along with folks from **Discord Coding Academy** server for helping with errors and questions!
+  
+## APIs used
+
+* TheCatAPI [https://www.thecatapi.com/]
+* TheDogAPI [https://thedogapi.com/]
+* Random Fox [https://randomfox.ca/]
+* Shibe.online [https://shibe.online/]
+* Cat Facts [https://cat-fact.herokuapp.com/]
+* Advices Slip [https://adviceslip.com/]
+* Programming Quotes [https://programming-quotes-api.herokuapp.com/]
+* QuoteGarden [https://pprathameshmore.github.io/QuoteGarden/]
+* icanhazdadjoke [https://icanhazdadjoke.com/]
+* Chuck Norris API [https://api.chucknorris.io/]
+* Kanye REST [https://kanye.rest/]
+* Taylor REST [https://taylor.rest/]
+* XKCD
+* Jikan (MyAnimeList) [https://jikan.docs.apiary.io/#introduction/information]
+* Ergast F1 API [https://ergast.com/mrd/]
+* ipapi [https://ipapi.co/]
+* OpenWeatherMap [https://openweathermap.org/api]
+* Nationalize.io [https://nationalize.io/]
+* Rule34 API [https://github.com/kurozenzen/r34-json-api]
 
 [![Built with libneko](https://img.shields.io/badge/built%20with-libneko-ff69b4.svg)](https://gitlab.com/koyagami/libneko)

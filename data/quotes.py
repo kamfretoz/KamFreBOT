@@ -177,7 +177,7 @@ errors = [
 ## Collections of Bobert's Quote from "The Amazing World of Gumball" show. ##
 #############################################################################
 
-bobert = [
+bobert = (
     "*Scans Gumball's homework and fills it in automatically in 2,4 seconds* Homework complete!",
     "Computing request. *Playing Gumball's request* \"I just want to skip the whole hassle of life.\" Command integrated. Terminating Gumball's life.",
     "Computing... Negative. My processor cannot take things anymore literally.",
@@ -200,4 +200,4 @@ bobert = [
     "Commencing final extinction in T minus ten. Nine. Eight–",
     "Attachment detected: Gumball and Darwin. Illogical. Life forms cannot attach themselves to email.",
     "Extinction protocol conflict with life protection protocol. Illogical argument detected. Terminating extinction protocol."
-]
+)

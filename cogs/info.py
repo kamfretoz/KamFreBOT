@@ -292,7 +292,7 @@ class Information(commands.Cog):
         )
         await ctx.send(embed=server, content=None)
 
-    @serverinfo.command(name="icon", brief="Show the icon of this server.")
+    @serverinfo.command(name="icon", brief="Show the icon of this server.",aliases=["pfp","pp"])
     @commands.guild_only()
     async def serverinfo_icon(self, ctx):
         """
@@ -329,7 +329,7 @@ class Information(commands.Cog):
             await ctx.send(embed=nobanner)
 
 
-    @serverinfo.command(name="membercount", aliases=["count", "memcount", "members", "member"], brief="shows the amount of members on this server.")
+    @serverinfo.command(name="membercount", aliases=["count", "memcount", "members", "member", "mem"], brief="shows the amount of members on this server.")
     @commands.guild_only()
     async def serverinfo_membercount(self, ctx):
         """
@@ -365,6 +365,7 @@ class Information(commands.Cog):
 
     @serverinfo.command(aliases=["rl", "role"], no_pm=True, name="roleinfo", brief="Shows information about a role")
     @commands.guild_only()
+    @commands.bot_has_permissions(manage_roles=True)
     async def serverinfo_roleinfo(self, ctx, *, role: libneko.converters.RoleConverter):
         """Shows information about a role"""
         guild = ctx.guild
@@ -444,23 +445,24 @@ class Information(commands.Cog):
         else:
             perms = perms.strip(", ")
 
-        em = discord.Embed(colour=color)
-        em.set_author(name=role.name)
+        em = discord.Embed(title=f"`{role.name}` Role Information",colour=color, timestamp=datetime.utcnow())
         em.add_field(name="Users", value=len(role.members))
         em.add_field(name="Mentionable", value=role.mentionable)
-        em.add_field(name="Hoist", value=role.hoist)
+        em.add_field(name="Hoisted", value=role.hoist)
         em.add_field(name="Position from Bottom", value=role.position)
         em.add_field(name="Managed", value=role.managed)
-        em.add_field(name="Colour", value=colour)
+        em.add_field(name="Color", value=colour)
         em.add_field(name="Creation Date", value=created_on)
         em.add_field(name='Permissions', value=perms, inline=False)
         em.set_footer(text=f"Role ID: {role.id}")
 
         await ctx.send(embed=em)
 
-    @commands.guild_only()
+    
     @serverinfo.command(name="inrole", aliases=["inrl"], brief="Show the list of users on a particular role.")
-    async def serverinfo_inrole(self, ctx, role:libneko.converters.RoleConverter = None):
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_roles=True)
+    async def serverinfo_inrole(self, ctx, * ,role:libneko.converters.RoleConverter = None):
         """
         Show the list of users on a particular role.
         """
@@ -472,27 +474,26 @@ class Information(commands.Cog):
             colour = str(role.colour).upper()
             color = role.colour
 
-        try:
-            if role is None:
-                await ctx.send(discord.Embed(description="⚠ Please specify the role."))
-            else:
-                @pag.embed_generator(max_chars=2048)
-                def det_embed(paginator, page, page_index):
-                    embed = discord.Embed(description=page, title=f"Members on {role.name} role:", color=colour)
-                    embed.set_footer(text=f"{str(len(role.members))} Members in Total.")
-                    return embed
+        if role is None:
+            await ctx.send(discord.Embed(description="⚠ Please specify the role."))
+        else:
+            @pag.embed_generator(max_chars=2048)
+            def det_embed(paginator, page, page_index):
+                embed = discord.Embed(description=page, title=f"Members on `{role.name}` role:", color=color, timestamp=datetime.utcnow())
+                embed.set_footer(text=f"{str(len(role.members))} Members in Total.")
+                return embed
+            lst = pag.EmbedNavigatorFactory(factory=det_embed)
+            members = ""
 
-
-                lst = pag.EmbedNavigatorFactory(factory=det_embed)
-
-                members = ""
+            try:
                 for user in role.members:
                     members += f"{user}\n"
+            except discord.Forbidden:
+                await ctx.send(embed=discord.Embed(description="⚠ Role cannot be found or i dont have permission!"))
+                return
 
-                lst += members
-                lst.start(ctx)
-        except:
-            await ctx.send(embed=discord.Embed(description="⚠ Role Cannot be found or I don't have permission!"))
+            lst += members
+            lst.start(ctx)
 
 
     @serverinfo.command(name="owner", aliases=["own"], brief="Shows the owner of this server")
@@ -644,8 +645,8 @@ class Information(commands.Cog):
             await ctx.send(embed=nosplash)
 
     @commands.command(invoke_without_command=True,aliases=["uins"])
-    async def userinspect(self, ctx, user: libneko.converters.InsensitiveUserConverter = None):
-        """Show info about a user. If not specified, the command caller info will be shown instead. This command will works accross servers!"""
+    async def userinspect(self, ctx, * ,user: libneko.converters.InsensitiveUserConverter = None):
+        """Show info about a user. If not specified, the command caller info will be shown instead. This command is meant to inspect user that aren't in current server (But they need to be in the same server as this bot)!"""
         await ctx.trigger_typing()
 
         if user is None:
@@ -696,9 +697,9 @@ class Information(commands.Cog):
 
         await ctx.send(embed=usr)
 
-    @commands.group(invoke_without_command=True,aliases=["user", "ui", "profile"])
+    @commands.group(invoke_without_command=True,aliases=["user", "ui", "profile","uinf"])
     @commands.guild_only()
-    async def userinfo(self, ctx, user: libneko.converters.InsensitiveMemberConverter = None):
+    async def userinfo(self, ctx, * ,user: libneko.converters.InsensitiveMemberConverter = None):
         """Show info about the user. If not specified, the command caller info will be shown instead."""
         await ctx.trigger_typing()
 
@@ -763,8 +764,8 @@ class Information(commands.Cog):
             inline=False
         )
         member.add_field(
-            name="》 Member since",
-            value=f'{user.joined_at.strftime("%B %d, %Y at %I:%M %p")}',
+            name="》 Joined at",
+            value=f'{user.joined_at.strftime("%B %d, %Y on %I:%M %p")}',
             inline=False,
         )
         member.add_field(

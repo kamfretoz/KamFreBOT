@@ -22,7 +22,7 @@ class F1MotorSport(commands.Cog):
         await ctx.send(embed=mainemb)
 
     @f1.command(name="schedule", aliases=["racesched"], brief="Shows the schedule of F1™ races.")
-    async def f1_raceschedule(self, ctx, season: str = "current", round: int = 1):
+    async def f1_raceschedule(self, ctx, season: str = "current", round: str = "last"):
         """
         Shows the schedule of F1™ races.
         `[p]f1 schedule <season> <round>`
@@ -57,12 +57,12 @@ class F1MotorSport(commands.Cog):
 
         emb = discord.Embed(title="F1™ Race Schedule Information", timestamp=datetime.utcnow())
         emb.set_thumbnail(url="https://i.ibb.co/nRfTBPZ/F1.png")
+        emb.add_field(name="Race",value=f"[{racename}]({urlrace})", inline=False)
+        emb.add_field(name="Circuit", value=f"[{circuitname}]({urlcircuit})", inline=False)
         emb.add_field(name="Season", value=seasoninfo, inline=True)
         emb.add_field(name="Round", value=rnd, inline=True)
         emb.add_field(name="Date", value=date, inline=False)
         emb.add_field(name="Time", value=time, inline=False)
-        emb.add_field(name="Race Name",value=f"[{racename}]({urlrace})", inline=False)
-        emb.add_field(name="Circuit Name", value=f"[{circuitname}]({urlcircuit})", inline=False)
         emb.add_field(name="Country", value=country, inline=False)
         emb.add_field(name="Location", value=loc, inline=False)
         emb.add_field(name="Longitude", value=long, inline=True)
@@ -131,12 +131,12 @@ class F1MotorSport(commands.Cog):
 
         emb = discord.Embed(title="F1™ Race Result Information")
         emb.set_thumbnail(url="https://i.ibb.co/nRfTBPZ/F1.png")
+        emb.add_field(name="Race",value=f"[{racename}]({urlrace})", inline=False)
+        emb.add_field(name="Circuit", value=f"[{circuitname}]({urlcircuit})", inline=False)
         emb.add_field(name="Season", value=seasoninfo, inline=True)
         emb.add_field(name="Round", value=rnd, inline=True)
         emb.add_field(name="Date", value=date, inline=False)
         emb.add_field(name="Time", value=time, inline=False)
-        emb.add_field(name="Race Name",value=f"[{racename}]({urlrace})", inline=False)
-        emb.add_field(name="Circuit Name", value=f"[{circuitname}]({urlcircuit})", inline=False)
         emb.add_field(name="Country", value=country, inline=False)
         emb.add_field(name="Location", value=loc, inline=False)
         emb.add_field(name="Longitude", value=long, inline=True)
@@ -144,7 +144,7 @@ class F1MotorSport(commands.Cog):
 
         embdrv = discord.Embed(title="Driver Information")
         embdrv.set_thumbnail(url="https://i.ibb.co/nRfTBPZ/F1.png")
-        embdrv.add_field(name="Driver Name", value=f"[{givendrvname} {fmdrvname}]({drvurl})", inline=False)
+        embdrv.add_field(name="Name", value=f"[{givendrvname} {fmdrvname}]({drvurl})", inline=False)
         embdrv.add_field(name="Date of Birth", value=drvdob, inline=False)
         embdrv.add_field(name="Nationality", value=drvnatio, inline=False)
         embdrv.add_field(name="Number", value=drvnum, inline=True)
@@ -163,7 +163,7 @@ class F1MotorSport(commands.Cog):
         embstats.add_field(name="Fastest Lap", value=fslap, inline=False)
         embstats.add_field(name="Fastest Lap Time", value=fslaptime, inline=False)
         embstats.add_field(name="Fastest Lap Rank", value=fslaprank, inline=False)
-        embstats.add_field(name="Average Speed", value=f"{avgspeed} {avgspeedunit.title()}", inline=False)
+        embstats.add_field(name="Average Speed", value=f"{avgspeed} {avgspeedunit.upper()}", inline=False)
 
         allembeds = [emb, embdrv, embcons, embstats]
 

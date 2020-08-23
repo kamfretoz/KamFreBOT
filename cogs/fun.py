@@ -10,6 +10,7 @@ import os
 import json
 import ciso8601
 import data.topics as topics
+from textwrap import shorten
 from collections import deque
 from datetime import datetime
 from random import randint, sample
@@ -130,6 +131,7 @@ ZALGO_CHARS = {
     ],
 }
 
+# CREDIT TO: Nekoka/Espy Tysm!
 class DictObject(dict):
     def __getattr__(self, item):
         return self[item]
@@ -284,7 +286,7 @@ class Fun(commands.Cog):
         await ctx.send(embed=flip)
 
 
-    @commands.command(aliases=["qt"])
+    @commands.command(aliases=["bqt"], hidden=True)
     async def bobertquote(self, ctx):
         """Send a random Bobert Quote!"""
         choice = str(random.choice(quotes.bobert))
@@ -622,6 +624,7 @@ class Fun(commands.Cog):
                 "Better not tell you now",
                 "Cannot predict now",
                 "Concentrate and ask again",
+                "I'm not sure about that right now"
             ],
             "psbad": [
                 "Don't count on it",
@@ -629,6 +632,7 @@ class Fun(commands.Cog):
                 "My sources say no",
                 "Outlook not so good",
                 "Very doubtful",
+                "No",
             ],
         }
         choice = random.choice(random.choice(list(ps.values())))
@@ -644,15 +648,15 @@ class Fun(commands.Cog):
         eightball.add_field(name="Question:", value=question.capitalize(), inline=False)
         eightball.add_field(name="Answer:", value=f"{choice}.")
         eightball.set_author(
-            name="The mighty 8-Ball", icon_url="https://i.imgur.com/Q9dxpTz.png"
-        )
+            name="The mighty 8-Ball")
+        eightball.set_thumbnail(url="https://i.imgur.com/Q9dxpTz.png")
         await ctx.send(embed=eightball, content=None)
 
     @commands.command(hidden=True, aliases=["ily"])
     async def iloveyou(self, ctx):
         await ctx.send(f"{ctx.author.mention}, I love you too! :heart::heart::heart:")
 
-    @commands.command(aliases=["rr"])
+    @commands.command(aliases=["rr"], hidden=True)
     async def rickroll(self, ctx):
         """
         Never gonna give you up...
@@ -661,9 +665,7 @@ class Fun(commands.Cog):
         rick.set_image(url="https://i.kym-cdn.com/photos/images/original/000/041/494/1241026091_youve_been_rickrolled.gif")
         await ctx.send(embed=rick)
 
-    @commands.command(
-        aliases=["bg"], disabled=True
-    )
+    @commands.command(aliases=["bg"], disabled=True)
     async def bigtext(self, ctx, *, text: str):
         """
         Make your text 🇧 🇮 🇬
@@ -677,6 +679,7 @@ class Fun(commands.Cog):
         await ctx.send(s)
 
     @commands.command(aliases=["kitty", "kitten", "kat","catto"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def cat(self, ctx):
         """
         Send cute cat pics.
@@ -695,9 +698,9 @@ class Fun(commands.Cog):
         embed.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
         embed.set_image(url=url)
         await ctx.send(embed=embed)
-        await ctx.message.delete()
 
     @commands.command(aliases=["doggie","doge","doggo"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def dog(self, ctx):
         """
         Send cute dog pics.
@@ -716,9 +719,9 @@ class Fun(commands.Cog):
         embed.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
         embed.set_image(url=url)
         await ctx.send(embed=embed)
-        await ctx.message.delete()
 
     @commands.command(aliases=["foxes"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def fox(self, ctx):
         """
         Send cute fox pics.
@@ -736,9 +739,9 @@ class Fun(commands.Cog):
         emb.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
         emb.set_image(url=image)
         await ctx.send(embed=emb)
-        await ctx.message.delete()
 
     @commands.command()
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def shibe(self, ctx):
         """
         Send cute shibe pics.
@@ -756,9 +759,9 @@ class Fun(commands.Cog):
         emb.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
         emb.set_image(url=img)
         await ctx.send(embed=emb)
-        await ctx.message.delete()
 
     @commands.command(aliases=["catfact"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def catfacts(self, ctx):
         """
         Get a random cat facts!
@@ -779,6 +782,7 @@ class Fun(commands.Cog):
         await ctx.send(embed=emb)
 
     @commands.command(aliases=["adv"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def advice(self, ctx):
         """
         Get a piece of Advice!
@@ -796,7 +800,8 @@ class Fun(commands.Cog):
         emb = discord.Embed(title="Here's some advice for you :)", description=adv,color = ctx.author.color, timestamp=datetime.utcnow())
         await ctx.send(embed=emb)
 
-    @commands.command(aliases=["prgquote"])
+    @commands.command(aliases=["prgquote","prqt"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def programmingquote(self, ctx):
         """
         Get a random programming quote!
@@ -816,7 +821,8 @@ class Fun(commands.Cog):
         emb.set_footer(text=f"Quote by: {aut}")
         await ctx.send(embed=emb)
 
-    @commands.command(aliases=["randquote", "inspire"])
+    @commands.command(aliases=["randquote", "inspire","qt"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def quote(self, ctx):
         """
         Get a random quote!
@@ -837,7 +843,8 @@ class Fun(commands.Cog):
 
         await ctx.send(embed=emb)
     
-    @commands.command(aliases=["daddyjokes","dadjoke"])
+    @commands.command(aliases=["daddyjokes","dadjoke","djoke"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def dadjokes(self, ctx):
         """
         Send Dad Jokes
@@ -861,6 +868,7 @@ class Fun(commands.Cog):
         await ctx.send(embed=emb)
 
     @commands.command(aliases=["chnorris","chnr","cn","chuck"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def chucknorris(self, ctx):
         """
         You Didn't run this command, Chuck Norris throw this command at your face.
@@ -883,6 +891,7 @@ class Fun(commands.Cog):
         await ctx.send(embed=emb)
 
     @commands.command(aliases=["kw","kanye"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def kanyewest(self, ctx):
         """
         Get a random Kanye West quote!
@@ -903,6 +912,7 @@ class Fun(commands.Cog):
         await ctx.send(embed=emb)
 
     @commands.command(aliases=["ts","taylor"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def taylorswift(self, ctx):
         """
         Get a random Taylor Swift quote!
@@ -936,7 +946,7 @@ class Fun(commands.Cog):
         )
         await ctx.send(embed=gugel, content=None)
 
-    @commands.command(aliases=["succ"])
+    @commands.command(aliases=["succ"], hidden=True)
     async def zucc(self, ctx):
         """Gives you the zucc"""
         zuccy = discord.Embed()
@@ -945,13 +955,92 @@ class Fun(commands.Cog):
         )
         await ctx.send(embed=zuccy, content="<:zucc:451945809144184862>")
 
+    @commands.command(hidden=True, aliases=["pelota"])
+    async def bola(self, ctx):
+        """Bola"""
+
+
+        def_bola = "https://i.ibb.co/87j54jp/bola.png"
+        def_pelota = "https://cdn.discordapp.com/attachments/617178714173603867/743032290682077184/1597223408911.png"
+        if ctx.invoked_with == "pelota":
+            pel = discord.Embed()
+            pel.set_image(url=def_pelota)
+            await ctx.send(embed=pel)
+            return
+
+        bol = discord.Embed()
+        bol.set_image(url=def_bola)
+        await ctx.send(embed=bol)
+
+    @commands.command(hidden=True, aliases=["owo"])
+    async def interject(self, ctx):
+        """What you’re referring to as Linux, is in fact, GNyU/Linux, or as I’ve recentwy taken to cawwing it, GNyU pwus Linyux."""
+        uwu = discord.Embed(description="||[Don't Click Here](https://www.youtube.com/watch?v=QXUSvSUsx80)||")
+        uwu.set_image(
+            url="https://i.ytimg.com/vi/QXUSvSUsx80/maxresdefault.jpg"
+        )
+        await ctx.send(embed=uwu)
+
+    @commands.command(hidden=True, aliases=["banned"])
+    async def banido(self, ctx):
+        """Banned!"""
+        ban = discord.Embed(description="You have been banned!")
+        ban.set_image(
+            url="https://media1.tenor.com/images/8a7663d1d754046373a5735fab9c14fa/tenor.gif"
+        )
+        await ctx.send(embed=ban)
+
+    @commands.command(hidden=True, aliases=["distraction"])
+    async def distract(self, ctx):
+        """Really?"""
+        dis = discord.Embed(description="You have been distracted.")
+        dis.set_image(
+            url="https://i.ibb.co/1ZHX2SZ/stickdancin.gif"
+        )
+        await ctx.send(embed=dis)
+
+    @commands.command(hidden=True)
+    @commands.cooldown(rate=2, per=3, type=commands.BucketType.user)
+    async def slap(self, ctx, member: libneko.converters.InsensitiveMemberConverter = None):
+        """IRC Style Trout Slap"""
+        if member is None:
+            await ctx.send("You have slapped yourself.")
+        elif member.id == ctx.bot.user.id:
+            await ctx.send(f'You rolled a Critical Fail...\nThe trout bounces off and rebounds on the attacker.') 
+            await ctx.send(f'{ctx.author.mention} '
+                           f'you shoot yourself')
+        else:
+            await ctx.send(f'*slapping noises* I slapped you! '
+                           f'{member.mention} ')
+
+    @commands.command(hidden=True, aliases=["rw"])
+    async def rewind(self, ctx):
+        """Rewind the time!"""
+        imgs = [
+            "https://media1.tenor.com/images/d29dc08bce25f5de5051ad2f6d3b5a99/tenor.gif",
+            "https://media1.tenor.com/images/3619126efbfc2d3f15eb60cabd6457ea/tenor.gif"
+        ]
+        rew = discord.Embed(description="YAAAAA IT'S REWIND TIME!")
+        rew.set_image(
+            url=random.choice(imgs)
+        )
+        await ctx.send(embed=rew)
+
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.guild)
     @commands.command(name="curse", aliases=("oppugno", "jynx", "kutuk", "santet"))
     async def emoji_curse(self, ctx, user: discord.Member = None, emoji: discord.Emoji = None):
-        if user is None or emoji is None:
+        if user is None and emoji is None:
             await ctx.send(embed=discord.Embed(description="Please specify who to curse and with what emoji!"))
             return
 
+        if emoji is None:
+            await ctx.send(embed=discord.Embed(description="Please specify what emoji to use!"))
+            return
+
+        if user.id == ctx.bot.user.id:
+            user = ctx.message.author
+            await ctx.send(embed=discord.Embed(description="HA! Nice try! But unfortunately i'm immune to the curse and so the curse goes back to sender!"))
+            
         emoji = (
             self.bot.get_emoji(int(emoji.split(":")[2].strip(">")))
             if "<:" in emoji or "<a:" in emoji
@@ -1030,6 +1119,7 @@ class Fun(commands.Cog):
 
     @commands.command()
     @commands.bot_has_permissions(embed_links=True, add_reactions=True)
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def xkcd(self, ctx, *, entry_number=None):
         """Post a random xkcd"""
         await ctx.trigger_typing()
@@ -1073,7 +1163,10 @@ class Fun(commands.Cog):
         
         # A Small Easter Egg for a server
         if name1 == "mixtape" and name2 == "calliope":
-            shipnumber = random.randint(95,100)
+            shipnumber = 100
+        # This one is a joke i promise
+        if name1 == "qwerty32" and name2 == "sergade":
+            shipnumber = 100
             
         if 0 <= shipnumber <= 10:
             status = "Really low! {}".format(random.choice(["Friendzone ;(", 
@@ -1117,12 +1210,14 @@ class Fun(commands.Cog):
                                                               "There's a sign of a match!", 
                                                               "I sense a match!", 
                                                               "A few things can be imporved to make this a match made in heaven!"]))
-        elif 90 < shipnumber <= 100:
+        elif 90 < shipnumber <= 99:
             status = "True love! {}".format(random.choice(["It's a match!", 
                                                            "There's a match made in heaven!", 
                                                            "It's definitely a match!", 
                                                            "Love is truely in the air!", 
                                                            "Love is most definitely in the air!"]))
+        elif shipnumber == 100:
+            status = "Forever lover! {}".format(random.choice(["Forever together and never be apart."]))
 
         meter = "🖤🖤🖤🖤🖤🖤🖤🖤🖤🖤"
 
@@ -1152,8 +1247,10 @@ class Fun(commands.Cog):
             shipColor = 0xE80303
         elif 33 < shipnumber < 66:
             shipColor = 0xff6600
-        else:
+        elif 67 < shipnumber < 90:
             shipColor = 0x3be801
+        else:
+            shipColor = 0xee82ee
 
         emb = (discord.Embed(color=shipColor, \
                              title="Love test for:", \
@@ -1183,6 +1280,10 @@ class Fun(commands.Cog):
         if not user:
             user = ctx.author.name
         gayness = random.randint(0,100)
+
+        if user == "qwertade":
+            gayness = 100
+
         if gayness <= 33:
             gayStatus = random.choice(["No homo", 
                                        "Wearing socks", 
@@ -1238,8 +1339,8 @@ class Fun(commands.Cog):
             meter = "🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈🏳‍🌈"
 
         emb = discord.Embed(description=f"Gayness for **{user}**", color=gayColor)
-        emb.add_field(name="Gayness:", value=f"{gayness}% gay")
-        emb.add_field(name="Comment:", value=f"{gayStatus} :kiss_mm:")
+        emb.add_field(name="Gayness:", value=f"{gayness}% gay", inline=False)
+        emb.add_field(name="Comment:", value=f"{gayStatus} :kiss_mm:", inline=False)
         emb.add_field(name="Gay Meter:", value=meter, inline=False)
         emb.set_author(name="Gay-O-Meter™", icon_url="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/ICA_flag.svg/2000px-ICA_flag.svg.png")
         await ctx.send(embed=emb)
@@ -1345,11 +1446,9 @@ class Fun(commands.Cog):
             embed_quote = discord.Embed(title="Here is a question...", description=f"{choice}",timestamp = datetime.utcnow())
             embed_quote.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
             await ctx.send(embed=embed_quote)
-        if len(topics.usedTopics) > 63:
             topics.usedTopics.popleft()
-        return
 
-    @commands.command(aliases=["truths"])
+    @commands.command(aliases=["truths","thetruth"])
     async def truth(self, ctx):
         """Spill out TheTruth!"""
         await ctx.trigger_typing()
@@ -1359,9 +1458,7 @@ class Fun(commands.Cog):
             embed_quote = discord.Embed(title="Let's start a Truth game!", description=f"{choice}",timestamp = datetime.utcnow())
             embed_quote.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
             await ctx.send(embed=embed_quote)
-        if len(topics.usedTruth) > 63:
             topics.usedTruth.popleft()
-        return
 
     @commands.command(aliases=["dares"])
     async def dare(self, ctx):
@@ -1373,18 +1470,16 @@ class Fun(commands.Cog):
             embed_quote = discord.Embed(title="Here is a Dare for you!", description=f"{choice}",timestamp = datetime.utcnow())
             embed_quote.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
             await ctx.send(embed=embed_quote)
-        if len(topics.usedDare) > 63:
             topics.usedDare.popleft()
-        return
 
     @commands.group(aliases=["mal","anime"], invoke_without_command=True)
-    @commands.cooldown(rate=2, per=3.0, type=commands.BucketType.user)
+    @commands.cooldown(rate=2, per=3.0, type=commands.BucketType.guild)
     async def myanimelist(self, ctx, * , name: str = None):
         """
         Find anime information from MyAnimeList!
         """
         if name is None:
-            await ctx.send(embed=discord.Embed(description="Please specifiy the title to find!"))
+            await ctx.send(embed=discord.Embed(description="Please specifiy the anime title to find!"))
             return
 
         if len(name) < 3 :
@@ -1402,11 +1497,12 @@ class Fun(commands.Cog):
                     data = json.loads(await resp.read(), object_hook=DictObject)
                     await session.close()
         except aiohttp.client_exceptions.ClientResponseError:
-            await ctx.send(embed=discord.Embed(description="⚠ No result was found."))
-            return
-        finally:
+            await ctx.send(embed=discord.Embed(description="⚠ No result was found or i was rate limited, Please try again later."))
             await session.close()
             return
+            
+
+        emb = discord.Embed(title="MyAnimeList Anime Information", timestamp=datetime.utcnow())
 
         try:
             anime_id = data.results[0].mal_id
@@ -1418,13 +1514,16 @@ class Fun(commands.Cog):
             anime_type = data.results[0].type
             total_episode = data.results[0].episodes
             score = data.results[0].score
-            start = data.results[0].start_date
-            end = data.results[0].end_date
-            mem = data.results[0].members
-            rate = data.results[0].rated
         except IndexError:
-            await ctx.send(embed=discord.Embed(description="⚠ No result was found."))
-            return
+             await ctx.send(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+             return
+
+        if int(score) == 0 or score is None:
+            score = "N/A"
+
+        start = data.results[0].start_date
+        end = data.results[0].end_date
+        mem = data.results[0].members
 
         # Time zone converter (a few checks will depends on the presence of time_end value)
         time_start = ciso8601.parse_datetime(start)
@@ -1438,19 +1537,34 @@ class Fun(commands.Cog):
             anime_status = "Ongoing"
             total_episode = "Not yet determined."
 
-        emb = discord.Embed(title="MyAnimeList Anime Information", timestamp=datetime.utcnow())
-        emb.set_thumbnail(url=anime_img)
-        emb.add_field(name="Title", value=f"[{anime_title}]({anime_url})", inline=False)
-        emb.add_field(name="Synopsis", value=anime_synopsis, inline=False)
-        emb.add_field(name="Status", value=anime_status, inline=False)
-        emb.add_field(name="Type", value=anime_type, inline=False)
-        emb.add_field(name="First Air Date", value=formatted_start, inline=False)
-        emb.add_field(name="Last Air Date", value=formatted_end, inline=False)
-        emb.add_field(name="Episodes", value=total_episode, inline=True)
-        emb.add_field(name="Score", value=score, inline=True)
-        emb.add_field(name="Rated", value=rate, inline=True)
-        emb.add_field(name="Members", value=mem, inline=True)
-        emb.add_field(name="ID", value=anime_id, inline=True)
+        if len(anime_synopsis) > 768:
+            shorten(anime_synopsis,width=756,placeholder="...")
+        
+        emb.set_image(url=anime_img)
+        emb.set_thumbnail(url="https://cdn.myanimelist.net/img/sp/icon/apple-touch-icon-256.png")
+        emb.add_field(name="📝 Title", value=f"[{anime_title}]({anime_url})", inline=False)
+        emb.add_field(name="ℹ Synopsis", value=anime_synopsis, inline=False)
+        emb.add_field(name="⌛ Status", value=anime_status, inline=False)
+        emb.add_field(name="📺 Type", value=anime_type, inline=False)
+        emb.add_field(name="📅 First Air Date", value=formatted_start, inline=False)
+        emb.add_field(name="📅 Last Air Date", value=formatted_end, inline=False)
+        emb.add_field(name="💿 Episodes", value=total_episode, inline=True)
+        emb.add_field(name="⭐ Score", value=f"{score}/10", inline=True)
+        
+        try:
+            rate = data.results[0].rated
+            if rate is None:
+                rate = "Unknown"
+            emb.add_field(name="🔞 Rated", value=rate, inline=True)
+        except IndexError:
+            pass
+        except AttributeError:
+            pass
+        except KeyError:
+            pass
+
+        emb.add_field(name="👥 Members", value=mem, inline=True)
+        emb.add_field(name="💳 ID", value=anime_id, inline=True)
 
         await ctx.send(embed=emb)
 
@@ -1461,7 +1575,7 @@ class Fun(commands.Cog):
         Find manga information from MyAnimeList!
         """
         if name is None:
-            await ctx.send(embed=discord.Embed(description="Please specifiy the title to find!"))
+            await ctx.send(embed=discord.Embed(description="Please specifiy the manga title to find!"))
             return
 
         if len(name) < 3 :
@@ -1479,18 +1593,15 @@ class Fun(commands.Cog):
                     data = json.loads(await resp.read(), object_hook=DictObject)
                     await session.close()
         except aiohttp.client_exceptions.ClientResponseError:
-            await ctx.send(embed=discord.Embed(description="⚠ No result was found."))
-            return
-        finally:
+            await ctx.send(embed=discord.Embed(description="⚠ No result was found or i was rate limited, Please try again later."))
             await session.close()
             return
-
 
         try:
             manga_title = data.results[0].title
             manga_url = data.results[0].url
             img_url = data.results[0].image_url
-            # stat = data.results[0].publishing
+            stat = data.results[0].publishing
             manga_synopsis = data.results[0].synopsis
             manga_type = data.results[0].type
             manga_chapters = data.results[0].chapters
@@ -1499,25 +1610,33 @@ class Fun(commands.Cog):
             pub_date = data.results[0].start_date
             memb = data.results[0].members
             manga_id = data.results[0].mal_id
-
             time_start = ciso8601.parse_datetime(pub_date)
             formatted_start = time_start.strftime("%B %d, %Y")
         except IndexError:
-            await ctx.send(embed=discord.Embed(description="⚠ No result was found."))
+            await ctx.send(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
             return
 
+        if stat is True:
+            stat = "Ongoing"
+        else:
+            stat = "Finished"
+
+        if len(manga_synopsis) > 768:
+            shorten(manga_synopsis,width=756,placeholder="...")
+
         emb = discord.Embed(title="MyAnimeList Manga Information", timestamp=datetime.utcnow())
-        emb.set_thumbnail(url=img_url)
-        emb.add_field(name="Title", value=f"[{manga_title}]({manga_url})", inline=False)
-        emb.add_field(name="Synopsis", value=manga_synopsis, inline=False)
-        # emb.add_field(name="Published", value=stat, inline=False)
-        emb.add_field(name="Type", value=manga_type, inline=False)
-        emb.add_field(name="Published Date", value=formatted_start, inline=False)
-        emb.add_field(name="Volumes", value=manga_volumes, inline=True)
-        emb.add_field(name="Chapters", value=manga_chapters, inline=True)
-        emb.add_field(name="Score", value=score, inline=True)
-        emb.add_field(name="Members", value=memb, inline=True)
-        emb.add_field(name="ID", value=manga_id, inline=True)
+        emb.set_image(url=img_url)
+        emb.set_thumbnail(url="https://cdn.myanimelist.net/img/sp/icon/apple-touch-icon-256.png")
+        emb.add_field(name="📑 Title", value=f"[{manga_title}]({manga_url})", inline=False)
+        emb.add_field(name="ℹ Synopsis", value=manga_synopsis, inline=False)
+        emb.add_field(name="⏳ Status", value=stat, inline=False)
+        emb.add_field(name="📁 Type", value=manga_type, inline=False)
+        emb.add_field(name="📅 Publish Date", value=formatted_start, inline=False)
+        emb.add_field(name="📚 Volumes", value=manga_volumes, inline=True)
+        emb.add_field(name="📰 Chapters", value=manga_chapters, inline=True)
+        emb.add_field(name="⭐ Score", value=f"{score}/10", inline=True)
+        emb.add_field(name="👥 Members", value=memb, inline=True)
+        emb.add_field(name="💳 ID", value=manga_id, inline=True)
 
         await ctx.send(embed=emb)
 
@@ -1546,9 +1665,7 @@ class Fun(commands.Cog):
                     data = json.loads(await resp.read(), object_hook=DictObject)
                     await session.close()
         except aiohttp.client_exceptions.ClientResponseError:
-            await ctx.send(embed=discord.Embed(description="⚠ No result was found."))
-            return
-        finally:
+            await ctx.send(embed=discord.Embed(description="⚠ No result was found or i was rate limited, Please try again later."))
             await session.close()
             return
 
@@ -1559,30 +1676,31 @@ class Fun(commands.Cog):
 
         emb = discord.Embed(title="MyAnimeList Character Information", timestamp=datetime.utcnow())
         emb.set_image(url=char_img)
-        emb.add_field(name="Name", value=f"[{char_name}]({char_url})", inline=False)
+        emb.set_thumbnail(url="https://cdn.myanimelist.net/img/sp/icon/apple-touch-icon-256.png")
+        emb.add_field(name="👤 Name", value=f"[{char_name}]({char_url})", inline=False)
 
         try:
             alt_name = data.results[0].alternative_names[0]
-            emb.add_field(name="Alternative Name", value=f"{alt_name}", inline=False)
+            emb.add_field(name="👥 Alternative Name", value=f"{alt_name}", inline=False)
         except IndexError:
             pass
 
         try:
             char_anime_name = data.results[0].anime[0].name
             char_anime_url = data.results[0].anime[0].url
-            emb.add_field(name="Animeography", value=f"[{char_anime_name}]({char_anime_url})", inline=False)
+            emb.add_field(name="📺 Animeography", value=f"[{char_anime_name}]({char_anime_url})", inline=False)
         except IndexError:
             pass
             
         try:
             char_manga_name = data.results[0].manga[0].name
             char_manga_url = data.results[0].manga[0].url
-            emb.add_field(name="Mangaography", value=f"[{char_manga_name}]({char_manga_url})", inline=False)
+            emb.add_field(name="📚 Mangaography", value=f"[{char_manga_name}]({char_manga_url})", inline=False)
         except IndexError:
             pass
 
 
-        emb.add_field(name="ID", value=char_id, inline=True)
+        emb.add_field(name="💳 ID", value=char_id, inline=True)
 
         await ctx.send(embed=emb)
 

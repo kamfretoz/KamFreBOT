@@ -2,7 +2,7 @@ from collections import deque
 
 usedTopics = deque()
 
-questions = [
+questions = (
     "If you had god-like powers for one day, what would you do with them?",
     "If you had the chance to talk to anyone, alive or dead, who would it be and what would you talk about?",
     "What's worse and why: having expectations that are too high or having no expectations at all?",
@@ -102,16 +102,15 @@ questions = [
     "If you could learn the answer to one question about your future, what would the question be?",
     "How often do you curse? And what’s your go-to string of curse words?",
     "What is the silliest fear you have?"
-]
+)
 
 usedTruth = deque()
 
-truth = [
+truth = (
     "When was the last time you lied?",
     "When was the last time you cried?",
     "What's your biggest fear?",
     "What's your biggest fantasy?",
-    "Do you have any fetishes?",
     "What's something you're glad your mum doesn't know about you?",
     "Have you ever cheated on someone?",
     "What's the worst thing you've ever done?",
@@ -176,12 +175,9 @@ truth = [
     "Have you ever peed yourself? If so, when?",
     "Have you ever pooped yourself? If so, when?",
     "When have you got caught in a lie?",
-    "What is your most embarrassing vomit story?",
     "What is the biggest thing that you’ve gotten away with?",
     "Where is the strangest place you have peed?",
     "What is the most embarrassing thing that your parents have caught you doing?",
-    "When was the most inappropriate time that you farted?",
-    "What is the grossest habit that you have?",
     "What is the most embarrassing nickname that you have had?",
     "What was the last thing you searched on your phone?",
     "Have you ever walked in on your parents having sex?",
@@ -190,12 +186,24 @@ truth = [
     "Do you ever talk in your sleep or sleep walk?",
     "When was a time that you embarrassed yourself in front of your crush?",
     "Have you ever regretted something you did in order to get a crush’s attention?",
-    "What was your weirdest habit as a kid?"
-]
+    "What was your weirdest habit as a kid?",
+    "What is the craziest thing you have ever done before?",
+    "What is a silly fun fact about yourself?",
+    "Tell me about your most awkward date.",
+    "What would you do if you were the opposite sex for a month?",
+    "What is one of the most childish things you still do?",
+    "What is the goofiest thing that you have an emotional attachment to?",
+    "What is the weirdest thing you have done for a boyfriend or girlfriend?",
+    "Have you ever lied to get out of a bad date?",
+    "What are some things you think about when you are sitting on the toilet?",
+    "Do you pee in the shower?",
+    "What animal best represents you?",
+    "Have you ever gotten really drunk and done anything silly?"
+)
 
 usedDare = deque()
 
-dare = [
+dare = (
     "Show the most embarrassing photo on your phone",
     "Show the last five people you texted and what the messages said",
     "Let the rest of the group DM someone from your Instagram account",
@@ -211,8 +219,6 @@ dare = [
     "Eat a spoonful of mustard",
     "Keep your eyes closed until it's your go again",
     "Send an embarassing text to the last person in your phonebook",
-    "Show off your ahegao face",
-    "Seductively eat a banana",
     "Empty out your wallet/purse and show everyone what's inside",
     "Pretend to be the person to your right for 10 minutes",
     "Eat a snack without using your hands",
@@ -228,18 +234,6 @@ dare = [
     "Pole dance with an imaginary pole",
     "Let someone else tickle you and try not to laugh",
     "Put as many snacks into your mouth at once as you can",
-    "What is the craziest thing you have ever done before?",
-    "What is a silly fun fact about yourself?",
-    "Tell me about your most awkward date.",
-    "What would you do if you were the opposite sex for a month?",
-    "What is one of the most childish things you still do?",
-    "What is the goofiest thing that you have an emotional attachment to?",
-    "What is the weirdest thing you have done for a boyfriend or girlfriend?",
-    "Have you ever lied to get out of a bad date?",
-    "What are some things you think about when you are sitting on the toilet?",
-    "Do you pee in the shower?",
-    "What animal best represents you?",
-    "Have you ever gotten really drunk and done anything silly?",
     "Jump up and down as high as you can go for a full minute.",
     "Text me the first word that comes to mind.",
     "Post an old selfie on your Instagram story.",
@@ -287,4 +281,4 @@ dare = [
     "Eat a booger.",
     "Chug a glass of milk.",
     "Put as many grapes in your mouth as you can.",
-]
+)
