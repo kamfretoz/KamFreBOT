@@ -2,7 +2,7 @@
 ## Customizeable Error Message Quote ##
 #######################################
 
-errors = [
+errors = (
     "Values of B will give rise to dom.",
     "FATAL system error #nnnn CAUSE: We should never get here!",
     "OHHHH…. I give up Core dumped",
@@ -171,7 +171,7 @@ errors = [
     "Hell is empty",
     "Catastrophic Failure",
     "This is NOT what i expected!"
-]
+)
 
 #############################################################################
 ## Collections of Bobert's Quote from "The Amazing World of Gumball" show. ##

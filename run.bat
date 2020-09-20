@@ -5,7 +5,7 @@ CD /d "%~dp0"
 
 
 IF EXIST %SYSTEMROOT%\py.exe (
-    CMD /k %SYSTEMROOT%\py.exe -3 main.py
+    CMD /k %SYSTEMROOT%\py.exe -3 -O main.py
     EXIT
 )
 

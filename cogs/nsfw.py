@@ -1,9 +1,37 @@
+"""
+MIT License
+
+Copyright (c) 2019 sks316
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 import discord
 import asyncio
 import aiohttp
 import libneko
 import json
 import ciso8601
+import random
+import io
+import bs4 as bs
+import safygiphy
 from datetime import datetime
 from discord.ext import commands
 
@@ -16,41 +44,143 @@ class NSFW(commands.Cog):
         self.bot = bot
 
     @commands.command(aliases=["r34"])
+    @commands.cooldown(3, 5, commands.BucketType.user)
     @commands.is_nsfw()
-    async def rule34(self, ctx, query: str):
-        """
-        Allows you to search for R34 Tags
-        """
+    async def rule34(self, ctx, *, search: str):
         await ctx.trigger_typing()
+        loading = await ctx.send('Looking for an image on Rule34...')
+        #--Connect to Rule34 JSON API and download search data--#
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f'https://r34-json.herokuapp.com/posts?tags={search}') as r34:
+                data = await r34.json()
+                #--Now we attempt to extract information--#
+                try:
+                    posts = data['posts']
+                    post = random.choice(posts)
+                    score = post['score']
+                    post_id = post['id']
+                    image = post['file_url']
+                    image = image.replace("https://r34-json.herokuapp.com/images?url=", "")
+                    if image.endswith(".webm") or image.endswith(".mp4"):
+                        await loading.edit(content=f":underage: Rule34 image for **{search}** \n\n:arrow_up: **Score:** {score}\n\n:link: **Post URL:** <https://rule34.xxx/index.php?page=post&s=view&id={post_id}>\n\n:link: **Video URL:** {image}")
+                    else:
+                        embed = discord.Embed(title=f":underage: Rule34 image for **{search}**", description=f"_ _ \n:arrow_up: **Score:** {score}\n\n:link: **[Post URL](https://rule34.xxx/index.php?page=post&s=view&id={post_id})**", color=0x8253c3)
+                        embed.set_image(url=image)
+                        await loading.edit(content='', embed=embed)
+                except IndexError:
+                    return await loading.edit(content=":x: No results found for your query. Check your spelling and try again.")
 
-        tags = query.replace(" ","_")
+    @commands.command(aliases=["gbooru"])
+    @commands.cooldown(3, 5, commands.BucketType.user)
+    @commands.is_nsfw()
+    async def gelbooru(self, ctx, *, search: str):
+        await ctx.trigger_typing()
+        loading = await ctx.send('Looking for an image on Gelbooru...')
+        #--Connect to Gelbooru JSON API and download search data--#
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f'https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags={search}') as gel:
+                data = await gel.json()
+                #--Now we attempt to extract information--#
+                try:
+                    post = random.choice(data)
+                    score = str(post['score'])
+                    post_id = str(post['id'])
+                    image = post['file_url']
+                    if image.endswith(".webm") or image.endswith(".mp4"):
+                        await loading.edit(content=f":underage: Gelbooru image for **{search}** \n\n:arrow_up: **Score:** {score}\n\n:link: **Post URL:** <https://gelbooru.com/index.php?page=post&s=view&id={post_id}>\n\n:link: **Video URL:** {image}")
+                    else:
+                        embed = discord.Embed(title=f":underage: Gelbooru image for **{search}**", description=f"_ _ \n:arrow_up: **Score:** {score}\n\n:link: **[Post URL](https://gelbooru.com/index.php?page=post&s=view&id={post_id})**", color=0x8253c3)
+                        embed.set_image(url=image)
+                        await loading.edit(content='', embed=embed)
+                except IndexError:
+                    return await loading.edit(content=":x: No results found for your query. Check your spelling and try again.")
+                except TypeError:
+                    return await loading.edit(content=":x: No results found for your query. Check your spelling and try again.")
 
-        async with aiohttp.ClientSession() as session: #https://github.com/kurozenzen/r34-json-api
-            async with session.get(f"https://r34-json.herokuapp.com/posts?limit=1&tags={tags}") as resp:
-                resp.raise_for_status()
-                data = json.loads(await resp.read(), object_hook=DictObject)
-                await session.close()
+    @commands.command(aliases=["booby", "tiddy", "tits"])
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.is_nsfw()
+    async def boobs(self, ctx, user: discord.Member = None):
+        boobs =[
+            'https://nekos.life/api/v2/img/boobs',
+            'https://nekos.life/api/v2/img/tits',
+        ]
+        #--Get image from NekosLife API--#
+        async with aiohttp.ClientSession() as session:
+            async with session.get(random.choice(boobs)) as tiddy:
+                data = await tiddy.json()
+                result = data.get('url')
+                embed = discord.Embed(title="🔞 Boobies!",  color=0x8253c3)
+                embed.set_image(url=result)
+                await ctx.send(embed=embed)
 
-        try:
-            image = data.posts[0].file_url
-            score = data.posts[0].score
-            rating = data.posts[0].rating
-            post_date = data.posts[0].created_at
-        except IndexError:
-            await ctx.send(embed=discord.Embed(description="⚠ No result was found."))
-            return
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.is_nsfw()
+    async def fuck(self, ctx, *, user: discord.Member = None):
+        if user == None:
+            return await ctx.send(":x: You need someone to fuck! Make sure they consent to it first...")
+        if user == ctx.author:
+            return await ctx.send(":x: You can't fuck yourself! You can masturbate, but you can't self-fuck.")
+        #--Get image from NekosLife API--#
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://nekos.life/api/v2/img/classic') as fuck:
+                data = await fuck.json()
+                result = data.get('url')
+                embed = discord.Embed(title=f"🔞 {ctx.author.display_name} fucks {user.display_name}!",  color=0x8253c3)
+                embed.set_image(url=result)
+                await ctx.send(embed=embed)
 
-        #converted_time = ciso8601.parse_datetime(post_date)
-        #formatted_time = converted_time.strftime("%B %d, %Y")
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.is_nsfw()
+    async def yandere(self, ctx, *, search: str):
+        loading = await ctx.send('<a:loading:598027019447435285> Looking for an image on yande.re...')
+        #--Connect to yande.re and get first 100 results--#
+        yande_agent = {'User-Agent': 'Bobert BOT: https://github.com/kamfretoz/KamFreBOT'}
+        async with aiohttp.ClientSession(headers=yande_agent) as session:
+            async with session.get(f'https://yande.re/post/index.json?tags={search}&limit=100') as yande:
+                data = await yande.json()
+                #--Now we attempt to extract information--#
+                try:
+                    post = random.choice(data)
+                    score = str(post['score'])
+                    post_id = str(post['id'])
+                    image = post['file_url']
+                    if image.endswith(".webm") or image.endswith(".mp4"):
+                        await loading.edit(content=f":underage: yande.re image for **{search}** \n\n:arrow_up: **Score:** {score}\n\n:link: **Post URL:** <https://yande.re/post/show/{post_id}>\n\n:link: **Video URL:** {image}")
+                    else:
+                        embed = discord.Embed(title=f":underage: yande.re image for **{search}**", description=f"_ _ \n:arrow_up: **Score:** {score}\n\n:link: **[Post URL](https://yande.re/post/show/{post_id})**", color=0x8253c3)
+                        embed.set_image(url=image)
+                        await loading.edit(content='', embed=embed)
+                except IndexError:
+                    return await loading.edit(content=":x: No results found for your query. Check your spelling and try again.")
 
-        emb = discord.Embed(title="Rule34 Image Viewer", timestamp=datetime.utcnow())
-        emb.add_field(name="Score", value=score, inline=True)
-        emb.add_field(name="Rating", value=rating, inline=True)
-        emb.add_field(name="Posted On", value=post_date, inline=False)
-        emb.set_image(url=image)
-        emb.set_footer(text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
-
-        await ctx.send(embed=emb)
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.is_nsfw()
+    async def e621(self, ctx, *, search: str):
+        loading = await ctx.send('<a:loading:598027019447435285> Looking for an image on e621...')
+        #--Connect to e621 and get first 100 results--#
+        e621_agent = {'User-Agent': 'Bobert BOT: https://github.com/kamfretoz/KamFreBOT'}
+        async with aiohttp.ClientSession(headers=e621_agent) as session:
+            async with session.get(f'https://e621.net/posts.json?tags={search}&limit=100') as esix:
+                data = await esix.json()
+                #--Now we attempt to extract information--#
+                try:
+                    data = data['posts']
+                    post = random.choice(data)
+                    score = str(post['score']['total'])
+                    post_id = str(post['id'])
+                    image = post['file']['url']
+                    if image.endswith(".webm") or image.endswith(".mp4"):
+                        await loading.edit(content=f":underage: e621 image for **{search}**\n\n:arrow_up: **Score:** {score}\n\n:link: **Post URL:** <https://e621.net/posts/{post_id}>\n\n:link: **Video URL:** {image}")
+                    else:
+                        embed = discord.Embed(title=f":underage: e621 image for **{search}**", description=f"_ _ \n:arrow_up: **Score:** {score}\n\n:link: **[Post URL](https://e621.net/posts/{post_id})**", color=0x8253c3)
+                        embed.set_image(url=image)
+                        await loading.edit(content='', embed=embed)
+                except IndexError:
+                    return await loading.edit(content=":x: No results found for your query. Check your spelling and try again.")
         
 def setup(bot):
     bot.add_cog(NSFW(bot))

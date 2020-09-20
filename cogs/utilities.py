@@ -26,19 +26,20 @@ import unicodedata
 import urllib
 import time
 import random
-import math
+import io
+from math import floor, sqrt, trunc
+from PIL import Image
 import os
 import operator
 from pytz import timezone
 from datetime import datetime
 import safygiphy
-import urbandict
 import pytemperature
-import PyDictionary
 import qrcode
 import requests
 from io import BytesIO
 from collections import deque
+from textwrap import shorten
 import string
 import json
 
@@ -96,12 +97,6 @@ morseAlphabet = {
     "=": "-...-"
 }
 
-inverseMorseAlphabet = dict((v, k) for (k, v) in morseAlphabet.items())
-
-def to_emoji(c):
-    base = 0x1f1e6
-    return chr(base + c)
-
 class DictObject(dict):
     def __getattr__(self, item):
         return self[item]
@@ -111,112 +106,178 @@ class Utilities(commands.Cog):
         self.bot = bot
         self.pingeries = {}
         self.lock = asyncio.Lock()
-        self.dictionary = PyDictionary.PyDictionary()
         self.delsniped = {}
         self.editsniped = {}
 
     #Delete Snipe Listener (Setter)
     @commands.Cog.listener()
     async def on_message_delete(self, message):
-        if not message.author.bot:
-            srvid = message.guild.id
-            chid = message.channel.id
-            author = message.author.mention
-            content = message.content
-            #print(f"server:{srvid}, channel:{chid}, author:{author}, content:{content}") #PRINTS ALL DELETED MESSAGES INTO THE CONSOLE (CAN BE SPAMMY)
-            self.delsniped.update({
-                srvid : {
-                    chid : {
-                        'Sender':author,
-                        'Content':content
+        try:
+            if not message.author.bot:
+                srvid = message.guild.id
+                chid = message.channel.id
+                author_mention = message.author.mention
+                author = message.author
+                content = message.content
+
+                try:
+                    attachment_name = message.attachments[0].filename
+                    file_attachment = message.attachments[0].proxy_url
+                    # print(f"attachment: {file_attachment}")
+                except IndexError:
+                    # print("No Attachment")
+                    file_attachment = None
+                    attachment_name = None
+
+                # print(f"server:{srvid}, channel:{chid}, author:{author}, content:{content}") #PRINTS ALL DELETED MESSAGES INTO THE CONSOLE (CAN BE SPAMMY)
+
+                self.delsniped.update({
+                    srvid : {
+                        chid : {
+                            'Sender':author,
+                            'Mention':author_mention,
+                            'Content':content,
+                            'Attachment':file_attachment,
+                            'Filename':attachment_name
+                        }
                     }
-                }
-            })
+                })
+        except:
+            pass
 
     #Edit Snipe Listener (Setter)
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        if not before.author.bot:
-            srvid = before.guild.id
-            chid = before.channel.id
-            author = before.author.mention
-            msg_before = before.content
-            msg_after = after.content
-            #print(f"server:{srvid}, channel:{chid}, author:{author}, before:{msg_before}, after:{msg_after}")
-            self.editsniped.update({
-                srvid : {
-                    chid : {
-                        'Sender':author,
-                        'Before':msg_before,
-                        'After':msg_after
+        try:
+            if not before.author.bot:
+                srvid = before.guild.id
+                chid = before.channel.id
+                author = before.author
+                author_mention = before.author.mention
+                msg_before = before.content
+                msg_after = after.content
+                #print(f"server:{srvid}, channel:{chid}, author:{author}, before:{msg_before}, after:{msg_after}")
+                self.editsniped.update({
+                    srvid : {
+                        chid : {
+                            'Sender':author,
+                            'Mention':author_mention,
+                            'Before':msg_before,
+                            'After':msg_after
+                        }
                     }
-                }
-            })
+                })
+        except:
+            pass
 
-    @commands.command(aliases=["sniped","snipe","delsnipe","dsnipe","ds"])
+    @commands.command(aliases=["sniped","snipe","delsnipe","dsnipe","ds","sn","s"])
+    @commands.cooldown(rate=3, per=30, type=commands.BucketType.user)
     @commands.guild_only()
     async def deletesnipe(self, ctx):
         """
         Allows you to see recently deleted message in the current channel.
         But you need to be quick because the deleted message won't last long!
+        Please do not spam this command!
         """
         try:
             author = self.delsniped[ctx.guild.id][ctx.channel.id]["Sender"]
+            author_mention = self.delsniped[ctx.guild.id][ctx.channel.id]["Mention"]
             msg = self.delsniped[ctx.guild.id][ctx.channel.id]["Content"]
+            attachment = self.delsniped[ctx.guild.id][ctx.channel.id]["Attachment"]
+            name = self.delsniped[ctx.guild.id][ctx.channel.id]["Filename"]
+
+            if len(msg) > 768:
+                shorten(msg,width=756,placeholder="...")
+
+            if "b!snipe" in msg:
+                await ctx.message.delete()
+                await ctx.send(embed=discord.Embed(description="⚠ No Message found! Perhaps you're too slow?"), delete_after=3)
+                return
             if msg:
-                emb = discord.Embed(title="Sniped!")
-                emb.add_field(name="Author:", value=author, inline=False)
+                await ctx.message.delete()
+                emb = discord.Embed()
+                emb.set_author(name="Sniped!", icon_url=author.avatar_url)
+                emb.add_field(name="Author:", value=author_mention, inline=False)
                 emb.add_field(name="Message:", value=msg)
-                await ctx.send(embed=emb)
+                emb.set_footer(text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
+                if attachment:
+                    emb.add_field(name="Attachments",value=f"[{name}]({attachment})")
+                    if str(name).endswith(".png") or str(name).endswith(".gif") or str(name).endswith(".jpg"):
+                        emb.set_image(url=attachment)
+                await ctx.send(embed=emb, delete_after=5)
             else:
+                await ctx.message.delete()
                 emb = discord.Embed(title="Sniped!")
                 emb.add_field(name="Author:", value=author, inline=False)
-                emb.add_field(name="Message:", value="Empty Message. (User probably sending image without providing message.)")
-                await ctx.send(embed=emb)
+                emb.add_field(name="Message:", value="Empty Message.",inline=False)
+                emb.set_footer(text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
+                if attachment:
+                    emb.add_field(name="Attachments",value=f"[{name}]({attachment})", inline=False)
+                    if str(name).endswith(".png") or str(name).endswith(".gif"):
+                        emb.set_image(url=attachment)
+                await ctx.send(embed=emb, delete_after=5)
             self.delsniped.popitem()
         except KeyError:
-            await ctx.send(embed=discord.Embed(description="⚠ No Message found! Perhaps you're too slow?"))
+            await ctx.message.delete()
+            await ctx.send(embed=discord.Embed(description="⚠ No Message found! Perhaps you're too slow?"), delete_after=3)
             return
+        except discord.NotFound:
+            pass
 
-    @commands.command(aliases=["esnipe","esniped","es"])
+    @commands.command(aliases=["esnipe","esniped","es","e"])
+    @commands.cooldown(rate=3, per=30, type=commands.BucketType.user)
     @commands.guild_only()
     async def editsnipe(self, ctx):
         """
         Similar to deletesnipe, this command allows you to see edited message.
+        Please do not spam this command as well!
         """
         try:
             author = self.editsniped[ctx.guild.id][ctx.channel.id]["Sender"]
+            author_mention = self.editsniped[ctx.guild.id][ctx.channel.id]["Mention"]
             before = self.editsniped[ctx.guild.id][ctx.channel.id]["Before"]
             after = self.editsniped[ctx.guild.id][ctx.channel.id]["After"]
+
+            if len(before) > 768:
+                shorten(before, width=756,placeholder="...")
+
+            if len(after) > 768:
+                shorten(after, width=756,placeholder="...")
+
             if before and after:
-                emb = discord.Embed(title="Sniped!")
-                emb.add_field(name="Author:", value=author, inline=False)
+                await ctx.message.delete()
+                emb = discord.Embed()
+                emb.set_author(name="Sniped!", icon_url=author.avatar_url)
+                emb.add_field(name="Author:", value=author_mention, inline=False)
                 emb.add_field(name="Before:", value=before)
                 emb.add_field(name="After:", value=after)
-                await ctx.send(embed=emb)
+                await ctx.send(embed=emb, delete_after=5)
             else:
+                await ctx.message.delete()
                 emb = discord.Embed(title="Sniped!")
                 emb.add_field(name="Author:", value=author, inline=False)
                 emb.add_field(name="Before:", value="Empty Message.")
                 emb.add_field(name="After:", value="Empty Message.")
-                await ctx.send(embed=emb)
+                await ctx.send(embed=emb, delete_after=5)
             self.editsniped.popitem()
         except KeyError:
+            await ctx.message.delete()
             await ctx.send(embed=discord.Embed(description="⚠ No Message found! Perhaps you're too slow?"))
             return
+        except discord.NotFound:
+            pass
     
     @commands.command(aliases=["codeblock"])
-    async def code(self, ctx, *, msg):
+    async def code(self, ctx, *, msg = "Please Write Something!"):
         """Write text in code format."""
         await ctx.message.delete()
         await ctx.send("```" + msg.replace("`", "") + "```")
-
 
     @commands.command(aliases=["char"])
     async def charinfo(self, ctx, *, char: str):
         """Shows you information about a number of characters."""
         if len(char) > 15:
-            return await ctx.send('Too many characters ({}/15)'.format(len(char)))
+            return await ctx.send(f'Too many characters ({len(char)}/15)')
 
         fmt = '`\\U{0:>08}`: `\\N{{{1}}}` - `{2}` - <http://www.fileformat.info/info/unicode/char/{0}>'
 
@@ -283,10 +344,15 @@ class Utilities(commands.Cog):
     # pingstorm command
     @commands.cooldown(rate=2, per=1800.0, type=commands.BucketType.guild)
     @commands.max_concurrency(number=1, per=commands.BucketType.guild, wait=False)
-    @commands.command(hidden=True, aliases=["pingmachine", "pingspam"], enabled=True)
+    @commands.command(hidden=True, aliases=["pingmachine", "pingspam"], enabled=False)
     @commands.guild_only()
-    async def pingstorm(self, ctx, user: discord.Member, amount: int = 5):
+    async def pingstorm(self, ctx, user: libneko.converters.InsensitiveMemberConverter, amount: int = 5):
         """Ping specified user number of times, 5 if no amount specified, Maximum amount is 200. (Cooldown: 1 use per 60 mins, Use wisely.)"""
+        if user == ctx.bot.user:
+            await ctx.send("HA! You think it'll work against me?? Nice Try.")
+            user = ctx.message.author
+            await asyncio.sleep(2)
+
         if not self.lock.locked():
             async with self.lock:
                 loading = await ctx.send("Ping Machine Initializing in 3 seconds!")
@@ -346,6 +412,7 @@ class Utilities(commands.Cog):
 
     # time command
     # ~~Scrapped for now until~~ i can figure out how to do the customizeable timezone. EDIT: I DID IT! HURRAHH!
+    @commands.cooldown(rate=3, per=10, type=commands.BucketType.user)
     @commands.group(invoke_without_command=True, aliases=["time","date","now"])
     async def clock(self, ctx, * ,location: str = "UTC"):
         """
@@ -372,6 +439,7 @@ class Utilities(commands.Cog):
             err = discord.Embed(title="⚠ **Warning!** An Error Occured.", description="Make sure that the timezone format is correct and is also available.\nThe Correct format is for example: `America/New_York` \nFor timezone list, use [p]clock list")
             await ctx.send(embed = err)
 
+    @commands.cooldown(rate=2, per=15, type=commands.BucketType.user)
     @clock.command(name="list", aliases=["timezone","timezones","lists","tz","tzs"], brief="Vew the list of available timezones")
     async def clock_list(self, ctx):
         """Shows the list of available timezones"""
@@ -387,7 +455,6 @@ class Utilities(commands.Cog):
         navi += lists
         navi.start(ctx)
 
-
     @commands.command()
     async def pick(self, ctx, *options: converters.clean_content):
         """
@@ -400,10 +467,12 @@ class Utilities(commands.Cog):
         else:
             await ctx.send(f"I pick **{random.choice(options)}**!")
 
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     @commands.command()
     async def gif(self, ctx, *, query: str = "rickroll"):
         """find a gif
         Usage: gif <query>"""
+        await ctx.trigger_typing()
         try:
             g = safygiphy.Giphy()
             gif = g.random(tag=query)
@@ -417,65 +486,122 @@ class Utilities(commands.Cog):
             await ctx.send("Unable to send the messages, make sure i have access to embed.")
             return
 
-#      DISABLED FOR NOW AS THERE IS A BUG WHERE IT ONLY SHOWS FEW WORDS AT MOST.
-
-    @commands.command(aliases=["ud","urbandict"], disabled=True)
-    async def urban(self, ctx, *, word: str = None):
-        "Browse Urban Dictionary."
-        if word is None:
-            await ctx.send(embed=discord.Embed(description="Please specify the word to define!"))
+    @commands.command(aliases=["math"])
+    async def calc(self, ctx, *, calculation):
+        """Simple calculator. Ex: [p]calc 2+2"""
+        if len(calculation) > 20:
+            await ctx.send(embed=discord.Embed(description="⚠ You can only input 16 characters at most!"))
             return
-
-        await ctx.trigger_typing()
-
+        equation = calculation.strip().replace("^", "**").replace("x", "*")
         try:
-            defi = urbandict.define(word)
-            definition = defi[0]["def"]
-            example = defi[0]["example"]
-            ud = discord.Embed(title=f":mag: {word}", description=f"```{definition}```", color=0x25332)
-            ud.add_field(name=":bulb: Example", value=f"```{example}```", inline=False)
-            ud.set_footer(
-                text="Urban Dictionary API",
-                icon_url="https://vignette.wikia.nocookie.net/logopedia/images/a/a7/UDAppIcon.jpg/revision/latest?cb=20170422211150",
-            )
-            await ctx.send(embed=ud, content=None)
-
-        except urllib.error.HTTPError:
-            await ctx.send(
-            embed=discord.Embed(
-                description=f":mag_right: No Definition Found."
-            )
-        )
-
-    @commands.command(name="define", aliases=["def","defi"])
-    async def _define(self, ctx, *, term: str):
-        """Defines a word."""
-        formatted = f"**Definition of `{term}`**\n"
-
-        async with ctx.typing():
-            definition = self.dictionary.meaning(term)
-            if definition is None:
-                await ctx.send("⛔ No definition found for that term.")
+            if "=" in equation:
+                left = eval(
+                    equation.split("=")[0], {"__builtins__": None}, {"sqrt": sqrt}
+                )
+                right = eval(
+                    equation.split("=")[1], {"__builtins__": None}, {"sqrt": sqrt}
+                )
+                answer = str(left == right)
             else:
-                for t in definition:
-                    formatted += f"{t}:\n```css\n"
-                    for subdef in definition[t]:
-                        formatted += f"- {subdef}"
-                    formatted += "\n```\n"
-                await ctx.send(formatted)
+                answer = str(eval(equation, {"__builtins__": None}, {"sqrt": sqrt}))
+        except TypeError:
+            return await ctx.send(embed=discord.Embed(description="⚠ Invalid calculation query."))
+        except ZeroDivisionError:
+            return await ctx.send(embed=discord.Embed(description="You must be joking."))
 
+        em = discord.Embed(color=0xD3D3D3, title="Calculator")
+        em.add_field(
+            name="Input:",
+            value=calculation.replace("**", "^").replace("x", "*"),
+            inline=False,
+        )
+        em.add_field(name="Output:", value=answer, inline=False)
+        await ctx.send(content=None, embed=em)
+        await ctx.message.delete()
+
+    @commands.command(aliases=["msgdump"])
+    @commands.has_permissions(manage_messages=True)
+    @commands.guild_only()
+    async def messagedump(self, ctx, filename, limit, details="yes", reverse="no"):
+        """Dump messages."""
+        await ctx.message.delete()
+        await ctx.send("Downloading messages...")
+        if not os.path.isdir("data/message_dump"):
+            os.mkdir("data/message_dump")
+        with open(
+            "data/message_dump/" + filename.rsplit(".", 1)[0] + ".txt",
+            "w+",
+            encoding="utf-8",
+        ) as f:
+            if reverse == "yes":
+                if details == "yes":
+                    async for message in ctx.message.channel.history(limit=int(limit)):
+                        f.write(
+                            "<{} at {} on {}> {}\n".format(
+                                message.author.name,
+                                message.created_at.strftime("%d %b %Y"),
+                                message.created_at.strftime("%H:%M:%S"),
+                                message.content,
+                            )
+                        )
+
+                else:
+                    async for message in ctx.message.channel.history(limit=int(limit)):
+                        f.write(message.content + "\n")
+            else:
+                if details == "yes":
+                    async for message in ctx.message.channel.history(
+                        limit=int(limit), oldest_first=True
+                    ):
+                        f.write(
+                            "<{} at {} on {}> {}\n".format(
+                                message.author.name,
+                                message.created_at.strftime("%d %b %Y"),
+                                message.created_at.strftime("%H:%M:%S"),
+                                message.content,
+                            )
+                        )
+
+                else:
+                    async for message in ctx.message.channel.history(
+                        limit=int(limit), oldest_first=True
+                    ):
+                        f.write(message.content + "\n")
+        await ctx.send("Finished downloading!")
+    
+    @commands.cooldown(rate=1, per=600, type=commands.BucketType.user)
+    @commands.command(aliases=["getcolor","color","getcolour"])
+    async def colour(self, ctx, *, colour_codes: str):
+        """Posts color of given hex"""
+        colour_codes = colour_codes.split()
+        size = (60, 80) if len(colour_codes) > 1 else (200, 200)
+        if len(colour_codes) > 5:
+            return await ctx.send("Sorry, 5 colour codes maximum")
+        for colour_code in colour_codes:
+            if not colour_code.startswith("#"):
+                colour_code = "#" + colour_code
+            image = Image.new("RGB", size, colour_code)
+            with io.BytesIO() as file:
+                image.save(file, "PNG")
+                file.seek(0)
+                await ctx.send(
+                    "Colour with hex code {}:".format(colour_code),
+                    file=discord.File(file, "colour_file.png"),
+                )
+
+    @commands.cooldown(rate=1, per=600, type=commands.BucketType.user)
     @commands.command(aliases=["channels","allchannel"])
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
-    async def allchannels(self, ctx):
+    async def allchannels(self, ctx, serverid: int = None):
         """Shows ALL Channels on this server."""
-        server = ctx.guild
-        #if serverid is None:
-        #    server = ctx.guild
-        #else:
-        #    server = discord.utils.get(self.bot.guilds, id=serverid)
-        #    if server is None:
-        #        return await ctx.send("Server not found!")
+        if serverid is None:
+            server = ctx.guild
+        else:
+            server = discord.utils.get(self.bot.guilds, id=serverid)
+            if server is None:
+                await ctx.send("Server not found!")
+                return
         
         e = discord.Embed(title=f"**{server.name}**\'s Channel list.")
 
@@ -506,11 +632,20 @@ class Utilities(commands.Cog):
             await ctx.send(content=f"**{ctx.guild.name}'s Channel List**", file=discord.File(data, filename=f"{ctx.guild.name}_Channel_Lists.txt"))
             await loading.delete()
 
+    @commands.cooldown(rate=1, per=600, type=commands.BucketType.user)
     @commands.command(aliases=["members"])
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def allmembers(self, ctx):
+    async def allmembers(self, ctx, serverid: int = None):
         """Get all members in this server"""
+        if serverid is None:
+            server = ctx.guild
+        else:
+            server = discord.utils.get(self.bot.guilds, id=serverid)
+            if server is None:
+                return await ctx.send("Server not found!")
+                return
+
         bots = ""
         bots_amount = 0
         members = ""
@@ -518,7 +653,7 @@ class Utilities(commands.Cog):
         total = 0
         everything =""
 
-        for x in ctx.guild.members:
+        for x in server.members:
             if x.bot is True:
                 bots += f"[BOT][{x.id}]\t{x}\n"
                 bots_amount += 1
@@ -529,12 +664,35 @@ class Utilities(commands.Cog):
                 total += 1
 
         loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
-        everything = f"Member Amount: {members_amount}\nBot Amount: {bots_amount}\nTotal: {total}\n\nMember List:\n{members + bots}"        
+        everything = f"Server: {server.name}\nID: {server.id}\nMember Amount: {members_amount}\nBot Amount: {bots_amount}\nTotal: {total}\n\nMember List:\n{members + bots}"        
         data = BytesIO(everything.encode('utf-8'))
-        await ctx.send(content=f"**{ctx.guild.name}'s Member List**", file=discord.File(data, filename=f"{ctx.guild.name}_Member_Lists.txt"))
+        await ctx.send(content=f"**{server.name}'s Member List**", file=discord.File(data, filename=f"{server.name}_Member_Lists.txt"))
         await loading.delete()
 
-    @commands.command(aliases=["discriminator","tagnum","tag"])
+    @commands.command(aliases=["allrole","roles"])
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
+    async def allroles(self, ctx, serverid: int = None):
+        """Get all roles in current server"""
+        allroles = ""
+
+        if serverid is None:
+            server = ctx.guild
+        else:
+            server = discord.utils.get(self.bot.guilds, id=serverid)
+            if server is None:
+                await ctx.send("Server not found!")
+                return
+
+        async with ctx.typing():
+            for num, role in enumerate(sorted(server.roles, reverse=True), start=1):
+                allroles += f"[{str(num).zfill(2)}] {role.id}\t[ Users: {len(role.members)} ]\t{role.name}\t\r\n"
+                loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
+                data = BytesIO(allroles.encode('utf-8'))
+                await ctx.send(content=f"Roles in **{server.name}**", file=discord.File(data, filename=f"{server.name}_Role_Lists.txt"))
+                await loading.delete()
+
+    @commands.command(aliases=["discriminator","tagnum","tags"])
     @commands.guild_only()
     async def discrim(self, ctx, tag: str = None):
         """Allows you to see whose member has the certain Discriminator/Tag!"""
@@ -571,74 +729,102 @@ class Utilities(commands.Cog):
             else:
                 await ctx.send(embed=discord.Embed(description="ℹ No user found!"))
 
-    @commands.command(aliases=["allrole","roles"])
-    @commands.has_permissions(administrator=True)
-    @commands.guild_only()
-    async def allroles(self, ctx):
-        """Get all roles in current server"""
-        allroles = ""
-        async with ctx.typing():
-            for num, role in enumerate(sorted(ctx.guild.roles, reverse=True), start=1):
-                allroles += f"[{str(num).zfill(2)}] {role.id}\t[ Users: {len(role.members)} ]\t{role.name}\t\r\n"
-            try:
-                embroles = discord.Embed(title=f"Roles in **{ctx.guild.name}**", description=f"```{allroles}```")
-                await ctx.send(embed=embroles)
-            except discord.HTTPException:
-                loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
-                data = BytesIO(allroles.encode('utf-8'))
-                await ctx.send(content=f"Roles in **{ctx.guild.name}**", file=discord.File(data, filename=f"{ctx.guild.name}_Role_Lists.txt"))
-                await loading.delete()
-
+    @commands.has_permissions(add_reactions=True)
     @commands.command()
-    @commands.guild_only()
-    async def poll(self, ctx, *, question):
-        """Interactively creates a poll with the following question.
-        To vote, use reactions!
+    async def poll(self, ctx, *, msg: commands.clean_content):
+        """Create a poll using reactions. [p]help poll for more information.
+        [p]poll <question> | <answer> | <answer> - Create a poll. You may use as many answers as you want, placing a pipe | symbol in between them.
+        Example:
+        [p]poll What is your favorite anime? | Steins;Gate | Naruto | Attack on Titan | Shrek
+        You can also use the "time" flag to set the amount of time in seconds the poll will last for.
+        Example:
+        [p]poll What time is it? | HAMMER TIME! | SHOWTIME! | time=10
         """
-
-        # a list of messages to delete when we're all done
-        messages = [ctx.message]
-        answers = []
-
-        def check(m):
-            return m.author == ctx.author and m.channel == ctx.channel and len(m.content) <= 100
-
-        for i in range(20):
-            messages.append(await ctx.send(f'Say poll option or type `cancel` to publish poll.'))
-
-            try:
-                entry = await self.bot.wait_for('message', check=check, timeout=60.0)
-            except asyncio.TimeoutError:
-                break
-
-            messages.append(entry)
-
-            if entry.clean_content.startswith(f'cancel'):
-                break
-
-            answers.append((to_emoji(i), entry.clean_content))
-
-        try:
-            await ctx.channel.delete_messages(messages)
-        except:
-            pass # oh well
-
-        answer = '\n'.join(f'{keycap}: {content}' for keycap, content in answers)
-        actual_poll = await ctx.send(f'{ctx.author} asks: {question}\n\n{answer}')
-        for emoji, _ in answers:
-            await actual_poll.add_reaction(emoji)
+        await ctx.message.delete()
+        options = msg.split(" | ")
+        time = [x for x in options if x.startswith("time=")]
+        if time:
+            time = time[0]
+        if time:
+            options.remove(time)
+        if len(options) <= 1:
+            return await ctx.send("You must have 2 options or more.")
+        if len(options) >= 11:
+            return await ctx.send("You must have 9 options or less.")
+        if time:
+            time = int(time.strip("time="))
+        else:
+            time = 30
+        emoji = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣"]
+        to_react = []
+        confirmation_msg = "**{}?**:\n\n".format(options[0].rstrip("?"))
+        for idx, option in enumerate(options[1:]):
+            confirmation_msg += "{} - {}\n".format(emoji[idx], option)
+            to_react.append(emoji[idx])
+        confirmation_msg += "\n\nYou have {} seconds to vote!".format(time)
+        poll_msg = await ctx.send(confirmation_msg)
+        for emote in to_react:
+            await poll_msg.add_reaction(emote)
+        await asyncio.sleep(time)
+        async for message in ctx.message.channel.history():
+            if message.id == poll_msg.id:
+                poll_msg = message
+        results = {}
+        for reaction in poll_msg.reactions:
+            if reaction.emoji in to_react:
+                results[reaction.emoji] = reaction.count - 1
+        end_msg = "The poll is over. The results:\n\n"
+        for result in results:
+            end_msg += "{} {} - {} votes\n".format(
+                result, options[emoji.index(result) + 1], results[result]
+            )
+        top_result = max(results, key=lambda key: results[key])
+        if len([x for x in results if results[x] == results[top_result]]) > 1:
+            top_results = []
+            for key, value in results.items():
+                if value == results[top_result]:
+                    top_results.append(options[emoji.index(key) + 1])
+            end_msg += "\nThe victory is tied between: {}".format(
+                ", ".join(top_results)
+            )
+        else:
+            top_result = options[emoji.index(top_result) + 1]
+            end_msg += f"\n**{top_result}** is the winner!"
+        await ctx.send(end_msg)
 
     @poll.error
     async def poll_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            return await ctx.send('Missing the question.')
+            await ctx.send('Missing the question.')
+            return
+
+    @commands.command()
+    async def canirun(self, ctx, command):
+        command = ctx.bot.get_command(command)
+        if command is None:
+            return await ctx.send("That command does not exist...", delete_after=5)
+        try:
+            can_run = await command.can_run(ctx)
+        except Exception as ex:
+            await ctx.send(
+                "You cannot run the command here, because: "
+                f"`{type(ex).__name__}: {ex!s}`"
+            )
+        else:
+            await ctx.send(
+                f'You {can_run and "can" or "cannot"} run this ' "command here."
+            )
 
     @commands.command()
     @commands.guild_only()
-    async def quickpoll(self, ctx, *questions_and_choices: str):
+    async def quickpoll(self, ctx, *questions_and_choices: commands.clean_content):
         """Makes a poll quickly.
         The first argument is the question and the rest are the choices.
         """
+
+        def to_emoji(c):
+            base = 0x1f1e6
+            return chr(base + c)
 
         if len(questions_and_choices) < 3:
             return await ctx.send('Need at least 1 question with 2 choices.')
@@ -665,9 +851,7 @@ class Utilities(commands.Cog):
     @commands.command()
     async def randint(self, ctx, a: int, b: int):
         """Usage: *ranint [least number][greatest number]. RanDOM!"""
-        if a is None:
-            await ctx.send("Boi, are you random! Usage: *ranint [least #] [greatest #], to set the range of the randomized number. Please use integers.")
-        if b is None:
+        if a is None or b is None:
             await ctx.send("Boi, are you random! Usage: *ranint [least #] [greatest #], to set the range of the randomized number. Please use integers.")
         else:
             color = discord.Color(value=0x00ff00)
@@ -675,77 +859,12 @@ class Utilities(commands.Cog):
             em.description = random.randint(a,b)
             await ctx.send(embed=em)
 
-    @commands.command(aliases=["cd","timer"])
-    @commands.cooldown(rate=2, per=600, type=commands.BucketType.guild)
-    @commands.max_concurrency(number=1, per=commands.BucketType.guild, wait=False)
-    async def countdown(self, ctx, timer: int = None):
-        """Create a timer with the given time."""
-        if timer is None:
-            await ctx.send(
-                embed=discord.Embed(
-                    description=":watch: Please enter the time!",
-                    color=discord.Colour.red(),
-                )
-            )
-        else:
-            if timer <= 0:
-                await ctx.send(
-                    embed=discord.Embed(
-                        description=":octagonal_sign: That's not a valid time!",
-                        color=discord.Colour.red(),
-                    )
-                )
-            elif timer > 1000:
-                await ctx.send(
-                    embed=discord.Embed(
-                        description=":octagonal_sign: That time is too big! It must be between 1 and 1000",
-                        color=discord.Colour.red(),
-                    )
-                )
-            else:
-                msg = await ctx.send(
-                    embed=discord.Embed(
-                        description="**Starting countdown!**",
-                        color=discord.Colour.orange(),
-                    )
-                )
-                loop = ctx.bot.loop
-                await asyncio.sleep(0.5)
-                stop = "\N{BLACK SQUARE FOR STOP}"
-                await msg.add_reaction(stop)
-                try:
-                    reaction, user = await self.bot.wait_for(
-                        "reaction_add",
-                        timeout=timer + 2,
-                        check=lambda r, u: u == ctx.author and r.emoji in (stop),
-                    )
-                except asyncio.TimeoutError:
-                    pass
-                finally:
-                    await msg.delete()
-                for t in range(timer, 0, -1):
-                    mins, secs = divmod(t, 60)
-                    ctx.bot.loop.create_task(
-                        msg.edit(
-                            embed=discord.Embed(
-                                description=f"**{mins:,}:{secs:02}**",
-                                color=discord.Colour.orange(),
-                            )
-                        )
-                    )
-                    await asyncio.sleep(1)
-                await msg.edit(
-                    embed=discord.Embed(
-                        description=":watch::exclamation: Time's up!",
-                        color=discord.Colour.red(),
-                    )
-                )
-                ping = await ctx.send(ctx.author.mention)
-                await ping.delete()
-
     @commands.command(aliases=["qr"])
     async def qrmaker(self, ctx, *, data: str):
         """Allows you to make a custom QR Code"""
+        if not os.path.isdir("data/qrcodes"):
+            os.mkdir("data/qrcodes")
+
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -754,9 +873,9 @@ class Utilities(commands.Cog):
         )
         qr.add_data(data)
         img = qr.make_image(fill_color="black", back_color="white")
-        img.save("data/qrcodes/QR.png")
-        await ctx.send(f"{ctx.author.mention}", file=discord.File("qrcodes/QR.png"))
-        os.remove("data/qrcodes/QR.png") #Feel free to disable the removal
+        img.save(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png")
+        await ctx.send(f"{ctx.author.mention}", file=discord.File(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png"))
+        # os.remove(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png") #Feel free to disable the removal
 
     @commands.command(aliases=["qrinv"])
     @commands.guild_only()
@@ -767,6 +886,9 @@ class Utilities(commands.Cog):
         Make sure to adjust the available options to suite your need!
         Set the `age` (defaults to 1 day) and `uses` argument to 0 to make a permanent link (default behavior)
         """
+        if not os.path.isdir("data/qrcodes"):
+            os.mkdir("data/qrcodes")
+
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -777,9 +899,9 @@ class Utilities(commands.Cog):
         link = await ctx.channel.create_invite(max_age = age, max_uses = uses, temporary = temp)
         qr.add_data(link)
         img = qr.make_image(fill_color="black", back_color="white")
-        img.save("qrcodes/QR.png")
-        await ctx.send(f"{ctx.author.mention}", file=discord.File("qrcodes/QR.png"))
-        os.remove("qrcodes/QR.png") #Feel free to disable the removal
+        img.save(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png")
+        await ctx.send(f"{ctx.author.mention}", file=discord.File(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png"))
+        os.remove(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png") #Feel free to disable the removal
 
 
     @commands.command(aliases=["whoisplaying"])
@@ -868,7 +990,7 @@ class Utilities(commands.Cog):
     async def mock(self, ctx, *, txt: commands.clean_content):
         lst = [str.upper, str.lower]
         newText = await commands.clean_content().convert(ctx, ''.join(random.choice(lst)(c) for c in txt))
-        if len(newText) <= 512:
+        if len(newText) <= 900:
             await ctx.send(newText)
         else:
             try:
@@ -884,7 +1006,7 @@ class Utilities(commands.Cog):
             for _ in range(num):
                 spacing+=" "
             result = spacing.join(txt)
-            if len(result) <= 200:
+            if len(result) <= 256:
                 await ctx.send(result)
             else:
                 try:
@@ -895,7 +1017,7 @@ class Utilities(commands.Cog):
         else:
             await ctx.send("```fix\nError: The number can only be from 1 to 5```")
 
-    @commands.command()
+    @commands.command(aliases=["rev"])
     async def reverse(self, ctx, *, txt: commands.clean_content):
         result = await commands.clean_content().convert(ctx, txt[::-1])
         if len(result) <= 350:
@@ -907,7 +1029,7 @@ class Utilities(commands.Cog):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @commands.command(aliases=["ascii2hex"])
+    @commands.command(aliases=["ascii2hex","a2h"])
     async def texttohex(self, ctx, *, txt: str):
         try:
             hexoutput = await commands.clean_content().convert(ctx, (" ".join("{:02x}".format(ord(c)) for c in txt)))
@@ -922,7 +1044,7 @@ class Utilities(commands.Cog):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @commands.command(aliases=["hex2ascii"])
+    @commands.command(aliases=["hex2ascii","h2a"])
     async def hextotext(self, ctx, *, txt: str):
         try:
             cleanS = await commands.clean_content().convert(ctx, bytearray.fromhex(txt).decode())
@@ -938,7 +1060,7 @@ class Utilities(commands.Cog):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @commands.command(aliases=["ascii2bin"])
+    @commands.command(aliases=["ascii2bin","a2b"])
     async def texttobinary(self, ctx, *, txt: str):
         try:
             cleanS = await commands.clean_content().convert(ctx, ' '.join(format(ord(x), 'b') for x in txt))
@@ -954,7 +1076,7 @@ class Utilities(commands.Cog):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @commands.command(aliases=["bin2ascii"])
+    @commands.command(aliases=["bin2ascii","b2a"])
     async def binarytotext(self, ctx, *, txt: str):
         try:
             cleanS = await commands.clean_content().convert(ctx, ''.join([chr(int(txt, 2)) for txt in txt.split()]))
@@ -1011,8 +1133,7 @@ class Utilities(commands.Cog):
                 async with session.get(f'https://ipapi.co/{ip}/json/') as resp:
                     resp.raise_for_status()
                     data = await resp.json()
-                    await session.close()
-
+                    
             ipaddr = data["ip"]
             city = data["city"]
             region = data["region"]
@@ -1058,8 +1179,8 @@ class Utilities(commands.Cog):
             await ctx.send(embed=embd)
         except IndexError:
             await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! Make sure the IP and the formatting are correct!"))
-        finally:
-            await session.close()
+        except KeyError:
+            await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! Make sure the IP and the formatting are correct!"))
 
     @commands.group(invoke_without_command=True, aliases=["mrs"])
     async def morse(self, ctx):
@@ -1072,10 +1193,12 @@ class Utilities(commands.Cog):
         await ctx.send(embed=mainemb)
 
     @morse.command(name="m2a", brief = "Convert Morse code to ASCII", aliases=["morse2ascii"])
-    async def morse2ascii(self, ctx, * , text:str = None):
+    async def morse2ascii(self, ctx, * , text:commands.clean_content = None):
         if text is None:
             await ctx.send(embed=discord.Embed(description="⚠ Please specify the input."))
             return
+
+        inverseMorseAlphabet = dict((v, k) for (k, v) in morseAlphabet.items())
 
         messageSeparated = text.split(' ')
         decodeMessage = ''
@@ -1088,7 +1211,7 @@ class Utilities(commands.Cog):
         await ctx.send(embed=discord.Embed(title="Morse to ASCII Conversion:", description=decodeMessage, timestamp=datetime.utcnow()))
 
     @morse.command(name="a2m", brief = "Convert ASCII into Morse Code", aliases=["ascii2morse"])
-    async def ascii2morse(self, ctx, * ,text: str = None):
+    async def ascii2morse(self, ctx, * ,text: commands.clean_content = None):
         if text is None:
             await ctx.send(embed=discord.Embed(description="⚠ Please specify the input."))
             return
@@ -1108,6 +1231,11 @@ class Utilities(commands.Cog):
         This command predicts the nationality of a person given their name.
         API Provided by: `https://nationalize.io/`
         """
+
+        if name is None:
+            await ctx.send(embed=discord.Embed(description="Please input the name."))
+            return
+
         await ctx.trigger_typing()
 
         fin_name = name.replace(" ","+")
@@ -1116,7 +1244,7 @@ class Utilities(commands.Cog):
             async with session.get(f'https://api.nationalize.io/?name={fin_name}') as resp:
                 resp.raise_for_status()
                 data = json.loads(await resp.read(), object_hook=DictObject)
-                await session.close()
+                
         try:
             answer = data["name"]
             country = data.country[0].country_id
@@ -1124,14 +1252,14 @@ class Utilities(commands.Cog):
         except IndexError:
             await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! Cannot determine the result."))
             return
-        finally:
-            await session.close()
-
+            
+        percentage = float(probability) * 100
+        floorPercentage = floor(percentage)
 
         emb = discord.Embed(description="Predict the nationality of a name!", color = ctx.author.color, timestamp = datetime.utcnow())
         emb.add_field(name="Name", value=answer.title())
-        emb.add_field(name="Country", value=country)
-        emb.add_field(name="Probability", value=probability)
+        emb.add_field(name="Country", value=f"{country} :flag_{country.lower()}:")
+        emb.add_field(name="Probability", value=f"{floorPercentage}%")
         emb.set_footer(text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
 
         await ctx.send(embed=emb)
@@ -1156,25 +1284,89 @@ class Utilities(commands.Cog):
 
         locate = city.replace(" ", "+")
 
-        def degToCompass(deg):
+        def degToCompass(deg): # https://stackoverflow.com/a/7490772 https://www.windfinder.com/wind/windspeed.htm
             val = int((deg/22.5)+.5)
-            arr = ["N","NNE","NE","ENE","E","ESE", "SE", "SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"]
+            arr = [ 
+                    "North (N)",
+                    "North-Northeast (NNE)",
+                    "Northeast (NE)",
+                    "East-Northeast (ENE)",
+                    "East (E)",
+                    "East-Southeast (ESE)",
+                    "Southeast (SE)",
+                    "South-Southeast (SSE)",
+                    "South (S)",
+                    "South-Southwest (SSW)",
+                    "Southwest (SW)",
+                    "West-Southwest (WSW)",
+                    "West (W)",
+                    "West-Northwest (WNW)",
+                    "Northwest (NW)",
+                    "North-Northwest (NNW)"
+                    ]
             return arr[(val % 16)]
+
+        def metertokilometer(meter): # https://www.asknumbers.com/meters-to-km.aspx
+            km = meter * 0.001
+            return km
+
+        def wind_condition(wind_speed): # In Meter/second https://www.windfinder.com/wind/windspeed.htm
+            if wind_speed > 0 and wind_speed < 0.2:
+                return "Calm"
+            elif wind_speed > 0.3 and wind_speed < 1.5:
+                return "Light Air"
+            elif wind_speed > 1.6 and wind_speed < 3.3:
+                return "Light Breeze"
+            elif wind_speed > 3.4 and wind_speed < 5.4:
+                return "Gentle Breeze"
+            elif wind_speed > 5.5 and wind_speed < 7.9:
+                return "Moderate Breeze"
+            elif wind_speed > 8.0 and wind_speed < 10.7:
+                return "Fresh Breeze"
+            elif wind_speed > 10.8 and wind_speed < 13.8:
+                return "Strong Breeze"
+            elif wind_speed > 13.9 and wind_speed < 17.1:
+                return "Near Gale"
+            elif wind_speed > 17.2 and wind_speed < 20.7:
+                return "Gale"
+            elif wind_speed > 20.8 and wind_speed < 24.4:
+                return "Severe Gale"
+            elif wind_speed > 24.5 and wind_speed < 28.4:
+                return "Strong Storm"
+            elif wind_speed > 28.5 and wind_speed < 32.6:
+                return "Violent Storm"
+            elif wind_speed > 32.7:
+                return "Hurricane"
 
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(f"http://api.openweathermap.org/data/2.5/weather?q={locate}&appid={key}&units=metric") as resp:
                     resp.raise_for_status()
                     data = json.loads(await resp.read(), object_hook=DictObject)
-                    await session.close()
+                    
+
+            code = data.cod
+
+            if code is not 200:
+                msg = data.message
+                if code is 404:
+                    await ctx.send(embed=discord.Embed(description="City cannot be found!"))
+                    return
+                elif code is 401:
+                    await ctx.send(embed=discord.Embed(description="Invalid API Key!"))
+                    return
+                else:
+                    await ctx.send(embed=discord.Embed(description=f"An Error Occured! `{msg}` (Code: `{code}`)"))
+                    return
 
             cityname = data.name
             countryid = data.sys.country
             country_flags = f":flag_{countryid.lower()}:"
             status = data.weather[0].main
             description = data.weather[0].description
-            sunrise = datetime.fromtimestamp(data.sys.sunrise)
-            sunset = datetime.fromtimestamp(data.sys.sunset)
+            sunrise = data.sys.sunrise
+            sunset = data.sys.sunset
+            timezone_offset = data.timezone
             clouds = data.clouds.all
             lon = data.coord.lon
             lat = data.coord.lat
@@ -1182,10 +1374,10 @@ class Utilities(commands.Cog):
             feels_c = data.main.feels_like
             t_min_c = data.main.temp_min
             t_max_c = data.main.temp_max
-            temp_f =  float(pytemperature.c2f(temp_c))
-            feels_f = float(pytemperature.c2f(feels_c))
-            t_min_f = float(pytemperature.c2f(t_min_c))
-            t_max_f = float(pytemperature.c2f(t_max_c))
+            temp_f =  pytemperature.c2f(temp_c)
+            feels_f = pytemperature.c2f(feels_c)
+            t_min_f = pytemperature.c2f(t_min_c)
+            t_max_f = pytemperature.c2f(t_max_c)
             pressure = data.main.pressure
             humidity = data.main.humidity
             vis = data.visibility
@@ -1200,35 +1392,259 @@ class Utilities(commands.Cog):
             await ctx.send(embed=discord.Embed(description="⚠ An Error Occured while parsing the data."))
             return
         except aiohttp.client_exceptions.ClientResponseError:
-            await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! That City cannot be found."))
-            return
-        finally:
-            await session.close()
+            if resp.status == 404:
+                await ctx.send(embed=discord.Embed(description="⚠ Not Found."))
+                return
+            if resp.status == 403:
+                await ctx.send(embed=discord.Embed(description="⚠ Forbidden."))
+                return
+            elif resp.status >= 500:
+                await ctx.send(embed=discord.Embed(description="⚠ Unable to access the REST API, it may be down or inaccessible at the moment."))
+                return
+            else:
+                await ctx.send(embed=discord.Embed(description="⚠ Undefined Error."))
+                return
 
-        embed = discord.Embed(title="Weather Information", timestamp=datetime.utcnow(), color=ctx.author.color)
+        colours = ""
+
+        if temp_c > 36:
+            colours = discord.Colour(0xFF0000)
+        elif temp_c > 28:
+            colours = discord.Colour(0xFFFF00)
+        elif temp_c > 16:
+            colours = discord.Colour(0x26D935)
+        elif temp_c > 8:
+            colours = discord.Colour(0x006BCE)
+        elif temp_c > 2:
+            colours = discord.Colour(0xB4CFFA)
+        elif temp_c < 2:
+            colours = discord.Colour(0x0000FF)
+        else:
+            colours = discord.Colour(0x36393E)
+
+        def emovisibconf(mtr):
+            if mtr > 8000:
+                return "😀"
+            elif mtr < 8000 and mtr > 7000:
+                return "🙂"
+            elif mtr < 6000 and mtr > 5000:
+                return "😐"
+            elif mtr < 4000 and mtr > 3000:
+                return "🙁"
+            elif mtr < 3000 and mtr > 2500:
+                return "😧"
+            elif mtr < 2000 and mtr > 1500:
+                return "😨"
+            elif mtr < 1000 and mtr > 500:
+                return "😱"
+            elif mtr < 499:
+                return "💀"
+            else:
+                return "🤔"
+
+
+        calculated_sunrise = datetime.fromtimestamp(sunrise + timezone_offset)
+        calculated_sunset = datetime.fromtimestamp(sunset + timezone_offset)
+
+        embed = discord.Embed(title="Weather Information", timestamp=datetime.utcnow(), color=colours)
         embed.set_thumbnail(url=icon)
 
         embed.add_field(name="🏙 City Name", value=cityname, inline=False)
         embed.add_field(name="🏳 Country ID", value=f"{countryid} {country_flags}", inline=False)
         embed.add_field(name="🌻 Weather Status", value=status, inline=False)
         embed.add_field(name="ℹ Condition", value=description.title(), inline=False)
-        embed.add_field(name="🌄 Sunrise", value=f"{sunrise} (UTC)", inline=True)
-        embed.add_field(name="🌇 Sunset", value=f"{sunset} (UTC)", inline=True)
         embed.add_field(name="🌐 Longitude", value=lon, inline=True)
         embed.add_field(name="🌐 Latitude", value=lat, inline=True)
+        embed.add_field(name="🌄 Sunrise", value=f"{calculated_sunrise} (UTC)", inline=True)
+        embed.add_field(name="🌇 Sunset", value=f"{calculated_sunset} (UTC)", inline=True)
         embed.add_field(name="🌡 Current Temperature", value=f"{temp_c} °C ({temp_f} °F)", inline=True)
         embed.add_field(name="🌡 Feels Like", value=f"{feels_c} °C ({feels_f} °F)", inline=True)
         embed.add_field(name="🌡 Min Temperature", value=f"{t_min_c} °C ({t_min_f} °F)", inline=True)
         embed.add_field(name="🌡 Max Temperature", value=f"{t_max_c} °C ({t_max_f} °F)", inline=True)
         embed.add_field(name="☁ Cloudiness", value=f"{clouds}%", inline=True)
-        embed.add_field(name="🍃Pressure", value=f"{pressure} hPa", inline=True)
+        embed.add_field(name="🍃Atmospheric Pressure", value=f"{pressure} hPa", inline=True)
         embed.add_field(name="🌬 Humidity", value=f"{humidity}%", inline=True)
-        embed.add_field(name="👀 Visibility", value=f"{vis} meter", inline=True)
-        embed.add_field(name="💨 Wind", value=f"{wind} m/sec", inline=True)
+        embed.add_field(name="👀 Visibility", value=f"{vis} Meter ({metertokilometer(vis)} KM) {emovisibconf(vis)}", inline=True)
+        embed.add_field(name="💨 Wind Speed", value=f"{wind} m/sec ({wind_condition(wind)})", inline=True)
         embed.add_field(name="🧭 Wind Direction", value=f"{wind_degree}° {wind_direction}", inline=True)
 
         await ctx.send(embed=embed)
 
+    @commands.command(name="define",aliases=["definition", "dictionary"])
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def _define(self, ctx, *, arg):
+        msg = await ctx.send("Looking for a definition...")
+        try:
+            #--Connect to unofficial Google Dictionary API and get results--#
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f'https://api.dictionaryapi.dev/api/v1/entries/en/{arg}') as r:
+                    #--Now we decode the JSON and get the variables, replacing them with None if they fail to define--#
+                    result = await r.json()
+                    word = result[0]['word']
+                    try:
+                        origin = result[0]['origin']
+                    except KeyError:
+                        origin = None
+                    try:
+                        noun_def = result[0]['meaning']['noun'][0]['definition']
+                    except KeyError:
+                        noun_def = None
+                    try:
+                        noun_eg = result[0]['meaning']['noun'][0]['example']
+                    except KeyError:
+                        noun_eg = None
+                    try:
+                        verb_def = result[0]['meaning']['verb'][0]['definition']
+                    except KeyError:
+                        verb_def = None
+                    try:
+                        verb_eg = result[0]['meaning']['verb'][0]['example']
+                    except KeyError:
+                        verb_eg = None
+                    try:
+                        prep_def = result[0]['meaning']['preposition'][0]['definition']
+                    except KeyError:
+                        prep_def = None
+                    try:
+                        prep_eg = result[0]['meaning']['preposition'][0]['example']
+                    except KeyError:
+                        prep_eg = None
+                    try:
+                        adverb_def = result[0]['meaning']['adverb'][0]['definition']
+                    except KeyError:
+                        adverb_def = None
+                    try:
+                        adverb_eg = result[0]['meaning']['adverb'][0]['example']
+                    except KeyError:
+                        adverb_eg = None
+                    try:
+                        adject_def = result[0]['meaning']['adjective'][0]['definition']
+                    except KeyError:
+                        adject_def = None
+                    try:
+                        adject_eg = result[0]['meaning']['adjective'][0]['example']
+                    except KeyError:
+                        adject_eg = None
+                    try:
+                        pronoun_def = result[0]['meaning']['pronoun'][0]['definition']
+                    except KeyError:
+                        pronoun_def = None
+                    try:
+                        pronoun_eg = result[0]['meaning']['pronoun'][0]['example']
+                    except KeyError:
+                        pronoun_eg = None
+                    try:
+                        exclaim_def = result[0]['meaning']['exclamation'][0]['definition']
+                    except KeyError:
+                        exclaim_def = None
+                    try:
+                        exclaim_eg = result[0]['meaning']['exclamation'][0]['example']
+                    except KeyError:
+                        exclaim_eg = None
+                    try:
+                        poss_determ_def = result[0]['meaning']['possessive determiner'][0]['definition']
+                    except KeyError:
+                        poss_determ_def = None
+                    try:
+                        poss_determ_eg = result[0]['meaning']['possessive determiner'][0]['example']
+                    except KeyError:
+                        poss_determ_eg = None
+                    try:
+                        abbrev_def = result[0]['meaning']['abbreviation'][0]['definition']
+                    except KeyError:
+                        abbrev_def = None
+                    try:
+                        abbrev_eg = result[0]['meaning']['abbreviation'][0]['example']
+                    except KeyError:
+                        abbrev_eg = None
+                    try:
+                        crossref_def = result[0]['meaning']['crossReference'][0]['definition']
+                    except KeyError:
+                        crossref_def = None
+                    try:
+                        crossref_eg = result[0]['meaning']['crossReference'][0]['example']
+                    except KeyError:
+                        crossref_eg = None
+                    embed = discord.Embed(title=f":blue_book: Google Definition for {word}", color=0x8253c3)
+                    #--Then we add see if the variables are defined and if they are, those variables to an embed and send it back to Discord--#
+                    if origin == None:
+                        pass
+                    else:
+                        embed.add_field(name="Origin:", value=origin, inline=False)
+                    if noun_def == None:
+                        pass
+                    else:
+                        if noun_eg == None:
+                            embed.add_field(name="As a Noun:", value=f"**Definition:** {noun_def}", inline=False)
+                        else:
+                            embed.add_field(name="As a Noun:", value=f"**Definition:** {noun_def}\n**Example:** {noun_eg}", inline=False)
+                    if verb_def == None:
+                        pass
+                    else:
+                        if verb_eg == None:
+                            embed.add_field(name="As a Verb:", value=f"**Definition:** {verb_def}", inline=False)
+                        else:
+                            embed.add_field(name="As a Verb:", value=f"**Definition:** {verb_def}\n**Example:** {verb_eg}", inline=False)
+                    if prep_def == None:
+                        pass
+                    else:
+                        if prep_eg == None:
+                            embed.add_field(name="As a Preposition:", value=f"**Definition:** {prep_def}", inline=False)
+                        else:
+                            embed.add_field(name="As a Preposition:", value=f"**Definition:** {prep_def}\n**Example:** {prep_eg}", inline=False)
+                    if adverb_def == None:
+                        pass
+                    else:
+                        if adverb_eg == None:
+                            embed.add_field(name="As an Adverb:", value=f"**Definition:** {adverb_def}", inline=False)
+                        else:
+                            embed.add_field(name="As a Adverb:", value=f"**Definition:** {adverb_def}\n**Example:** {adverb_eg}", inline=False)
+                    if adject_def == None:
+                        pass
+                    else:
+                        if adject_eg == None:
+                            embed.add_field(name="As an Adjective:", value=f"**Definition:** {adject_def}", inline=False)
+                        else:
+                            embed.add_field(name="As an Adjective:", value=f"**Definition:** {adject_def}\n**Example:** {adject_eg}", inline=False)
+                    if pronoun_def == None:
+                        pass
+                    else:
+                        if pronoun_eg == None:
+                            embed.add_field(name="As a Pronoun:", value=f"**Definition:** {pronoun_def}", inline=False)
+                        else:
+                            embed.add_field(name="As a Pronoun:", value=f"**Definition:** {pronoun_def}\n**Example:** {pronoun_eg}", inline=False)
+                    if exclaim_def == None:
+                        pass
+                    else:
+                        if exclaim_eg == None:
+                            embed.add_field(name="As an Exclamation:", value=f"**Definition:** {exclaim_def}", inline=False)
+                        else:
+                            embed.add_field(name="As an Exclamation:", value=f"**Definition:** {exclaim_def}\n**Example:** {exclaim_eg}", inline=False)
+                    if poss_determ_def == None:
+                        pass
+                    else:
+                        if poss_determ_eg == None:
+                            embed.add_field(name="As a Possessive Determiner:", value=f"**Definition:** {poss_determ_def}", inline=False)
+                        else:
+                            embed.add_field(name="As a Possessive Determiner:", value=f"**Definition:** {poss_determ_def}\n**Example:** {poss_determ_eg}", inline=False)
+                    if abbrev_def == None:
+                        pass
+                    else:
+                        if abbrev_eg == None:
+                            embed.add_field(name="As an Abbreviation:", value=f"**Definition:** {abbrev_def}", inline=False)
+                        else:
+                            embed.add_field(name="As an Abbreviation:", value=f"**Definition:** {abbrev_def}\n**Example:** {abbrev_eg}", inline=False)
+                    if crossref_def == None:
+                        pass
+                    else:
+                        if crossref_eg == None:
+                            embed.add_field(name="As a Cross-Reference:", value=f"**Definition:** {crossref_def}", inline=False)
+                        else:
+                            embed.add_field(name="As a Cross-Reference:", value=f"**Definition:** {crossref_def}\n**Example:** {crossref_eg}", inline=False)
+                    await msg.edit(content='',embed=embed)
+        except:
+            #--Send error message if command fails, as it's assumed a definition isn't found--#
+            await msg.edit(content=":x: Sorry, I couldn't find that word. Check your spelling and try again.")
 
 def setup(bot):
     bot.add_cog(Utilities(bot))

@@ -29,13 +29,6 @@ To customize the bootup logo, edit the `bootup_logo.txt` to your liking.
   
 * The bot also has a customizeable Error message quotes
 Go to `quotes.py` to customize the error message quotes.
-  
-* There also a meme command.
-You can put your own memes on `/memes/` folder and use the meme command to send it randomly.
-
-* You can also put custom sound into the `/audio/` folder
-Use `localplay` command to play the audio
-NOTE: The filename **IS** case sensitive. (For example, `[p]localplay lingsir_wengi.mp3`)
 
 * You can customize the Error Logging channel
 Open up `config.py` and put your desired channel ID on `home` variable

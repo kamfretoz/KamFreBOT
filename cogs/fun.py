@@ -10,6 +10,7 @@ import os
 import json
 import ciso8601
 import data.topics as topics
+import dateutil
 from textwrap import shorten
 from collections import deque
 from datetime import datetime
@@ -150,31 +151,45 @@ class Fun(commands.Cog):
         self.lock = asyncio.Lock()
         self.jynxed = {}
 
-    @commands.command(aliases=["talk", "speak","s"])
+    @commands.command(aliases=["talk", "speak","sy"])
     @commands.bot_has_permissions(manage_messages=True)
-    async def say(self, ctx, *, text: str = None):
+    async def say(self, ctx, *, text: commands.clean_content = None):
         """Say whatever you typed in"""
         try:
             if text is None:
                 await ctx.send("❓ What do you want me to say?", delete_after=5.0)
                 await ctx.message.add_reaction("❓")
             else:
+                await ctx.message.delete()
                 await ctx.trigger_typing()
                 await ctx.send(text)
-                await ctx.message.delete()
         except discord.Forbidden:
             await ctx.author.send(":no_entry_sign: I'm not allowed to send message here!", delete_after=5)
         except discord.NotFound:
             await ctx.send(discord.Embed(description=":grey_exclamation: ERROR: Original message not found! (404 UNKNOWN MESSAGE)"), delete_after=5)
         except discord.ext.commands.BotMissingPermissions:
-            await ctx.send(discord.Embed(description="I don't have permission to delete the original message!"), delete_after=5.0,)
+            await ctx.send(discord.Embed(description="I don't have permission to delete the original message!"), delete_after=5.0,)    @commands.command(aliases=["talk", "speak","s"])
 
+    @commands.command(aliases=["sghost", "sayg","sg"])
+    @commands.bot_has_permissions(manage_messages=True)
+    async def sayghost(self, ctx, *, text: commands.clean_content = None):
+        """Say whatever you typed in and immediately deletes it"""
+        try:
+            if text is None:
+                await ctx.send("❓ What do you want me to say?", delete_after=5.0)
+                await ctx.message.add_reaction("❓")
+            else:
+                await ctx.message.delete()
+                await ctx.trigger_typing()
+                await ctx.send(text, delete_after=1)
+        except discord.Forbidden:
+            await ctx.author.send(":no_entry_sign: I'm not allowed to send message here!", delete_after=5)
 
     # Say to all members command
     @commands.command(aliases=["stoall"], hidden=True)
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def saytoall(self, ctx, *, text: str = None):
+    async def saytoall(self, ctx, *, text: commands.clean_content = None):
         """Send a message to every member on the server (Can only be used by Administrator)"""
         try:
             if text is None:
@@ -193,7 +208,7 @@ class Fun(commands.Cog):
     # Say Command with TTS
     @commands.command(aliases=["ttstalk", "speaktts","st"], hidden=True)
     @commands.bot_has_permissions(manage_messages=True)
-    async def saytts(self, ctx, *, text:str = None):
+    async def saytts(self, ctx, *, text: commands.clean_content = None):
         """Say whatever you typed in, this time with TTS!"""
         if text is None:
             await ctx.send("❓ What do you want me to say?", delete_after=10.0)
@@ -213,7 +228,7 @@ class Fun(commands.Cog):
     @commands.command(aliases=["embedsay","syd","emb"])
     @commands.bot_has_permissions(embed_links=True)
     @commands.guild_only()
-    async def sayembed(self, ctx, *, message: str = None):
+    async def sayembed(self, ctx, *, message: commands.clean_content = None):
         '''A command to embed messages quickly.'''
         if message is None:
             await ctx.send(discord.Embed(description="❓ What do you want me to say?", delete_after=5))
@@ -228,7 +243,7 @@ class Fun(commands.Cog):
     @commands.command(aliases=["sto"])
     @commands.bot_has_permissions(manage_messages=True)
     @commands.guild_only()
-    async def sayto(self, ctx, destination: libneko.converters.GuildChannelConverter=None, *, text: str = None):
+    async def sayto(self, ctx, destination: libneko.converters.GuildChannelConverter=None, *, text: commands.clean_content = None):
         """Send whatever you want to specific channel"""
         if text is None:
             await ctx.send("What do you want me to say?", delete_after=10.0)
@@ -254,7 +269,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=["send", "dm"])
     @commands.guild_only()
-    async def sendto(self, ctx, target: libneko.converters.InsensitiveMemberConverter = None, *, text: str =None):
+    async def sendto(self, ctx, target: libneko.converters.InsensitiveUserConverter = None, *, text:commands.clean_content =None):
         """Send whatever you want to a user's DM"""
         if text is None:
             await ctx.send("What do you want me to say?", delete_after=10.0)
@@ -301,19 +316,6 @@ class Fun(commands.Cog):
         bdance.set_image(url="https://i.imgur.com/1DEtTrQ.gif")
         await ctx.send(embed=bdance)
 
-    @commands.group(invoke_without_command=True, aliases=["sendmeme"])
-    async def sendmemes(self, ctx):
-        """send memes!"""
-        upload = await ctx.send("Uploading, Please Wait!")
-        str(upload)
-        await asyncio.sleep(1)
-        await ctx.trigger_typing()
-        if os.path.isdir(config.dir):
-            folder = config.dir + get_filesystem_slash() + random.choice(os.listdir(config.dir))
-            await ctx.send(file=discord.File(folder))
-        await ctx.send("Finished!")
-        await upload.delete()
-
     @commands.command()
     async def f(self, ctx, *, text: commands.clean_content = None):
         """ Press F to pay respect """
@@ -321,35 +323,11 @@ class Fun(commands.Cog):
         reason = f"for **{text}** " if text else ""
         await ctx.send(f"**{ctx.author.name}** has paid their respect {reason}{random.choice(hearts)}")
 
-
-    @commands.cooldown(rate=2,per=900.0, type=commands.BucketType.user)
-    @sendmemes.command(name='overload')
-    async def memes_overload(self, ctx, count: int = 5):
-        """MOAR MEMES!"""
-        selected_images = []
-        uploading = await ctx.send(f"Uploading {count} images... This may take a while.")
-        str(uploading)
-        await asyncio.sleep(3)
-        if count <= 50:
-            for i in range(0, int(count)):
-                await ctx.trigger_typing()
-                stop = False
-                while not stop:
-                    path = config.dir + get_filesystem_slash() + random.choice(os.listdir(config.dir))
-                    if path not in selected_images:
-                        selected_images.append(path)
-                        await ctx.send(file=discord.File(path))
-                        stop = True
-        else:
-           await ctx.send("Please select the amount between 2 and 50")
-        await ctx.send("Finished!", delete_after=3.0)
-        await uploading.delete()
-
     @commands.command(aliases=['tf'])
-    async def textface(self, ctx, Type):
+    async def textface(self, ctx, Type: str = None):
         """Get those dank/cool faces here. Type *textface list for a list."""
         if Type is None:
-            await ctx.send('That is NOT one of the dank textfaces in here yet. Use: *textface [lenny/tableflip/shrug]')
+            await ctx.send('That is NOT one of the dank textfaces in here yet. Use: [p]textface [lenny/tableflip/shrug]')
         else:
             if Type.lower() == 'lenny':
               await ctx.send('( ͡° ͜ʖ ͡°)')
@@ -378,7 +356,7 @@ class Fun(commands.Cog):
               em.set_footer(text="Don't you dare question my names for the textfaces.")
               await ctx.send(embed=em)
             else:
-              await ctx.send('That is NOT one of the dank textfaces in here yet. Use *textface list to see a list of the textfaces.')
+              await ctx.send('That is NOT one of the dank textfaces in here yet. Use [p]textface list to see a list of the textfaces.')
 
     @commands.command()
     async def hack(self, ctx, user: libneko.converters.InsensitiveMemberConverter = None):
@@ -415,7 +393,7 @@ class Fun(commands.Cog):
         await msg.edit(content=f"An error has occurred hacking {user}'s account. Please try again later. ❌")  
 
     @commands.command(aliases=['animation', 'a'])
-    async def anim(self, ctx, Type):
+    async def anim(self, ctx, Type: str = None):
         """Animations! Usage: anim [type]. For a list, use [p]anim list."""
         if Type is None:
             await ctx.send('Probably a really cool animation, but we have not added them yet! But hang in there! You never know... For a current list, type [p]anim list')
@@ -599,7 +577,7 @@ class Fun(commands.Cog):
               em.set_footer(text="We will always be adding new animations!")
               await ctx.send(embed=em)
             else:
-              await ctx.send('Probably a really cool animation, but we have not added them yet! But hang in there! You never know... For a current list, type *anim list')             
+              await ctx.send('Probably a really cool animation, but we have not added them yet! But hang in there! You never know... For a current list, type [p]anim list')             
 
     # 8Ball Command
     @commands.command(name="8ball", aliases=["ball","8b"])
@@ -618,14 +596,6 @@ class Fun(commands.Cog):
                 "Outlook good",
                 "Signs point to yes",
             ],
-            "psmed": [
-                "Reply hazy, try again",
-                "Ask again later",
-                "Better not tell you now",
-                "Cannot predict now",
-                "Concentrate and ask again",
-                "I'm not sure about that right now"
-            ],
             "psbad": [
                 "Don't count on it",
                 "My reply is no",
@@ -639,16 +609,14 @@ class Fun(commands.Cog):
 
         if choice in ps["psbad"]:
             color = discord.Color(0xFF0000)
-        elif choice in ps["psmed"]:
-            color = discord.Color(0xFFFF00)
         elif choice in ps["psgood"]:
             color = discord.Color(0x26D934)
 
         eightball = discord.Embed(color=color)
         eightball.add_field(name="Question:", value=question.capitalize(), inline=False)
         eightball.add_field(name="Answer:", value=f"{choice}.")
-        eightball.set_author(
-            name="The mighty 8-Ball")
+        eightball.set_author(name="The mighty 8-Ball")
+        eightball.set_footer(text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
         eightball.set_thumbnail(url="https://i.imgur.com/Q9dxpTz.png")
         await ctx.send(embed=eightball, content=None)
 
@@ -665,7 +633,7 @@ class Fun(commands.Cog):
         rick.set_image(url="https://i.kym-cdn.com/photos/images/original/000/041/494/1241026091_youve_been_rickrolled.gif")
         await ctx.send(embed=rick)
 
-    @commands.command(aliases=["bg"], disabled=True)
+    @commands.command(aliases=["bg"])
     async def bigtext(self, ctx, *, text: str):
         """
         Make your text 🇧 🇮 🇬
@@ -690,7 +658,7 @@ class Fun(commands.Cog):
             async with session.get('https://api.thecatapi.com/v1/images/search') as resp:
                 resp.raise_for_status()
                 data = await resp.json()
-                await session.close()
+                
 
         url = data[0]["url"]
         color = ctx.author.color
@@ -711,7 +679,7 @@ class Fun(commands.Cog):
             async with session.get('https://api.thedogapi.com/v1/images/search') as resp:
                 resp.raise_for_status()
                 data = await resp.json()
-                await session.close()
+                
 
         url = data[0]["url"]
         color = ctx.author.color
@@ -732,7 +700,7 @@ class Fun(commands.Cog):
             async with session.get('https://randomfox.ca/floof/') as resp:
                 resp.raise_for_status()
                 data = await resp.json()
-                await session.close()
+                
 
         image = data["image"]
         emb = discord.Embed(description="Here's a cute fox!! :D", color=ctx.author.color, timestamp=datetime.utcnow())
@@ -752,7 +720,7 @@ class Fun(commands.Cog):
             async with session.get('https://shibe.online/api/shibes') as resp:
                 resp.raise_for_status()
                 data = await resp.json()
-                await session.close()
+                
 
         img = data[0]
         emb = discord.Embed(description="Here's a cute shibe!! :D", color=ctx.author.color, timestamp=datetime.utcnow())
@@ -772,7 +740,7 @@ class Fun(commands.Cog):
             async with session.get('https://cat-fact.herokuapp.com/facts/random') as resp:
                 resp.raise_for_status()
                 data = await resp.json()
-                await session.close()
+                
 
         fact = data["text"]
 
@@ -793,7 +761,7 @@ class Fun(commands.Cog):
             async with session.get(f'https://api.adviceslip.com/advice') as resp:
                 resp.raise_for_status()
                 data = json.loads(await resp.read(), object_hook=DictObject)
-                await session.close()
+                
 
         adv = data.slip.advice
 
@@ -812,7 +780,7 @@ class Fun(commands.Cog):
             async with session.get(f'https://programming-quotes-api.herokuapp.com/quotes/random') as resp:
                 resp.raise_for_status()
                 data = json.loads(await resp.read(), object_hook=DictObject)
-                await session.close()
+                
 
         quo = data.en
         aut = data.author
@@ -833,7 +801,7 @@ class Fun(commands.Cog):
             async with session.get('https://quote-garden.herokuapp.com/api/v2/quotes/random') as resp:
                 resp.raise_for_status()
                 data = await resp.json()
-                await session.close()
+                
 
         quote = data["quote"]["quoteText"]
         author = data["quote"]["quoteAuthor"]
@@ -858,7 +826,7 @@ class Fun(commands.Cog):
                 session.post
                 resp.raise_for_status()
                 data = await resp.json()
-                await session.close()
+                
 
         jokes = data["joke"]
 
@@ -880,7 +848,7 @@ class Fun(commands.Cog):
             async with session.get('https://api.chucknorris.io/jokes/random') as resp:
                 resp.raise_for_status()
                 data = await resp.json()
-                await session.close()
+                
 
         joke = data["value"]
         icon = data["icon_url"]
@@ -903,7 +871,7 @@ class Fun(commands.Cog):
             async with session.get('https://api.kanye.rest/') as resp:
                 resp.raise_for_status()
                 data = await resp.json()
-                await session.close()
+                
 
         quote = data["quote"]
 
@@ -924,7 +892,7 @@ class Fun(commands.Cog):
             async with session.get('https://api.taylor.rest/') as resp:
                 resp.raise_for_status()
                 data = await resp.json()
-                await session.close()
+                
 
         quote = data["quote"]
 
@@ -958,10 +926,9 @@ class Fun(commands.Cog):
     @commands.command(hidden=True, aliases=["pelota"])
     async def bola(self, ctx):
         """Bola"""
-
-
         def_bola = "https://i.ibb.co/87j54jp/bola.png"
         def_pelota = "https://cdn.discordapp.com/attachments/617178714173603867/743032290682077184/1597223408911.png"
+
         if ctx.invoked_with == "pelota":
             pel = discord.Embed()
             pel.set_image(url=def_pelota)
@@ -975,7 +942,7 @@ class Fun(commands.Cog):
     @commands.command(hidden=True, aliases=["owo"])
     async def interject(self, ctx):
         """What you’re referring to as Linux, is in fact, GNyU/Linux, or as I’ve recentwy taken to cawwing it, GNyU pwus Linyux."""
-        uwu = discord.Embed(description="||[Don't Click Here](https://www.youtube.com/watch?v=QXUSvSUsx80)||")
+        uwu = discord.Embed(description="||[Yes](https://www.youtube.com/watch?v=QXUSvSUsx80)||")
         uwu.set_image(
             url="https://i.ytimg.com/vi/QXUSvSUsx80/maxresdefault.jpg"
         )
@@ -1028,7 +995,7 @@ class Fun(commands.Cog):
 
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.guild)
     @commands.command(name="curse", aliases=("oppugno", "jynx", "kutuk", "santet"))
-    async def emoji_curse(self, ctx, user: discord.Member = None, emoji: discord.Emoji = None):
+    async def emoji_curse(self, ctx, user: libneko.converters.InsensitiveMemberConverter = None, emoji: discord.Emoji = None):
         if user is None and emoji is None:
             await ctx.send(embed=discord.Embed(description="Please specify who to curse and with what emoji!"))
             return
@@ -1090,7 +1057,7 @@ class Fun(commands.Cog):
                 self.jynxed.update({f"{user.id}@{ctx.guild.id}": curse})
 
     @commands.command(name="bless", aliases=("ruqyah", "finitincantatem", "countercurse"), hidden=False)
-    async def emoji_bless(self, ctx, user: discord.Member):
+    async def emoji_bless(self, ctx, user: libneko.converters.InsensitiveMemberConverter):
         """Cure someone from a curse"""
         cursed = self.jynxed.get(f"{user.id}@{ctx.guild.id}")
         if user == ctx.author and user != self.bot.creator:
@@ -1120,7 +1087,7 @@ class Fun(commands.Cog):
     @commands.command()
     @commands.bot_has_permissions(embed_links=True, add_reactions=True)
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
-    async def xkcd(self, ctx, *, entry_number=None):
+    async def xkcd(self, ctx, *, entry_number: int = None):
         """Post a random xkcd"""
         await ctx.trigger_typing()
         # Creates random number between 0 and 2190 (number of xkcd comics at time of writing) and queries xkcd
@@ -1130,7 +1097,7 @@ class Fun(commands.Cog):
             async with session.get(url, headers=headers) as response:
                 xkcd_latest = await response.json()
                 xkcd_max = xkcd_latest.get("num") + 1
-                await session.close()
+                
 
         if entry_number is not None and int(entry_number) > 0 and int(entry_number) < xkcd_max:
             i = int(entry_number)
@@ -1141,7 +1108,7 @@ class Fun(commands.Cog):
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers) as response:
                 xkcd = await response.json()
-                await session.close()
+                
 
         # Build Embed
         embed = discord.Embed()
@@ -1160,12 +1127,18 @@ class Fun(commands.Cog):
             return
 
         shipnumber = random.randint(0,100)
-        
-        # A Small Easter Egg for a server
+
+        # A Small Easter Egg for a server        
+        if name1 == "Oreo" and name2 == "TaylorSwift":
+            shipnumber = 100
+
         if name1 == "mixtape" and name2 == "calliope":
             shipnumber = 100
-        # This one is a joke i promise
-        if name1 == "qwerty32" and name2 == "sergade":
+
+        if name1 == "Prisma" and name2 == "Atticus":    
+            shipnumber = 100
+
+        if name1 == "qwerty32" and name2 == "Penny":
             shipnumber = 100
             
         if 0 <= shipnumber <= 10:
@@ -1209,7 +1182,7 @@ class Fun(commands.Cog):
                                                               "I feel the love! There's a sign of a match!", 
                                                               "There's a sign of a match!", 
                                                               "I sense a match!", 
-                                                              "A few things can be imporved to make this a match made in heaven!"]))
+                                                              "A few things can be improved to make this a match made in heaven!"]))
         elif 90 < shipnumber <= 99:
             status = "True love! {}".format(random.choice(["It's a match!", 
                                                            "There's a match made in heaven!", 
@@ -1279,10 +1252,8 @@ class Fun(commands.Cog):
         """very mature command yes haha"""
         if not user:
             user = ctx.author.name
+            
         gayness = random.randint(0,100)
-
-        if user == "qwertade":
-            gayness = 100
 
         if gayness <= 33:
             gayStatus = random.choice(["No homo", 
@@ -1345,56 +1316,29 @@ class Fun(commands.Cog):
         emb.set_author(name="Gay-O-Meter™", icon_url="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/ICA_flag.svg/2000px-ICA_flag.svg.png")
         await ctx.send(embed=emb)
 
-    def zalgoify(self, text, amount=3):
-        zalgo_text = ""
-        for c in text:
-            zalgo_text += c
-            if c != " ":
-                for t, range in ZALGO_PARAMS.items():
-                    range = (round(x * amount / 5) for x in range)
-                    n = min(randint(*range), len(ZALGO_CHARS[t]))
-                    zalgo_text += "".join(sample(ZALGO_CHARS[t], n))
-        return zalgo_text
-
     @commands.command()
     async def zalgo(self, ctx, *, text: str):
+        """
+        Zalgo-ify your text!
+        """
+        def zalgoify(self, text, amount=3):
+            zalgo_text = ""
+            for c in text:
+                zalgo_text += c
+                if c != " ":
+                    for t, range in ZALGO_PARAMS.items():
+                        range = (round(x * amount / 5) for x in range)
+                        n = min(randint(*range), len(ZALGO_CHARS[t]))
+                        zalgo_text += "".join(sample(ZALGO_CHARS[t], n))
+            return zalgo_text
         fw = text.split()[0]
         try:
             amount = min(int(fw), ZALGO_MAX_AMT)
             text = text[len(fw) :].strip()
         except ValueError:
             amount = ZALGO_DEFAULT_AMT
-        text = self.zalgoify(text.upper(), amount)
+        text = zalgoify(text.upper(), amount)
         await ctx.send(text)
-
-    @commands.group(invoke_without_command=True, aliases=["tc","timecard"])
-    async def timecards(self, ctx):
-        """Send Spongebob's Timecards"""
-        tipe = "pics"
-        
-        slash = get_filesystem_slash()
-        upload = await ctx.send("Uploading, Please Wait!")
-        str(upload)
-        await asyncio.sleep(1)
-        await ctx.trigger_typing()
-        if os.path.isdir(config.tc):
-            folder = f"{config.tc}{slash}{tipe}{slash}" + random.choice(os.listdir(f"{config.tc}{slash}{tipe}"))
-            await ctx.send(file=discord.File(folder))
-        await upload.delete()
-    
-    @timecards.command(name="audio", aliases=["Sound"], brief="Send the audio version")
-    async def timecards_audio(self, ctx):
-        tipe = "sound"
-        
-        slash = get_filesystem_slash()
-        upload = await ctx.send("Uploading, Please Wait!")
-        str(upload)
-        await asyncio.sleep(1)
-        await ctx.trigger_typing()
-        if os.path.isdir(config.tc):
-            folder = f"{config.tc}{slash}{tipe}{slash}" + random.choice(os.listdir(f"{config.tc}{slash}{tipe}"))
-            await ctx.send(file=discord.File(folder))
-        await upload.delete()
 
     @commands.command()
     async def textmojify(self, ctx, *, msg):
@@ -1489,21 +1433,31 @@ class Fun(commands.Cog):
         await ctx.trigger_typing()
 
         fname = name.replace(" ", "+")
-
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(f'https://api.jikan.moe/v3/search/anime?q={fname}&limit=1') as resp:
                     resp.raise_for_status()
                     data = json.loads(await resp.read(), object_hook=DictObject)
-                    await session.close()
+                    
         except aiohttp.client_exceptions.ClientResponseError:
-            await ctx.send(embed=discord.Embed(description="⚠ No result was found or i was rate limited, Please try again later."))
-            await session.close()
-            return
-            
-
+            if resp.status is 404:
+                await ctx.send(embed=discord.Embed(description="⚠ Not Found."))
+                return
+            if resp.status is 429:
+                await ctx.send(embed=discord.Embed(description="⚠ We are being rate limited! calm your horses."))
+                return
+            if resp.status is 403:
+                await ctx.send(embed=discord.Embed(description="⚠ Forbidden."))
+                return
+            elif resp.status is 500:
+                await ctx.send(embed=discord.Embed(description="⚠ Unable to access Jikan API, it may be down or inaccessible at the moment."))
+                return
+            elif resp.status is 503:
+                await ctx.send(embed=discord.Embed(description="⚠ MyAnimeList is down at the moment, please try again later."))
+                return
+   
         emb = discord.Embed(title="MyAnimeList Anime Information", timestamp=datetime.utcnow())
-
+    
         try:
             anime_id = data.results[0].mal_id
             anime_title = data.results[0].title
@@ -1512,13 +1466,12 @@ class Fun(commands.Cog):
             anime_status = data.results[0].airing
             anime_synopsis = data.results[0].synopsis
             anime_type = data.results[0].type
-            total_episode = data.results[0].episodes
             score = data.results[0].score
         except IndexError:
              await ctx.send(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
              return
 
-        if int(score) == 0 or score is None:
+        if score is None or score is 0:
             score = "N/A"
 
         start = data.results[0].start_date
@@ -1531,11 +1484,18 @@ class Fun(commands.Cog):
         try:
             time_end = ciso8601.parse_datetime(end)
             formatted_end = time_end.strftime("%B %d, %Y")
-            anime_status = "Finished Airing"
-        except:
+        except TypeError:
             formatted_end = "Still Ongoing!"
-            anime_status = "Ongoing"
+            
+        try:
+            total_episode = data.results[0].episodes
+        except TypeError:
             total_episode = "Not yet determined."
+
+        if anime_status:
+            anime_status = "Ongoing"
+        elif not anime_status:
+            anime_status = "Finished airing"
 
         if len(anime_synopsis) > 768:
             shorten(anime_synopsis,width=756,placeholder="...")
@@ -1549,7 +1509,7 @@ class Fun(commands.Cog):
         emb.add_field(name="📅 First Air Date", value=formatted_start, inline=False)
         emb.add_field(name="📅 Last Air Date", value=formatted_end, inline=False)
         emb.add_field(name="💿 Episodes", value=total_episode, inline=True)
-        emb.add_field(name="⭐ Score", value=f"{score}/10", inline=True)
+        emb.add_field(name="⭐ Score", value=f"{score}", inline=True)
         
         try:
             rate = data.results[0].rated
@@ -1562,14 +1522,14 @@ class Fun(commands.Cog):
             pass
         except KeyError:
             pass
-
+        
         emb.add_field(name="👥 Members", value=mem, inline=True)
         emb.add_field(name="💳 ID", value=anime_id, inline=True)
 
         await ctx.send(embed=emb)
 
     @myanimelist.command(name="manga", brief="Find Manga information")
-    @commands.cooldown(rate=2, per=3.0, type=commands.BucketType.user)
+    @commands.cooldown(rate=2, per=3.0, type=commands.BucketType.guild)
     async def myanimelist_manga(self, ctx, * , name: str = None):
         """
         Find manga information from MyAnimeList!
@@ -1591,11 +1551,23 @@ class Fun(commands.Cog):
                 async with session.get(f'https://api.jikan.moe/v3/search/manga?q={fname}&limit=1') as resp:
                     resp.raise_for_status()
                     data = json.loads(await resp.read(), object_hook=DictObject)
-                    await session.close()
+                    
         except aiohttp.client_exceptions.ClientResponseError:
-            await ctx.send(embed=discord.Embed(description="⚠ No result was found or i was rate limited, Please try again later."))
-            await session.close()
-            return
+            if resp.status is 404:
+                await ctx.send(embed=discord.Embed(description="⚠ Not Found."))
+                return
+            if resp.status is 429:
+                await ctx.send(embed=discord.Embed(description="⚠ We are being rate limited! calm your horses."))
+                return
+            if resp.status is 403:
+                await ctx.send(embed=discord.Embed(description="⚠ Forbidden."))
+                return
+            elif resp.status is 500:
+                await ctx.send(embed=discord.Embed(description="⚠ Unable to access Jikan API, it may be down or inaccessible at the moment."))
+                return
+            elif resp.status is 503:
+                await ctx.send(embed=discord.Embed(description="⚠ MyAnimeList is down at the moment, please try again later."))
+                return
 
         try:
             manga_title = data.results[0].title
@@ -1618,7 +1590,7 @@ class Fun(commands.Cog):
 
         if stat is True:
             stat = "Ongoing"
-        else:
+        elif not stat:
             stat = "Finished"
 
         if len(manga_synopsis) > 768:
@@ -1634,14 +1606,14 @@ class Fun(commands.Cog):
         emb.add_field(name="📅 Publish Date", value=formatted_start, inline=False)
         emb.add_field(name="📚 Volumes", value=manga_volumes, inline=True)
         emb.add_field(name="📰 Chapters", value=manga_chapters, inline=True)
-        emb.add_field(name="⭐ Score", value=f"{score}/10", inline=True)
+        emb.add_field(name="⭐ Score", value=f"{score}", inline=True)
         emb.add_field(name="👥 Members", value=memb, inline=True)
         emb.add_field(name="💳 ID", value=manga_id, inline=True)
 
         await ctx.send(embed=emb)
 
     @myanimelist.command(name="character", brief="Find character information", aliases=["chara","char"])
-    @commands.cooldown(rate=2, per=3.0, type=commands.BucketType.user)
+    @commands.cooldown(rate=2, per=3.0, type=commands.BucketType.guild)
     async def myanimelist_chara(self, ctx, * , name: str = None):
         """
         Find character information from MyAnimeList!
@@ -1663,11 +1635,23 @@ class Fun(commands.Cog):
                 async with session.get(f'https://api.jikan.moe/v3/search/character?q={fname}&limit=1') as resp:
                     resp.raise_for_status()
                     data = json.loads(await resp.read(), object_hook=DictObject)
-                    await session.close()
+                    
         except aiohttp.client_exceptions.ClientResponseError:
-            await ctx.send(embed=discord.Embed(description="⚠ No result was found or i was rate limited, Please try again later."))
-            await session.close()
-            return
+            if resp.status is 404:
+                await ctx.send(embed=discord.Embed(description="⚠ Not Found."))
+                return
+            if resp.status is 429:
+                await ctx.send(embed=discord.Embed(description="⚠ We are being rate limited! calm your horses."))
+                return
+            if resp.status is 403:
+                await ctx.send(embed=discord.Embed(description="⚠ Forbidden."))
+                return
+            elif resp.status is 500:
+                await ctx.send(embed=discord.Embed(description="⚠ Unable to access Jikan API, it may be down or inaccessible at the moment."))
+                return
+            elif resp.status is 503:
+                await ctx.send(embed=discord.Embed(description="⚠ MyAnimeList is down at the moment, please try again later."))
+                return
 
         char_id = data.results[0].mal_id
         char_url = data.results[0].url
@@ -1698,11 +1682,256 @@ class Fun(commands.Cog):
             emb.add_field(name="📚 Mangaography", value=f"[{char_manga_name}]({char_manga_url})", inline=False)
         except IndexError:
             pass
-
-
+        
         emb.add_field(name="💳 ID", value=char_id, inline=True)
 
         await ctx.send(embed=emb)
+
+    @commands.command() # https://github.com/sks316/mewtwo-bot/blob/master/cogs/fun.py#L220
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def amiibo(self, ctx, *, query: str):
+        #--First we connect to the Amiibo API and download the Amiibo information--#
+        await ctx.trigger_typing()
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f'https://amiiboapi.com/api/amiibo/?name={query}') as amiibo:
+                data = await amiibo.json()
+                
+                #--Now we attempt to extract information--#
+                try:
+                    series = data['amiibo'][0]['amiiboSeries']
+                    character = data['amiibo'][0]['character']
+                    name = data['amiibo'][0]['name']
+                    game = data['amiibo'][0]['gameSeries']
+                    atype = data['amiibo'][0]['type']
+                    na_release = data['amiibo'][0]['release']['na']
+                    eu_release = data['amiibo'][0]['release']['eu']
+                    jp_release = data['amiibo'][0]['release']['jp']
+                    au_release = data['amiibo'][0]['release']['au']
+                    image = data['amiibo'][0]['image']
+                    #--Finally, we format it into a nice little embed--#
+                    embed = discord.Embed(title=f"Amiibo information for {name} ({series} series)", color=0xd82626)
+                    embed.add_field(name='Character Represented', value=character)
+                    embed.add_field(name='Amiibo Series', value=f"{series} series")
+                    embed.add_field(name='Game of Origin', value=game)
+                    embed.add_field(name='Type', value=atype)
+                    embed.add_field(name='Released', value=f":flag_us: {na_release}\n:flag_eu: {eu_release}\n:flag_jp: {jp_release}\n:flag_au: {au_release}")
+                    embed.set_image(url=image)
+                    embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Amiibo.svg/1024px-Amiibo.svg.png")
+                    await ctx.send(embed=embed)
+                except KeyError:
+                    return await ctx.send(":x: I couldn't find any Amiibo with that name. Double-check your spelling and try again.")
+
+    @commands.command() # https://github.com/sks316/mewtwo-bot/blob/master/cogs/fun.py#L252
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def urban(self, ctx, *, query: str):
+        msg = await ctx.send("Looking for a definition...")
+        try:
+            #--First we connect to Urban Dictionary's API and get the results--#
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f'http://api.urbandictionary.com/v0/define?term={query}') as r:
+                    #--Now we decode the JSON and get the variables, truncating definitions and examples if they are longer than 900 characters due to Discord API limitations and replacing example with None if blank--#
+                    result = await r.json()
+                    word = result['list'][0]['word']
+                    url = result['list'][0]['permalink']
+                    upvotes = result['list'][0]['thumbs_up']
+                    downvotes = result['list'][0]['thumbs_down']
+                    author = result['list'][0]['author']
+                    definition = result['list'][0]['definition']
+                    definition = definition.replace('[', '')
+                    definition = definition.replace(']', '')
+                    if len(definition) > 900:
+                        definition = definition[0:901]
+                        definition = f"{definition}[...]({url})"
+                    example = result['list'][0]['example']
+                    example = example.replace('[', '')
+                    example = example.replace(']', '')
+                    if len(example) > 900:
+                        example = example[0:901]
+                        example = f"{example}[...]({url})"
+                    if len(example) < 1:
+                        example = None
+                    embed = discord.Embed(title=f":notebook: Urban Dictionary Definition for {word}", description=definition, url=url, color=0x8253c3)
+                    if example == None:
+                        pass
+                    else:
+                        embed.add_field(name="Example:", value=example, inline=False)
+                    embed.set_footer(text=f"Author: {author} - 👍️ {str(upvotes)} - 👎️ {str(downvotes)}")
+                    await msg.edit(content='', embed=embed)
+                    
+        except:
+            await msg.edit(content=":x: Sorry, I couldn't find that word. Check your spelling and try again.")
+
+    @commands.command(aliases=["pokemon", "pkmn"])
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def pokedex(self, ctx, *, query: str):
+        await ctx.trigger_typing()
+        #--Some Pokemon with several forms are named differently on the API, so if one of those Pokemon are specified, we replace the query with the correct name--#
+        pkmn = {
+            'meloetta': 'Meloetta - Aria Forme',
+            'keldeo': 'Keldeo - Ordinary Form',
+            'burmy': 'Burmy - Plant Cloak',
+            'wormadam': 'Wormadam - Plant Cloak',
+            'cherrim': 'Cherrim - Overcast Form',
+            'giratina': 'Giratina - Altered Forme',
+            'shaymin': 'Shaymin - Land Forme',
+            'basculin': 'Basculin - Red-Striped Form',
+            'deerling': 'Deerling - Spring Form',
+            'tornadus': 'Tornadus - Incarnate Forme',
+            'thundurus': 'Thundurus - Incarnate Forme',
+            'landorus': 'Landorus - Incarnate Forme',
+            'flabebe': 'Flabébé',
+            'zygarde': 'Zygarde - Complete Forme',
+            'hoopa': 'Hoopa Confined',
+            'oricorio': 'Oricorio - Baile Style',
+            'lycanroc': 'Lycanroc - Midday Form',
+            'wishiwashi': 'Wishiwashi - Solo Form',
+            'minior': 'Minior - Meteor Form',
+            'mimikyu': 'Mimikyu - Disguised Form',
+        }.get(query.lower(), query)
+
+        #--First we connect to the Pokedex API and download the Pokedex entry--#
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f'https://pokeapi.glitch.me/v1/pokemon/{pkmn}') as dex_entry:
+                data = await dex_entry.json()
+                #--Now we attempt to extract information--#
+                try:
+                    pkmn_name = data[0]['name']
+                    pkmn_no = data[0]['number']
+                    pkmn_desc = data[0]['description']
+                    pkmn_img = data[0]['sprite']
+                    pkmn_height = data[0]['height']
+                    pkmn_weight = data[0]['weight']
+                    pkmn_species = data[0]['species']
+                    pkmn_type1 = data[0]['types'][0]
+                    pkmn_gen = str(data[0]['gen'])
+                    pkmn_ability1 = data[0]['abilities']['normal'][0]
+                    #--Detect if Pokemon has a second ability--#
+                    try:
+                        pkmn_ability2 = data[0]['abilities']['normal'][1]
+                    except IndexError:
+                        pkmn_ability2 = None
+                    #--Detect if Pokemon has a hidden ability--#
+                    try:
+                        pkmn_hiddenability = data[0]['abilities']['hidden'][0]
+                    except IndexError:
+                        pkmn_hiddenability = None
+                    #--Detect if Pokemon has a second type--#
+                    try:
+                        pkmn_type2 = data[0]['types'][1]
+                    except IndexError:
+                        pkmn_type2 = None
+                    #--Finally, we format it into a nice little embed--#
+                    embed = discord.Embed(title=f"Pokédex information for {pkmn_name} (#{pkmn_no})", description=pkmn_desc, color=0xd82626)
+                    embed.add_field(name='Height', value=pkmn_height)
+                    embed.add_field(name='Weight', value=pkmn_weight)
+                    embed.add_field(name='Species', value=pkmn_species)
+                    #--Detect if type2 is defined--#
+                    if pkmn_type2 == None:
+                        embed.add_field(name='Type', value=pkmn_type1)
+                    else:
+                        embed.add_field(name='Types', value=f"{pkmn_type1}, {pkmn_type2}")
+                    #--Detect if ability2 and hiddenability defined--#
+                    if pkmn_ability2 == None:
+                        if pkmn_hiddenability == None:
+                            embed.add_field(name='Ability', value=pkmn_ability1)
+                        else:
+                            embed.add_field(name='Abilities', value=f"{pkmn_ability1};\n**Hidden:** {pkmn_hiddenability}")
+                    else:
+                        if pkmn_hiddenability == None:
+                            embed.add_field(name='Abilities', value=f"{pkmn_ability1}, {pkmn_ability2}")
+                        else:
+                            embed.add_field(name='Abilities', value=f"{pkmn_ability1}, {pkmn_ability2};\n**Hidden:** {pkmn_hiddenability}")
+                    embed.add_field(name='Generation Introduced', value=f"Gen {pkmn_gen}")
+                    embed.set_image(url=pkmn_img)
+                    embed.set_thumbnail(url="https://cdn.bulbagarden.net/upload/7/79/Dream_Pok%C3%A9_Ball_Sprite.png")
+                    await ctx.send(embed=embed)
+                except KeyError:
+                    return await ctx.send(":x: I couldn't find any Pokémon with that name. Double-check your spelling and try again.")
+
+    @commands.command(aliases=["pats", "pet"]) # https://github.com/sks316/mewtwo-bot/blob/master/cogs/fun.py#L307
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def pat(self, ctx, *, user: libneko.converters.InsensitiveMemberConverter = None):
+        if user == None:
+            return await ctx.send(":x: You need someone to give headpats to! You can give me a headpat if you want...")
+        if user == ctx.author:
+            return await ctx.send(":x: You can't give yourself headpats! You can give me a headpat if you want...")
+        #--Get image from NekosLife API--#
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://nekos.life/api/v2/img/pat') as pat:
+                data = await pat.json()
+                result = data.get('url')
+                embed = discord.Embed(title=f"{ctx.author.display_name} gives {user.display_name} some headpats!",  color=0x8253c3)
+                embed.set_image(url=result)
+                await ctx.send(embed=embed)
+                
+
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def cuddle(self, ctx, *, user: libneko.converters.InsensitiveMemberConverter = None):
+        if user == None:
+            return await ctx.send(":x: You need someone to cuddle! You can cuddle me if you want...")
+        if user == ctx.author:
+            return await ctx.send(":x: You can't cuddle yourself! You can cuddle me if you want...")
+        #--Get image from NekosLife API--#
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://nekos.life/api/v2/img/cuddle') as cuddle:
+                data = await cuddle.json()
+                result = data.get('url')
+                embed = discord.Embed(title=f"🤗 {ctx.author.display_name} cuddles {user.display_name}!",  color=0x8253c3)
+                embed.set_image(url=result)
+                await ctx.send(embed=embed)
+                
+
+    @commands.command(aliases=["smooch"])
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def kiss(self, ctx, *, user: libneko.converters.InsensitiveMemberConverter = None):
+        if user == None:
+            return await ctx.send(":x: You need someone to kiss! You can kiss me if you want...")
+        if user == ctx.author:
+            return await ctx.send(":x: You can't kiss yourself! You can kiss me if you want...")
+        #--Get image from NekosLife API--#
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://nekos.life/api/v2/img/kiss') as kiss:
+                data = await kiss.json()
+                result = data.get('url')
+                embed = discord.Embed(title=f"❤ {ctx.author.display_name} kisses {user.display_name}!",  color=0x8253c3)
+                embed.set_image(url=result)
+                await ctx.send(embed=embed)
+                
+
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def snuggle(self, ctx, *, user: libneko.converters.InsensitiveMemberConverter = None):
+        if user == None:
+            return await ctx.send(":x: You need someone to cuddle! You can cuddle me if you want...")
+        if user == ctx.author:
+            return await ctx.send(":x: You can't cuddle yourself! You can cuddle me if you want...")
+        #--Get image from NekosLife API--#
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://nekos.life/api/v2/img/cuddle') as snuggle:
+                data = await snuggle.json()
+                result = data.get('url')
+                embed = discord.Embed(title=f"🤗 {ctx.author.display_name} snuggles {user.display_name}!",  color=0x8253c3)
+                embed.set_image(url=result)
+                await ctx.send(embed=embed)
+                
+
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def hug(self, ctx, *, user: libneko.converters.InsensitiveMemberConverter = None):
+        if user == None:
+            return await ctx.send(":x: You need someone to hug! You can hug me if you want...")
+        if user == ctx.author:
+            return await ctx.send(":x: You can't hug yourself! You can hug me if you want...")
+        #--Get image from NekosLife API--#
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://nekos.life/api/v2/img/hug') as hug:
+                data = await hug.json()
+                result = data.get('url')
+                embed = discord.Embed(title=f"🤗 {ctx.author.display_name} hugs {user.display_name}!",  color=0x8253c3)
+                embed.set_image(url=result)
+                await ctx.send(embed=embed)
+                
 
 def setup(bot):
     bot.add_cog(Fun(bot))

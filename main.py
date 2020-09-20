@@ -8,6 +8,7 @@ import json
 import os
 import logging
 import data.config as config
+import glob
 import sys
 import subprocess
 import traceback
@@ -18,6 +19,10 @@ from discord.ext import commands
 from _datetime import datetime
 
 print("Importing Modules....[Success]")
+
+if os.name != "nt":
+    import uvloop
+    uvloop.install()
 
 # bootup logo, use the bootup_logo.txt to modify it
 def bootsplash():
@@ -48,7 +53,7 @@ def get_prefix(bot, message):
     return commands.when_mentioned_or(*prefix)(bot, message)
 
 # Bot client initialization
-bot = commands.AutoShardedBot(command_prefix=get_prefix, description=config.desc, case_insensitive=True)
+bot = commands.Bot(command_prefix=get_prefix, description=config.desc, case_insensitive=True)
 
 # Setting up logging
 print("\nSetting Log files to system.log ...[Success]")
@@ -228,6 +233,11 @@ async def on_command_error(ctx, error):
         conv = discord.Embed(description=f"**:warning: Command Check Failure, You are not authorized to use this command!**")
         conv.set_image(url="https://http.cat/401.jpg")
         await ctx.send(embed=conv, content=None, delete_after=10)
+
+    elif isinstance(error, commands.errors.BotMissingPermissions):
+        conv = discord.Embed(description=f"**:warning: I don't have enough permission to perform that command! Make sure that these permission are available for me: ```{error.missing_perms}```!**")
+        conv.set_image(url="https://http.cat/401.jpg")
+        await ctx.send(embed=conv, content=None, delete_after=10)
         
     else:
         try:
@@ -235,12 +245,17 @@ async def on_command_error(ctx, error):
             print(f"Ignoring exception in command {ctx.command.name}")
             trace = traceback.format_exception(type(error), error, error.__traceback__)
             print("".join(trace))
-            errormsg = discord.Embed(title=f"🛑 An error occurred with the `{ctx.command.name}` command.", description=f"ℹ More Information:\n🖥 Server: {ctx.guild.name}\n📑 Channel: #{ctx.channel}\n👥 User: {ctx.message.author}\n🕓 At: {now.strftime('%B %d, %Y - %H:%M:%S')} GMT+7")
+            errormsg = discord.Embed(title=f"🛑 An error occurred with the `{ctx.command.name}` command.", description=f"ℹ More Information")
+            errormsg.add_field(name="🖥 Server", value=ctx.guild.name)
+            errormsg.add_field(name="📑 Channel", value=f"#{ctx.channel}")
+            errormsg.add_field(name="👥 User", value=ctx.message.author)
+            errormsg.add_field(name="🕓 Time", value=f"{now.strftime('%B %d, %Y - %H:%M:%S')} GMT+7")
+            #errormsg.add_field(name="📜 Log", value=trace)
             errormsg.set_image(url="https://http.cat/500.jpg")
             await bot.get_channel(config.home).send(content=f"{random.choice(quotes.errors)}", embed=errormsg)
             await ctx.send(content=f"'{random.choice(quotes.errors)}'", embed=errormsg)
             await bot.get_channel(config.home).send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```")
-            #await ctx.send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```", delete_after=10)
+            await ctx.send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```", delete_after=10)
         except discord.HTTPException:
             fuckeduperr = discord.Embed(title="💥 An error occurred while displaying the previous error.")
             fuckeduperr.set_image(url="https://http.cat/500.jpg")
@@ -273,11 +288,14 @@ async def restart(ctx):
     openerr = None
     core = "main.py"
     await ctx.send("Restarting!")
-    if sys.platform == "win32":
-        os.startfile(core)
-    else:
-        openerr ="open" if sys.platform == "darwin" else "xdg-open"
-        subprocess.call([openerr, core])
+    try:
+        if sys.platform == "win32":
+            os.startfile(core)
+        else:
+            openerr ="open" if sys.platform == "darwin" else "xdg-open"
+            subprocess.call([openerr, core])
+    except FileNotFoundError:
+        await ctx.send("❌ Unable to open the file! (is `xdg-open` installed?)\n Shutting Down.")
     await ctx.bot.logout()
     sys.exit()
 
@@ -287,17 +305,60 @@ async def poweroof(ctx):
     """Turn the bot Off"""
     await ctx.send("Goodbye Cruel World...")
     await ctx.bot.logout()
+    await ctx.bot.clear()
     exit()
 
-@bot.command(hidden=True)
+@bot.command(aliases=["clist"])
 @commands.is_owner()
-async def runningcog(ctx):
-    """See what cogs are currently running"""
-    running = ""
-    for cogs in bot.cogs:
-        running += cogs
+async def loaded(ctx):
+    """Shows loaded/unloaded cogs"""
+    core_cogs = []
+    cogs = [
+        "cogs." + os.path.splitext(f)[0]
+        for f in [os.path.basename(f) for f in glob.glob("cogs/*.py")]
+    ]
+    loaded = [x.__module__.split(".")[1] for x in bot.cogs.values()]
+    unloaded = [c.split(".")[1] for c in cogs if c.split(".")[1] not in loaded]
+    embed = discord.Embed(title="List of loaded cogs")
+    cogs = [w.replace("cogs.", "") for w in cogs]
+    for cog in loaded:
+        if cog in cogs:
+            core_cogs.append(cog)
+    if core_cogs:
+        embed.add_field(
+            name="Loaded", value="\n".join(sorted(core_cogs)), inline=True
+        )
+    if unloaded:
+        embed.add_field(
+            name="Not Loaded", value="\n".join(sorted(unloaded)), inline=True
+        )
+    else:
+        embed.add_field(name="Not Loaded", value="None!", inline=True)
+    await ctx.send(embed=embed)
 
-    await ctx.send(f"```{running}```")
+@bot.command(aliases=["clearconsole", "cc","cls"])
+@commands.is_owner()
+async def clear(ctx):
+    """Clear the console."""
+    if os.name == "nt":
+        os.system("cls")
+    else:
+        try:
+            os.system("clear")
+        except Exception:
+            for _ in range(100):
+                print()
+    message = "Logged in as %s." % bot.user
+    uid_message = "User id: %s." % bot.user.id
+    separator = "-" * max(len(message), len(uid_message))
+    print(separator)
+    try:
+        print(message)
+    except:  # some bot usernames with special chars fail on shitty platforms
+        print(message.encode(errors="replace").decode())
+    print(uid_message)
+    print(separator)
+    await ctx.send("Console cleared successfully.")
 
 
 # This one is for testing error messages only
@@ -342,6 +403,8 @@ async def reloadcog(ctx, name):
             bot.load_extension(f"cogs.{name}")
         except Exception as e:
             await ctx.send(f"```py\n{traceback.format_exc()}\n```")
+        except commands.errors.ExtensionNotLoaded:
+            await ctx.send(f"Extension cannot be found or it hasn't been loaded")
         else:
             await ctx.send(f":gear: Successfully Reloaded the **{name}** module!")
 
@@ -383,7 +446,7 @@ async def loadallcogs(ctx):
 
 @bot.command(hidden=True, aliases=["unloadall"])
 @commands.is_owner()
-async def unloadallcogs(self, ctx):
+async def unloadallcogs(ctx):
     async with ctx.typing():
         await ctx.send(":gear: Unloading all Cogs!")
         try:
@@ -400,4 +463,4 @@ async def unloadallcogs(self, ctx):
 ## RUN THE WHOLE THING ##
 bot.run(TOKEN)
 
-print("EOF")
+print("\nEOF")

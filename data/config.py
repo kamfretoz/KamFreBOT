@@ -4,11 +4,10 @@ botname = "KamFreBOT"
 home = 570978148586356750 #Your Error Log Channel ID Here.
 prefix = ["b!", "B!"]
 desc = "A simple Discord bot made by me for some of my private Discord servers"
-tc = "timecards"
 
 bootsplash = True
 
-status_timeout = 10
+status_timeout = 30
 playing_status = "with Transistors and Gates."
 watching_status = "the World"
 listening_status = "the Sound of Machinery"
@@ -17,7 +16,6 @@ streaming_status = "a few thousand bytes"
 
 about_github_link = "https://github.com/kamfretoz/KamFreBOT"
 about_thumbnail_img="https://i.ibb.co/d0jMw5h/Bobert-Downscaled.png"
-dir = "memes"
 
 extensions = [
 	"cogs.emoji"
@@ -25,7 +23,6 @@ extensions = [
     "cogs.utilities",
     "cogs.info",
     "cogs.mod",
-    "cogs.music"
-    "cogs.Subreddit"
+    "cogs.Subreddit",
     "cogs.F1"
 ]

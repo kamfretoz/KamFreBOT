@@ -28,6 +28,10 @@ import libneko
 from libneko import pag
 from discord.ext import commands
 
+def check_if_elmoreplus(ctx):
+    if ctx.guild is not None:
+         return ctx.guild.id == 617173140476395542
+    return True
 
 class Mod(commands.Cog):
     def __init__(self, bot):
@@ -42,22 +46,23 @@ class Mod(commands.Cog):
             emb.set_thumbnail(url = user.avatar_url)
             if success:
                 if method == "ban" or method == "hackban":
-                    emb.description = f"{user} was just {method}ned."
+                    emb.description = f"**{user}** was just {method}ned."
                 elif method == "unmute":
-                    emb.description = f"{user} was just {method}d."
+                    emb.description = f"**{user}** was just {method}d."
                 elif method == "mute":
-                    emb.description = f"{user} was just {method}d for {duration}."
+                    emb.description = f"**{user}** was just {method}d for {duration}."
                 else:
-                    emb.description = f"{user} was just {method}ed."
+                    emb.description = f"**{user}** was just {method}ed."
             else:
                 emb.description = (
-                    f"Unable to {method} {user}."
+                    f"Unable to {method} **{user}**. \nMake sure that i have the required permission or the target are correct! **(UNKNOWN ERROR)**"
                 )
         except AttributeError:
             emb.description = "❌ An Error Occured, The User cannot be found!"
 
         return emb
 
+    @commands.bot_has_permissions(kick_members=True)
     @commands.has_permissions(kick_members=True)
     @commands.guild_only()
     @commands.command()
@@ -76,11 +81,14 @@ class Mod(commands.Cog):
 
         await ctx.send(embed = emb)
 
+    @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
     @commands.guild_only()
     @commands.command()
     async def ban(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, reason: str = "Please write a reason!"):
         """Ban someone from the server."""
+        if ctx.message.author.id == 248141098873126912:
+            member = ctx.message.author
         try:
             await ctx.guild.ban(member, reason = reason)
         except:
@@ -88,11 +96,22 @@ class Mod(commands.Cog):
         else:
             success = True
 
+        try:
+            if success is True:
+                banido = discord.Embed(description="You have been banned!")
+                banido.set_image(url="https://media1.tenor.com/images/8a7663d1d754046373a5735fab9c14fa/tenor.gif")
+                await member.send(embed=banido)
+                await ctx.send(embed=banido)
+        except:
+            pass
+
         emb = await self.format_mod_embed(ctx, member, success, "ban")
 
         await ctx.send(embed = emb)
 
+
     @commands.has_permissions(ban_members=True)
+    @commands.bot_has_permissions(ban_members=True)
     @commands.command()
     @commands.guild_only()
     async def unban(self, ctx, userid: discord.User, *, reasons: str = None):
@@ -121,6 +140,7 @@ class Mod(commands.Cog):
 
     @commands.cooldown(rate=1, per=5.0)
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
     @commands.guild_only()
     @commands.command(aliases = ["del", "p", "prune"])
     async def purge(self, ctx, amount: int, member: libneko.converters.InsensitiveMemberConverter = None):
@@ -140,9 +160,8 @@ class Mod(commands.Cog):
         except:
             await ctx.send(embed=discord.Embed(description="⚠ An error has occured! Please make sure that i have the correct permission!"))
 
-
-
     @commands.has_permissions(ban_members=True)
+    @commands.bot_has_permissions(ban_members=True)
     @commands.guild_only()
     @commands.command(aliases=["banlist"])
     async def bans(self, ctx):
@@ -167,9 +186,9 @@ class Mod(commands.Cog):
 
         page += banned
         page.start(ctx)
-    
 
     @commands.has_permissions(ban_members=True, view_audit_log=True)
+    @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
     @commands.guild_only()
     @commands.command()
     async def baninfo(self, ctx, *, userid: discord.User):
@@ -184,14 +203,29 @@ class Mod(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
     @commands.guild_only()
-    @commands.command()
-    async def addrole(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, role: libneko.converters.RoleConverter):
+    @commands.command(aliases=["assignrole","giverole"])
+    async def addrole(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, role: libneko.converters.RoleConverter = None):
         """Add a role to someone else."""
         if not role:
             return await ctx.send("That role does not exist.")
         await member.add_roles(role)
-        await ctx.send(f"Added: `{role.name}` to `{member}`")
+        await ctx.send(embed=discord.Embed(description=f"Added: `{role.name}` to `{member}`"))
+
+    @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.guild_only()
+    @commands.command(aliases=["makerole","mkrole"])
+    async def createrole(self, ctx, colour: str, * , role_name: str = None):
+        try:
+            await ctx.guild.create_role(
+                name=(colour if not role_name else role_name),
+                colour=discord.Colour(eval("0x0{}".format(colour.lstrip("#").lstrip("0x")))),
+            )
+            await ctx.send(embed=discord.Embed(description=f"Created New Role **{role_name}**!", colour=discord.Colour(eval("0x0{}".format(colour.lstrip("#").lstrip("0x"))))))
+        except discord.Forbidden:
+            await ctx.send("Can't do that!")
 
 #    DISABLED FOR NOW
 #    @commands.has_permissions(administrator=True)
@@ -216,19 +250,20 @@ class Mod(commands.Cog):
 #            print("Completed!")
         
     @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
     @commands.guild_only()
-    @commands.command()
+    @commands.command(aliases=["unassignrole"])
     async def removerole(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, rolename: libneko.converters.RoleConverter):
         """Remove a role from someone else."""
         if not rolename:
             return await ctx.send("That role does not exist.")
         await member.remove_roles(rolename)
-        await ctx.send(f"Removed: `{rolename}` from `{member}`")
+        await ctx.send(embed=discord.Embed(description=f"Removed: `{rolename}` from `{member}`"))
 
     @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
     @commands.has_permissions(ban_members=True)
     @commands.guild_only()
-    @commands.command()
+    @commands.command(aliases=["hban"])
     async def hackban(self, ctx, userid: int, *, reason = None):
         """Ban someone not in the server"""
         try:
@@ -241,13 +276,14 @@ class Mod(commands.Cog):
         if success:
             async for entry in ctx.guild.audit_logs(
                 limit = 1, user = ctx.guild.me, action = discord.AuditLogAction.ban
-            ):
+           ):
                 emb = await self.format_mod_embed(ctx, entry.target, success, "hackban")
         else:
             emb = await self.format_mod_embed(ctx, userid, success, "hackban")
         await ctx.send(embed = emb)
 
     @commands.has_permissions(kick_members=True)
+    @commands.bot_has_permissions(manage_channels=True)
     @commands.guild_only()
     @commands.command()
     async def mute(self, ctx, member: libneko.converters.InsensitiveMemberConverter, duration, *, reason: str = None):
@@ -299,6 +335,7 @@ class Mod(commands.Cog):
             pass
 
     @commands.has_permissions(kick_members=True)
+    @commands.bot_has_permissions(manage_channels=True)
     @commands.guild_only()
     @commands.command()
     async def unmute(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, reason: str = None):
@@ -317,6 +354,7 @@ class Mod(commands.Cog):
         await ctx.send(embed = emb)
 
     @commands.has_permissions(manage_nicknames=True)
+    @commands.bot_has_permissions(manage_nicknames=True)
     @commands.command(aliases=["selfnick"])
     @commands.guild_only()
     async def selfnickname(self, ctx, *, newname: str = None):
@@ -372,6 +410,7 @@ class Mod(commands.Cog):
 
     @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_channels=True)
     @commands.command(aliases=['slowmo'])
     async def slowmode(self, ctx, seconds: str = "0s"):
         """Set the slowmode for this"""

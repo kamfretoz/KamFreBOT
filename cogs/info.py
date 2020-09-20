@@ -11,32 +11,7 @@ import lxml
 import time
 from libneko import pag
 from discord.ext import commands
-
 import data.config as config
-
-
-def format_seconds(time_seconds):
-    """Formats some number of seconds into a string of format. d days, x hours, y minutes, z seconds"""
-    seconds = time_seconds
-    hours = 0
-    minutes = 0
-    days = 0
-    while seconds >= 60:
-        if seconds >= 60 * 60 * 24:
-            seconds -= 60 * 60 * 24
-            days += 1
-        elif seconds >= 60 * 60:
-            seconds -= 60 * 60
-            hours += 1
-        elif seconds >= 60:
-            seconds -= 60
-            minutes += 1
-
-    return f"{days}d {hours}h {minutes}m {seconds}s"
-
-
-counter = datetime.now()
-
 
 ###############################
 
@@ -44,6 +19,28 @@ counter = datetime.now()
 class Information(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.counter = datetime.now()
+
+    @staticmethod
+    def format_seconds(time_seconds):
+        """
+        Formats some number of seconds into a string of format. d days, x hours, y minutes, z seconds
+        """
+        seconds = time_seconds
+        hours = 0
+        minutes = 0
+        days = 0
+        while seconds >= 60:
+            if seconds >= 60 * 60 * 24:
+                seconds -= 60 * 60 * 24
+                days += 1
+            elif seconds >= 60 * 60:
+                seconds -= 60 * 60
+                hours += 1
+            elif seconds >= 60:
+                seconds -= 60
+                minutes += 1
+        return f"{days} Days {hours} Hours {minutes} Minutes {seconds} Seconds"
 
     @commands.command(aliases=["status"])
     async def stats(self, ctx):
@@ -63,9 +60,9 @@ class Information(commands.Cog):
                 __import__("psutil").Process().memory_full_info().rss / 1024 ** 2
             )
 
-        sysboot = datetime.fromtimestamp(psutil.boot_time()).strftime("%B %d, %Y at %I:%M %p")
+        sysboot = datetime.fromtimestamp(psutil.boot_time()).strftime("%B %d, %Y at %I:%M:%S %p")
 
-        uptime = datetime.now() - counter
+        uptime = datetime.now() - self.counter
         hours, rem = divmod(int(uptime.total_seconds()), 3600)
         minutes, seconds = divmod(rem, 60)
         days, hours = divmod(hours, 24)
@@ -126,7 +123,7 @@ class Information(commands.Cog):
                 inline=False
             )
             em.add_field(
-                name="\u2694 Servers", 
+                name="\u2694 Servers (Guilds)", 
                 value=str(len(self.bot.guilds)), 
                 inline=False
             )
@@ -152,42 +149,35 @@ class Information(commands.Cog):
         """This command will show some informations about this server"""
         await ctx.trigger_typing()
 
+        level = str(ctx.guild.premium_tier)
+        region = str(ctx.guild.region)
         guild = ctx.guild
         roles = [role.mention for role in guild.roles]
 
         booster_amount = None
 
-        if guild.premium_subscription_count == 0 or None:
+        if not guild.premium_subscription_count:
             booster_amount = "This server is not boosted"
         else:
             booster_amount = (
-                f"This server has been boosted {guild.premium_subscription_count} time(s)!"
+                f"This server has {guild.premium_subscription_count} boost(s)!"
             )
             
-        # we're going to duck type our way here
-        class Secret:
-            pass
-
-        secret_member = Secret()
-        secret_member.id = 0
-        secret_member.roles = [guild.default_role]
-
-        # figure out what channels are 'secret'
-        secret_channels = 0
-        secret_voice = 0
-        text_channels = 0
-        for channel in guild.channels:
-            perms = channel.permissions_for(secret_member)
-            is_text = isinstance(channel, discord.TextChannel)
-            text_channels += is_text
-            if is_text and not perms.read_messages:
-                secret_channels += 1
-            elif not is_text and (not perms.connect or not perms.speak):
-                secret_voice += 1
-
-        regular_channels = len(guild.channels) - secret_channels
-        voice_channels = len(guild.channels) - text_channels
-        member_by_status = Counter(str(m.status) for m in guild.members)
+        sregion = {
+            'brazil': ':flag_br: Brazil',
+            'europe': ':flag_eu: Europe',
+            'hongkong': ':flag_hk: Hong Kong',
+            'india': ':flag_in: India',
+            'japan': ':flag_jp: Japan',
+            'russia': ':flag_ru: Russia',
+            'singapore': ':flag_sg: Singapore',
+            'southafrica': ':flag_za: South Africa',
+            'sydney': ':flag_au: Sydney',
+            'us-central': ':flag_us: US Central',
+            'us-east': ':flag_us: US East',
+            'us-south': ':flag_us: US South',
+            'us-west': ':flag_us: US West',
+        }.get(region)
 
         server = discord.Embed(
             color=ctx.message.author.color, timestamp=datetime.utcnow()
@@ -200,6 +190,7 @@ class Information(commands.Cog):
             inline=False,
         )
         server.add_field(name="》 Owner ID", value=guild.owner_id, inline=False)
+
         if guild.icon:
             if guild.is_icon_animated() is True:
                 server.set_thumbnail(url=guild.icon_url_as(format="gif", size=4096))
@@ -208,10 +199,21 @@ class Information(commands.Cog):
         if guild.splash:
             server.set_image(url=guild.splash_url_as(format="png",size=4096))
 
-        fmt = f"Text {text_channels} ({secret_channels} secret)\nVoice {voice_channels} ({secret_voice} locked)"
+        def sec2min(seconds): # https://stackoverflow.com/a/775075
+            m, s = divmod(seconds, 60)
+            h, m = divmod(m, 60)
+            return f'{h:d}:{m:02d}:{s:02d}'
+
+        since_created = (ctx.message.created_at - guild.created_at).days
+
         server.add_field(
-            name="》 Channels",
-            value=fmt, 
+            name="》 Member count", 
+            value=f"{len(ctx.guild.members)} Members",
+            inline=False
+        )
+        server.add_field(
+            name="》 Channel count",
+            value=f"{len(ctx.guild.channels)} channels", 
             inline=False
         )
         server.add_field(
@@ -221,17 +223,27 @@ class Information(commands.Cog):
         )
         server.add_field(
             name="》 Created",
-            value=guild.created_at.strftime("%B %d, %Y at %I:%M %p"),
+            value=f"{guild.created_at.strftime('%B %d, %Y at %I:%M:%S %p')} ({since_created} days ago!)",
             inline=False,
+        )
+        server.add_field(
+            name="》 Region", 
+            value=sregion, 
+            inline=False
+        )
+        server.add_field(
+            name="》 Server Boost Status", 
+            value=booster_amount, 
+            inline=False
+        )
+        server.add_field(
+            name="》 Server Level", 
+            value=f"Level {level}", 
+            inline=False
         )
         server.add_field(
             name="》 Is a large guild?", 
             value=guild.large, 
-            inline=False
-        )
-        server.add_field(
-            name="》 Region", 
-            value=f"{guild.region}", 
             inline=False
         )
         server.add_field(
@@ -241,49 +253,7 @@ class Information(commands.Cog):
         )
         server.add_field(
             name="》 AFK Timeout", 
-            value=f"{guild.afk_timeout} Seconds", 
-            inline=False
-        )
-        server.add_field(
-            name="》 2FA Level", 
-            value=guild.mfa_level, 
-            inline=False
-        )
-        server.add_field(
-            name="》 Verification Level", 
-            value=guild.verification_level, 
-            inline=False
-        )
-        server.add_field(
-            name="》 Explicit Content Filter",
-            value=guild.explicit_content_filter,
-            inline=False,
-        )
-        server.add_field(
-            name="》 Default Notification",
-            value=guild.default_notifications,
-            inline=False,
-        )
-        server.add_field(
-            name="》 Server Features", 
-            value=guild.features, 
-            inline=False
-        )
-        server.add_field(
-            name="》 Server Boost Status", 
-            value=booster_amount, 
-            inline=False
-        )
-        fmt = (
-            f'🟢 Online: {member_by_status["online"]}\n'
-            f'🟡 Idle: {member_by_status["idle"]}\n'
-            f'🔴 Do Not Disturb: {member_by_status["dnd"]}\n'
-            f'⚫ Offline: {member_by_status["offline"]}\n'
-            f"➕ Total: {guild.member_count}"
-        )
-        server.add_field(
-            name="》 Members", 
-            value=f"```{fmt}```",
+            value=sec2min(guild.afk_timeout), 
             inline=False
         )
         server.set_footer(
@@ -368,10 +338,8 @@ class Information(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     async def serverinfo_roleinfo(self, ctx, *, role: libneko.converters.RoleConverter):
         """Shows information about a role"""
-        guild = ctx.guild
-
         since_created = (ctx.message.created_at - role.created_at).days
-        role_created = role.created_at.strftime("%d %b %Y %H:%M")
+        role_created = role.created_at.strftime("%d %b %Y %H:%M:%S")
         created_on = f"{role_created} ({since_created} days ago!)"
 
         if str(role.colour) is "#000000":
@@ -462,7 +430,7 @@ class Information(commands.Cog):
     @serverinfo.command(name="inrole", aliases=["inrl"], brief="Show the list of users on a particular role.")
     @commands.guild_only()
     @commands.bot_has_permissions(manage_roles=True)
-    async def serverinfo_inrole(self, ctx, * ,role:libneko.converters.RoleConverter = None):
+    async def serverinfo_inrole(self, ctx, * , role:libneko.converters.RoleConverter = None):
         """
         Show the list of users on a particular role.
         """
@@ -502,12 +470,14 @@ class Information(commands.Cog):
         """
         Shows the owner of this server
         """
-        await ctx.send(
-            embed=discord.Embed(
-                description=f"{ctx.guild.owner} ({ctx.guild.owner.mention}) owns this server!",
-                color=ctx.guild.owner.colour
-            )
-        )
+        own = discord.Embed(color=ctx.guild.owner.colour)
+        if ctx.guild.owner.is_avatar_animated() is True:
+            pic_frmt = "gif"
+        else:
+            pic_frmt = "png"
+        own.add_field(name=f"Who own {ctx.guild.name}?", value=f"{ctx.guild.owner} ({ctx.guild.owner.mention}) owns the server!")
+        own.set_thumbnail(url=ctx.guild.owner.avatar_url_as(format=pic_frmt, size=4096))
+        await ctx.send(embed=own)
 
     @serverinfo.command(name="created", aliases=["madeon", "born"], brief="Shows when this server was created")
     @commands.guild_only()
@@ -515,10 +485,18 @@ class Information(commands.Cog):
         """
         Shows when this server was created.
         """
-        create = discord.Embed(description=f"**{ctx.guild.name}** was created on `{ctx.guild.created_at.strftime('%B %d, %Y at %I:%M %p')}`")
+        since_created = (ctx.message.created_at - ctx.guild.created_at).days
+        create = discord.Embed(description=f"**{ctx.guild.name}** was created on `{ctx.guild.created_at.strftime('%B %d, %Y at %I:%M:%S %p')}` ({since_created} Days ago!)")
+
+        if ctx.guild.icon:
+            if ctx.guild.is_icon_animated() is True:
+                create.set_thumbnail(url=ctx.guild.icon_url_as(format="gif", size=4096))
+            else:
+                create.set_thumbnail(url=ctx.guild.icon_url_as(format="png", size=4096))
+
         await ctx.send(embed = create)
 
-    @serverinfo.command(name="administrators", aliases=["admin", "admins"], brief="Check which admins are online on current server")
+    @serverinfo.command(name="administrators", aliases=["admin", "admins","adm"], brief="Check which admins are online on current server")
     @commands.guild_only()
     async def serverinfo_administrators(self, ctx):
         """ Check which admins are online on current guild """
@@ -590,7 +568,7 @@ class Information(commands.Cog):
         @pag.embed_generator(max_chars=2048)
         def main_embed(paginator, page, page_index):
             boost = discord.Embed(title=f"Nitro Booster on **{ctx.guild.name}**.",description = page, color=0x00FF00)
-            boost.set_footer(text=f"{len(ctx.guild.premium_subscribers)} Users in total")
+            boost.set_footer(text=f"{len(ctx.guild.premium_subscribers)} Users in total ({ctx.guild.premium_subscription_count} Boost(s))")
             return boost
 
         navi = pag.EmbedNavigatorFactory(factory=main_embed)
@@ -645,7 +623,7 @@ class Information(commands.Cog):
             await ctx.send(embed=nosplash)
 
     @commands.command(invoke_without_command=True,aliases=["uins"])
-    async def userinspect(self, ctx, * ,user: libneko.converters.InsensitiveUserConverter = None):
+    async def userinspect(self, ctx, * , user: libneko.converters.InsensitiveUserConverter = None):
         """Show info about a user. If not specified, the command caller info will be shown instead. This command is meant to inspect user that aren't in current server (But they need to be in the same server as this bot)!"""
         await ctx.trigger_typing()
 
@@ -655,7 +633,7 @@ class Information(commands.Cog):
         usr = discord.Embed(timestamp=datetime.utcnow())
         shared = sum(1 for m in self.bot.get_all_members() if m.id == user.id)
 
-        usr.set_author(name=f"Information of {str(user)}")
+        usr.set_author(name=f"Information of {user.name}")
 
         usr.add_field(
             name="》 Display Name", 
@@ -669,7 +647,7 @@ class Information(commands.Cog):
         )
         usr.add_field(
             name="》 Created",
-            value=user.created_at.strftime("%B %d, %Y at %I:%M %p"),
+            value=user.created_at.strftime("%B %d, %Y at %I:%M:%S %p"),
             inline=False,
         )
         usr.add_field(
@@ -699,7 +677,7 @@ class Information(commands.Cog):
 
     @commands.group(invoke_without_command=True,aliases=["user", "ui", "profile","uinf"])
     @commands.guild_only()
-    async def userinfo(self, ctx, * ,user: libneko.converters.InsensitiveMemberConverter = None):
+    async def userinfo(self, ctx, * , user: libneko.converters.InsensitiveMemberConverter = None):
         """Show info about the user. If not specified, the command caller info will be shown instead."""
         await ctx.trigger_typing()
 
@@ -709,10 +687,10 @@ class Information(commands.Cog):
         boost_stats = None
 
         try:
-            if user.premium_since is None:
+            if not user.premium_since:
                 boost_stats = "The user are not boosting this server."
             else:
-                boost_stats = f"Boosting the server since {user.premium_since.strftime('%B %d, %Y at %I:%M %p')}"
+                boost_stats = f"Boosting the server since {user.premium_since.strftime('%B %d, %Y at %I:%M:%S %p')}"
         except AttributeError:
             boost_stats = "Information Unavailable"
 
@@ -745,12 +723,22 @@ class Information(commands.Cog):
         )
         member.add_field(
             name="》 Created",
-            value=user.created_at.strftime("%B %d, %Y at %I:%M %p"),
+            value=user.created_at.strftime("%B %d, %Y at %I:%M:%S %p"),
             inline=False,
         )
         member.add_field(
             name="》 User ID", 
             value=user.id, 
+            inline=False
+        )
+        member.add_field(
+            name="Platform", 
+            value=f"{'Mobile' if user.is_on_mobile() else 'Desktop'}", 
+            inline=False
+        )
+        member.add_field(
+            name="Account Type", 
+            value=f"{'Bot' if user.bot else 'Human'}", 
             inline=False
         )
         member.add_field(
@@ -765,7 +753,7 @@ class Information(commands.Cog):
         )
         member.add_field(
             name="》 Joined at",
-            value=f'{user.joined_at.strftime("%B %d, %Y on %I:%M %p")}',
+            value=f'{user.joined_at.strftime("%B %d, %Y on %I:%M:%S %p")}',
             inline=False,
         )
         member.add_field(
@@ -776,23 +764,20 @@ class Information(commands.Cog):
         member.add_field(
             name="》 Current Activity/Status", 
             value=user.activity, 
-            inline=False)
-        member.add_field(
-            name="》 is Active on Mobile?", 
-            value=user.is_on_mobile(), 
             inline=False
         )
         member.add_field(
             name="》 Voice", 
             value=voice, 
-            inline=False)
+            inline=False
+        )
         member.add_field(
             name="》 Nitro Stats", 
             value=boost_stats, 
             inline=False
         )   
         member.add_field(
-            name="》 Roles",
+            name=f"》 Roles [{len(roles)}]",
             value=", ".join(roles) if len(roles) < 10 else f"{len(roles)} roles",
             inline=False,
         )
@@ -814,7 +799,7 @@ class Information(commands.Cog):
 
         await ctx.send(embed=member)
 
-    @userinfo.command(name="avatar", aliases=["pfp", "pp"], brief="View the avatar of a member.")
+    @userinfo.command(name="avatar", aliases=["pfp", "pp","icon"], brief="View the avatar of a member.")
     @commands.guild_only()
     async def userinfo_avatar(self, ctx, *, user: libneko.converters.InsensitiveUserConverter = None):
         """View the avatar of a member.\nYou can either use Discord ID or ping them instead"""
@@ -841,9 +826,9 @@ class Information(commands.Cog):
                     color=ctx.author.color,
                     timestamp=datetime.utcnow(),
                 )
+                pfp.add_field(name="User", value=f"{ctx.message.author} ({ctx.message.author.id})")
                 pfp.add_field(name="Full avatar link", value=link_frmt)
                 pfp.set_image(url=ctx.message.author.avatar_url_as(format=pic_frmt, size=4096))
-                pfp.set_footer(text=f"User: {ctx.message.author} {ctx.message.author.id}")
                 await ctx.send(embed=pfp)
             else:  # This is what normally executed.
                 pfp = discord.Embed(
@@ -886,14 +871,17 @@ class Information(commands.Cog):
         await ctx.send(embed=memrole)
 
 
-    @userinfo.command(name="mention", brief="Mention a user.")
+    @userinfo.command(name="mention", brief="Mention a user.",aliases=["tag"])
     async def userinfo_mention(self, ctx, target: libneko.converters.InsensitiveUserConverter = None):
         """
         Mention a user.
         """
         if target is None:
-            await ctx.send(f"Mention who? {ctx.message.author}")
-
+            await ctx.send(f"Mention who?")
+            return
+        elif target == ctx.message.author:
+            await ctx.send(f"{ctx.message.author.mention} Mentioned themselves.")
+            return
         await ctx.send(f"{target.mention} has been mentioned by {ctx.message.author.mention}!")
 
 def setup(bot):

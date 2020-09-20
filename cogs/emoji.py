@@ -87,7 +87,7 @@ class Emoji(commands.Cog):
         name = "emoji.png"
         return name, url, "N/A", "Official"
 
-    @commands.group(aliases=["emote","em","e"], invoke_without_command=True)
+    @commands.group(aliases=["emote","em"], invoke_without_command=True)
     async def emoji(self, ctx, *, msg):
         """
         View, copy, add or remove emoji.
@@ -249,7 +249,7 @@ class Emoji(commands.Cog):
         else:
             try:
                 message = int(message)
-                message = await ctx.channel.get_message(message)
+                message = await ctx.channel.fetch_message(message)
             except ValueError:
                 message = ctx.message
             finally:
@@ -277,7 +277,7 @@ class Emoji(commands.Cog):
             )
             await ctx.message.delete()
         except discord.Forbidden:
-            await ctx.author.send(f"⛔ {ctx.message.author.name}, Your DM are disabled!", delete_after=5)
+            await ctx.send(f"⛔ {ctx.message.author.name}, Your DM are disabled!", delete_after=5)
         except discord.ext.commands.BotMissingPermissions:
             return
 

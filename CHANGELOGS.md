@@ -1,11 +1,22 @@
 # CHANGELOG
 
+## v0.1.9
+
+* Added `uvloop`
+* Fixed formatting error in `anime` score section
+* Fixed discrepancy in the synopsis section of the `anime` command
+* Removed type conversion in weather temperature
+* Auto adjust embed color to temperature in `weather` command and added more detailed wind condition
+* Added safety mechanism in case the folder for `qrcodes` related command are not available
+* Added some new commands
+* Removed some useless commands
+
 ## v0.1.8
 
 * `snipe` command is now working!
 * Fixed Regression in `myanimelist` command
 * Updated `README`
-* Removed potentially offensive line from The Truth database
+* Removed potentially offensive lines from The Truth database
 * Switched from `Bot` client to `AutoShardedBot` client
 * Few Bugfixes for `MyAnimeList` command
 * Bug fixed and new addition

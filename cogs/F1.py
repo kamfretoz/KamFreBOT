@@ -34,7 +34,7 @@ class F1MotorSport(commands.Cog):
             async with session.get(f"https://ergast.com/api/f1/{season}/{round}.json?limit=1") as resp:
                 resp.raise_for_status()
                 data = json.loads(await resp.read(), object_hook=DictObject)
-                await session.close()
+                
 
         try:
             seasoninfo = data.MRData.RaceTable.Races[0].season
@@ -83,7 +83,7 @@ class F1MotorSport(commands.Cog):
             async with session.get(f"https://ergast.com/api/f1/{season}/{round}/results.json?limit=1") as resp:
                 resp.raise_for_status()
                 data = json.loads(await resp.read(), object_hook=DictObject)
-                await session.close()
+                
 
         try:
             #CIRCUIT INFO

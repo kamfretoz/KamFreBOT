@@ -1,1 +1,3 @@
-python3 main.py
+#!/usr/bin/env bash
+
+python3 -O main.py

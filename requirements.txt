@@ -11,8 +11,8 @@ youtube-dl
 urbandict
 bs4
 google-api-python-client
-PyDictionary
 pytemperature
 qrcode[pil]
 ciso8601
-python-benedict
+python-dateutil
+uvloop
