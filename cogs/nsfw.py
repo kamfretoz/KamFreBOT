@@ -23,21 +23,10 @@ SOFTWARE.
 """
 
 import discord
-import asyncio
 import aiohttp
-import libneko
-import json
-import ciso8601
 import random
-import io
 import bs4 as bs
-import safygiphy
-from datetime import datetime
 from discord.ext import commands
-
-class DictObject(dict):
-    def __getattr__(self, item):
-        return self[item]
 
 class NSFW(commands.Cog):
     def __init__(self, bot):

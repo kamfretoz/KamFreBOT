@@ -19,34 +19,35 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import asyncio
+from unicodedata import decomposition
 import aiohttp
-import data.config as config
 import inspect
 import unicodedata
-import urllib
 import time
 import random
 import io
 from math import floor, sqrt, trunc
 from PIL import Image
 import os
-import operator
+from operator import pow, truediv, mul, add, sub, itemgetter
 from pytz import timezone
 from datetime import datetime
 import safygiphy
 import pytemperature
 import qrcode
-import requests
 from io import BytesIO
 from collections import deque
 from textwrap import shorten
-import string
 import json
+import base64
 
 import libneko
 from libneko import pag, converters
 import discord
 from discord.ext import commands
+
+from modules.http import HttpCogBase
+from modules.dictobj import DictObject
 
 morseAlphabet = {
     "A": ".-",
@@ -97,17 +98,19 @@ morseAlphabet = {
     "=": "-...-"
 }
 
-class DictObject(dict):
-    def __getattr__(self, item):
-        return self[item]
+# To retrieve KSoft.Si API KEY
+with open("cogs/data/ksoft-api_key.json") as json_fp:
+    classified = json.load(json_fp)
+    ksoft_key = classified["key"]
 
-class Utilities(commands.Cog):
+class Utilities(HttpCogBase):
     def __init__(self, bot):
         self.bot = bot
         self.pingeries = {}
         self.lock = asyncio.Lock()
         self.delsniped = {}
         self.editsniped = {}
+        self.loop = asyncio.get_event_loop()
 
     #Delete Snipe Listener (Setter)
     @commands.Cog.listener()
@@ -186,13 +189,6 @@ class Utilities(commands.Cog):
             attachment = self.delsniped[ctx.guild.id][ctx.channel.id]["Attachment"]
             name = self.delsniped[ctx.guild.id][ctx.channel.id]["Filename"]
 
-            if len(msg) > 768:
-                shorten(msg,width=756,placeholder="...")
-
-            if "b!snipe" in msg:
-                await ctx.message.delete()
-                await ctx.send(embed=discord.Embed(description="⚠ No Message found! Perhaps you're too slow?"), delete_after=3)
-                return
             if msg:
                 await ctx.message.delete()
                 emb = discord.Embed()
@@ -201,8 +197,8 @@ class Utilities(commands.Cog):
                 emb.add_field(name="Message:", value=msg)
                 emb.set_footer(text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
                 if attachment:
-                    emb.add_field(name="Attachments",value=f"[{name}]({attachment})")
-                    if str(name).endswith(".png") or str(name).endswith(".gif") or str(name).endswith(".jpg"):
+                    emb.add_field(name="Attachments", value=f"[{name}]({attachment})")
+                    if str(name).endswith(".png") or str(name).endswith(".gif") or str(name).endswith(".jpg") or str(name).endswith(".jpeg"):
                         emb.set_image(url=attachment)
                 await ctx.send(embed=emb, delete_after=5)
             else:
@@ -238,12 +234,6 @@ class Utilities(commands.Cog):
             before = self.editsniped[ctx.guild.id][ctx.channel.id]["Before"]
             after = self.editsniped[ctx.guild.id][ctx.channel.id]["After"]
 
-            if len(before) > 768:
-                shorten(before, width=756,placeholder="...")
-
-            if len(after) > 768:
-                shorten(after, width=756,placeholder="...")
-
             if before and after:
                 await ctx.message.delete()
                 emb = discord.Embed()
@@ -251,6 +241,7 @@ class Utilities(commands.Cog):
                 emb.add_field(name="Author:", value=author_mention, inline=False)
                 emb.add_field(name="Before:", value=before)
                 emb.add_field(name="After:", value=after)
+                emb.set_footer(text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
                 await ctx.send(embed=emb, delete_after=5)
             else:
                 await ctx.message.delete()
@@ -258,6 +249,7 @@ class Utilities(commands.Cog):
                 emb.add_field(name="Author:", value=author, inline=False)
                 emb.add_field(name="Before:", value="Empty Message.")
                 emb.add_field(name="After:", value="Empty Message.")
+                emb.set_footer(text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
                 await ctx.send(embed=emb, delete_after=5)
             self.editsniped.popitem()
         except KeyError:
@@ -267,8 +259,8 @@ class Utilities(commands.Cog):
         except discord.NotFound:
             pass
     
-    @commands.command(aliases=["codeblock"])
-    async def code(self, ctx, *, msg = "Please Write Something!"):
+    @commands.command(aliases=["code"])
+    async def codeblock(self, ctx, *, msg = "I am Codeblock!"):
         """Write text in code format."""
         await ctx.message.delete()
         await ctx.send("```" + msg.replace("`", "") + "```")
@@ -279,7 +271,7 @@ class Utilities(commands.Cog):
         if len(char) > 15:
             return await ctx.send(f'Too many characters ({len(char)}/15)')
 
-        fmt = '`\\U{0:>08}`: `\\N{{{1}}}` - `{2}` - <http://www.fileformat.info/info/unicode/char/{0}>'
+        fmt = '`\\U{0:>08}`: `\\N{{{1}}}` - `{2}` - <=http://www.fileformat.info/info/unicode/char/{0}>='
 
         def to_string(c):
             digit = format(ord(c), 'x')
@@ -289,6 +281,7 @@ class Utilities(commands.Cog):
         await ctx.send('\n'.join(map(to_string, char)))
 
     @commands.command(aliases=["servlist"])
+    @commands.is_owner()
     async def serverlist(self, ctx):
         """Shows a list of servers that the bot is in along with member count"""
         @pag.embed_generator(max_chars=2048)
@@ -306,7 +299,7 @@ class Utilities(commands.Cog):
         navi.start(ctx)
         
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, aliases=["source"])
     @commands.is_owner()
     async def rtfm(self, ctx, *, command):
         """Get the source code for a certain command, cog..."""
@@ -475,7 +468,7 @@ class Utilities(commands.Cog):
         await ctx.trigger_typing()
         try:
             g = safygiphy.Giphy()
-            gif = g.random(tag=query)
+            gif = g.search(tag=query)
             em = discord.Embed()
             em.set_image(url=str(gif.get("data", {}).get("image_original_url")))
             await ctx.send(embed=em)
@@ -486,45 +479,57 @@ class Utilities(commands.Cog):
             await ctx.send("Unable to send the messages, make sure i have access to embed.")
             return
 
-    @commands.command(aliases=["math"])
+    @commands.command(aliases=["math"]) # https://levelup.gitconnected.com/3-ways-to-write-a-calculator-in-python-61642f2e4a9a
     async def calc(self, ctx, *, calculation):
         """Simple calculator. Ex: [p]calc 2+2"""
-        if len(calculation) > 20:
+        if len(calculation) > 16:
             await ctx.send(embed=discord.Embed(description="⚠ You can only input 16 characters at most!"))
             return
-        equation = calculation.strip().replace("^", "**").replace("x", "*")
-        try:
-            if "=" in equation:
-                left = eval(
-                    equation.split("=")[0], {"__builtins__": None}, {"sqrt": sqrt}
-                )
-                right = eval(
-                    equation.split("=")[1], {"__builtins__": None}, {"sqrt": sqrt}
-                )
-                answer = str(left == right)
-            else:
-                answer = str(eval(equation, {"__builtins__": None}, {"sqrt": sqrt}))
-        except TypeError:
-            return await ctx.send(embed=discord.Embed(description="⚠ Invalid calculation query."))
-        except ZeroDivisionError:
-            return await ctx.send(embed=discord.Embed(description="You must be joking."))
+
+        operators = {
+              '+': add,
+              '-': sub,
+              '*': mul,
+              '/': truediv,
+              '^': pow
+            }
+
+        def calculate(s):
+            if s.isdigit():
+                return float(s)
+            for c in operators.keys():
+                left, operator, right = s.partition(c)
+                if operator in operators:
+                    return operators[operator](calculate(left), calculate(right))
 
         em = discord.Embed(color=0xD3D3D3, title="Calculator")
-        em.add_field(
-            name="Input:",
-            value=calculation.replace("**", "^").replace("x", "*"),
-            inline=False,
-        )
-        em.add_field(name="Output:", value=answer, inline=False)
+        try:
+            em.add_field(name="Input:",value=calculation.replace("**", "^").replace("x", "*"),inline=False,)
+            em.add_field(name="Output:", value=calculate(calculation.replace("**", "^").replace("x", "*")), inline=False)
+        except Exception as e:
+            return await ctx.send(embed=discord.Embed(description=f"An Error Occured! **{e}**"))
+        await ctx.send(content=None, embed=em)
+        await ctx.message.delete()
+
+    @commands.command(name="sqrt", aliases=["squareroot"]) 
+    async def sqroot(self, ctx, x: float):
+        """Calculate the squareroot of a given number"""
+        try:
+            out = sqrt(x)
+        except Exception as e:
+            return await ctx.send(embed=discord.Embed(description=f"An Error Occured! **{e}**"))
+
+        em = discord.Embed(color=0xD3D3D3, title="Square Root (√)")
+        em.add_field(name="Input:",value=f"√{x}",inline=False,)
+        em.add_field(name="Output:", value=out, inline=False)
         await ctx.send(content=None, embed=em)
         await ctx.message.delete()
 
     @commands.command(aliases=["msgdump"])
-    @commands.has_permissions(manage_messages=True)
+    @commands.has_permissions(administrator=True)
     @commands.guild_only()
     async def messagedump(self, ctx, filename, limit, details="yes", reverse="no"):
-        """Dump messages."""
-        await ctx.message.delete()
+        """Dump messages into a text file."""
         await ctx.send("Downloading messages...")
         if not os.path.isdir("data/message_dump"):
             os.mkdir("data/message_dump")
@@ -593,120 +598,109 @@ class Utilities(commands.Cog):
     @commands.command(aliases=["channels","allchannel"])
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
-    async def allchannels(self, ctx, serverid: int = None):
-        """Shows ALL Channels on this server."""
-        if serverid is None:
+    async def allchannels(self, ctx):
+        """
+        Shows ALL Channels on this server.
+        Can only be used by server owner.
+        """
+        if ctx.author == ctx.guild.owner:
             server = ctx.guild
-        else:
-            server = discord.utils.get(self.bot.guilds, id=serverid)
-            if server is None:
-                await ctx.send("Server not found!")
-                return
-        
-        e = discord.Embed(title=f"**{server.name}**\'s Channel list.")
+            e = discord.Embed(title=f"**{server.name}**\'s Channel list.")
 
-        voice = ""
-        text = ""
-        categories = ""
+            voice = ""
+            text = ""
+            categories = ""
 
-        for channel in server.voice_channels:
-            voice += f"\U0001f508 {channel}\n"
-        for channel in server.categories:
-            categories += f"\U0001f4da {channel}\n"
-        for channel in server.text_channels:
-            text += f"\U0001f4dd {channel}\n"
+            for channel in server.voice_channels:
+                voice += f"\U0001f508 {channel}\n"
+            for channel in server.categories:
+                categories += f"\U0001f4da {channel}\n"
+            for channel in server.text_channels:
+                text += f"\U0001f4dd {channel}\n"
 
-        if len(server.text_channels) > 0:
-            e.add_field(name="Text Channels", value=f"```{text}```")
-        if len(server.categories) > 0:
-            e.add_field(name="Categories", value=f"```{categories}```")
-        if len(server.voice_channels) > 0:
-            e.add_field(name="Voice Channels", value=f"```{voice}```")
+            if len(server.text_channels) > 0:
+                e.add_field(name="Text Channels", value=f"```{text}```")
+            if len(server.categories) > 0:
+                e.add_field(name="Categories", value=f"```{categories}```")
+            if len(server.voice_channels) > 0:
+                e.add_field(name="Voice Channels", value=f"```{voice}```")
 
-        try:
-            await ctx.send(embed=e)
-        except discord.HTTPException:
-            loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
-            everything = f"Text Channels:\n{text}\nCategories:\n{categories}\nVoice Channels:\n{voice}"
-            data = BytesIO(everything.encode('utf-8'))
-            await ctx.send(content=f"**{ctx.guild.name}'s Channel List**", file=discord.File(data, filename=f"{ctx.guild.name}_Channel_Lists.txt"))
-            await loading.delete()
+            try:
+                await ctx.send(embed=e)
+            except discord.HTTPException:
+                loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
+                everything = f"Text Channels:\n{text}\nCategories:\n{categories}\nVoice Channels:\n{voice}"
+                data = BytesIO(everything.encode('utf-8'))
+                await ctx.send(content=f"**{ctx.guild.name}'s Channel List**", file=discord.File(data, filename=f"{ctx.guild.name}_Channel_Lists.txt"))
+                await loading.delete()
 
     @commands.cooldown(rate=1, per=600, type=commands.BucketType.user)
     @commands.command(aliases=["members"])
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def allmembers(self, ctx, serverid: int = None):
-        """Get all members in this server"""
-        if serverid is None:
+    async def allmembers(self, ctx):
+        """
+        Get all members on a server
+        Can only be used by server owner.
+        """
+        if ctx.author == ctx.guild.owner:
             server = ctx.guild
-        else:
-            server = discord.utils.get(self.bot.guilds, id=serverid)
-            if server is None:
-                return await ctx.send("Server not found!")
-                return
+            bots = ""
+            bots_amount = 0
+            members = ""
+            members_amount = 0
+            total = 0
+            everything =""
 
-        bots = ""
-        bots_amount = 0
-        members = ""
-        members_amount = 0
-        total = 0
-        everything =""
+            for x in server.members:
+                if x.bot is True:
+                    bots += f"[BOT][{x.id}]\t{x}\n"
+                    bots_amount += 1
+                    total += 1
+                else:
+                    members += f"[USER][{x.id}]\t{x}\n"
+                    members_amount += 1
+                    total += 1
 
-        for x in server.members:
-            if x.bot is True:
-                bots += f"[BOT][{x.id}]\t{x}\n"
-                bots_amount += 1
-                total += 1
-            else:
-                members += f"[USER][{x.id}]\t{x}\n"
-                members_amount += 1
-                total += 1
-
-        loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
-        everything = f"Server: {server.name}\nID: {server.id}\nMember Amount: {members_amount}\nBot Amount: {bots_amount}\nTotal: {total}\n\nMember List:\n{members + bots}"        
-        data = BytesIO(everything.encode('utf-8'))
-        await ctx.send(content=f"**{server.name}'s Member List**", file=discord.File(data, filename=f"{server.name}_Member_Lists.txt"))
-        await loading.delete()
+            loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
+            everything = f"Server: {server.name}\nID: {server.id}\nMember Amount: {members_amount}\nBot Amount: {bots_amount}\nTotal: {total}\n\nMember List:\n{members + bots}"        
+            data = BytesIO(everything.encode('utf-8'))
+            await ctx.send(content=f"**{server.name}'s Member List**", file=discord.File(data, filename=f"{server.name}_Member_Lists.txt"))
+            await loading.delete()
 
     @commands.command(aliases=["allrole","roles"])
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def allroles(self, ctx, serverid: int = None):
-        """Get all roles in current server"""
-        allroles = ""
-
-        if serverid is None:
+    async def allroles(self, ctx):
+        """
+        Get all roles in current server
+        Can only be used by server owner.
+        """
+        if ctx.author == ctx.guild.owner:
+            allroles = ""
             server = ctx.guild
-        else:
-            server = discord.utils.get(self.bot.guilds, id=serverid)
-            if server is None:
-                await ctx.send("Server not found!")
-                return
-
-        async with ctx.typing():
-            for num, role in enumerate(sorted(server.roles, reverse=True), start=1):
-                allroles += f"[{str(num).zfill(2)}] {role.id}\t[ Users: {len(role.members)} ]\t{role.name}\t\r\n"
-                loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
-                data = BytesIO(allroles.encode('utf-8'))
-                await ctx.send(content=f"Roles in **{server.name}**", file=discord.File(data, filename=f"{server.name}_Role_Lists.txt"))
-                await loading.delete()
+            async with ctx.typing():
+                for num, role in enumerate(sorted(server.roles, reverse=True), start=1):
+                    allroles += f"[{str(num).zfill(2)}] {role.id}\t[ Users: {len(role.members)} ]\t{role.name}\t\r\n"
+                    loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
+                    data = BytesIO(allroles.encode('utf-8'))
+                    await ctx.send(content=f"Roles in **{server.name}**", file=discord.File(data, filename=f"{server.name}_Role_Lists.txt"))
+                    await loading.delete()
 
     @commands.command(aliases=["discriminator","tagnum","tags"])
     @commands.guild_only()
     async def discrim(self, ctx, tag: str = None):
-        """Allows you to see whose member has the certain Discriminator/Tag!"""
+        """Allows you to see whose user has the certain Discriminator/Tag!"""
 
         if tag is None:
             await ctx.send(embed=discord.Embed(description="⚠ Please enter the desired tag number!"))
             return
 
-        elif len(tag) is not 4 or tag.isdigit() is False:
+        elif len(tag) != 4 or tag.isdigit() != False:
             await ctx.send(embed=discord.Embed(description="⚠ Please enter the correct format!"))
             return
 
         else:
-        
             member_list = ""
     
             @pag.embed_generator(max_chars=2048)
@@ -723,7 +717,7 @@ class Utilities(commands.Cog):
                         duplicates.append(x.id)
                         member_list += f"{str(x)}\n"
                     
-            if member_list is not "":
+            if member_list != "":
                 page += member_list
                 page.start(ctx)
             else:
@@ -731,7 +725,7 @@ class Utilities(commands.Cog):
 
     @commands.has_permissions(add_reactions=True)
     @commands.command()
-    async def poll(self, ctx, *, msg: commands.clean_content):
+    async def poll(self, ctx, *, opt: commands.clean_content):
         """Create a poll using reactions. [p]help poll for more information.
         [p]poll <question> | <answer> | <answer> - Create a poll. You may use as many answers as you want, placing a pipe | symbol in between them.
         Example:
@@ -741,7 +735,7 @@ class Utilities(commands.Cog):
         [p]poll What time is it? | HAMMER TIME! | SHOWTIME! | time=10
         """
         await ctx.message.delete()
-        options = msg.split(" | ")
+        options = opt.split(" | ")
         time = [x for x in options if x.startswith("time=")]
         if time:
             time = time[0]
@@ -799,7 +793,10 @@ class Utilities(commands.Cog):
             return
 
     @commands.command()
-    async def canirun(self, ctx, command):
+    async def canirun(self, ctx, command: str):
+        """
+        See if you can run a certain command
+        """
         command = ctx.bot.get_command(command)
         if command is None:
             return await ctx.send("That command does not exist...", delete_after=5)
@@ -818,8 +815,10 @@ class Utilities(commands.Cog):
     @commands.command()
     @commands.guild_only()
     async def quickpoll(self, ctx, *questions_and_choices: commands.clean_content):
-        """Makes a poll quickly.
+        """
+        Makes a poll quickly.
         The first argument is the question and the rest are the choices.
+        if you need to have spaces between the question and the choices, enclose them in double quotes ("")
         """
 
         def to_emoji(c):
@@ -900,7 +899,7 @@ class Utilities(commands.Cog):
         qr.add_data(link)
         img = qr.make_image(fill_color="black", back_color="white")
         img.save(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png")
-        await ctx.send(f"{ctx.author.mention}", file=discord.File(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png"))
+        await ctx.send(f"{ctx.author.mention}, here is the QR Code Invite of {ctx.guild.name}", file=discord.File(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png"))
         os.remove(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png") #Feel free to disable the removal
 
 
@@ -963,7 +962,7 @@ class Utilities(commands.Cog):
             freq_list[member.activity.name] += 1
 
         sorted_list = sorted(freq_list.items(),
-                             key=operator.itemgetter(1),
+                             key=itemgetter(1),
                              reverse=True)
 
         if not freq_list:
@@ -988,6 +987,10 @@ class Utilities(commands.Cog):
 
     @commands.command(aliases=['drunkify'])
     async def mock(self, ctx, *, txt: commands.clean_content):
+        """
+        iTS SpElleD sQl!!
+
+        """
         lst = [str.upper, str.lower]
         newText = await commands.clean_content().convert(ctx, ''.join(random.choice(lst)(c) for c in txt))
         if len(newText) <= 900:
@@ -1000,10 +1003,13 @@ class Utilities(commands.Cog):
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
     @commands.command()
-    async def expand(self, ctx,  num: int, *, txt: commands.clean_content):
+    async def expand(self, ctx,  gap: int, *, txt: commands.clean_content):
+        """
+        E X P A N D the T E X T
+        """
         spacing = ""
-        if num > 0 and num <= 5:
-            for _ in range(num):
+        if gap > 0 and gap <= 5:
+            for _ in range(gap):
                 spacing+=" "
             result = spacing.join(txt)
             if len(result) <= 256:
@@ -1019,6 +1025,9 @@ class Utilities(commands.Cog):
 
     @commands.command(aliases=["rev"])
     async def reverse(self, ctx, *, txt: commands.clean_content):
+        """
+        txeT eht esreveR
+        """
         result = await commands.clean_content().convert(ctx, txt[::-1])
         if len(result) <= 350:
             await ctx.send(f"{result}")
@@ -1031,6 +1040,9 @@ class Utilities(commands.Cog):
 
     @commands.command(aliases=["ascii2hex","a2h"])
     async def texttohex(self, ctx, *, txt: str):
+        """
+        Converts ASCII characters into Hexadecimal value
+        """
         try:
             hexoutput = await commands.clean_content().convert(ctx, (" ".join("{:02x}".format(ord(c)) for c in txt)))
         except Exception as e:
@@ -1046,6 +1058,9 @@ class Utilities(commands.Cog):
 
     @commands.command(aliases=["hex2ascii","h2a"])
     async def hextotext(self, ctx, *, txt: str):
+        """
+        Converts Hexadecimal value into ASCII characters
+        """
         try:
             cleanS = await commands.clean_content().convert(ctx, bytearray.fromhex(txt).decode())
         except Exception as e:
@@ -1062,6 +1077,9 @@ class Utilities(commands.Cog):
 
     @commands.command(aliases=["ascii2bin","a2b"])
     async def texttobinary(self, ctx, *, txt: str):
+        """
+        Converts ASCII characters into Binary
+        """
         try:
             cleanS = await commands.clean_content().convert(ctx, ' '.join(format(ord(x), 'b') for x in txt))
         except Exception as e:
@@ -1078,6 +1096,9 @@ class Utilities(commands.Cog):
 
     @commands.command(aliases=["bin2ascii","b2a"])
     async def binarytotext(self, ctx, *, txt: str):
+        """
+        Converts Binary into ASCII Characters
+        """
         try:
             cleanS = await commands.clean_content().convert(ctx, ''.join([chr(int(txt, 2)) for txt in txt.split()]))
         except Exception as e:
@@ -1095,6 +1116,9 @@ class Utilities(commands.Cog):
     @commands.command(hidden=True)
     @commands.is_owner()
     async def nickscan(self, ctx):
+        """
+        List all the servers that i have nickname in
+        """
         @pag.embed_generator(max_chars=2048)
         def main_embed(paginator, page, page_index):
             embed = discord.Embed(title=f'Servers I Have Nicknames In', description=page)
@@ -1129,10 +1153,10 @@ class Utilities(commands.Cog):
         await ctx.trigger_typing()
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f'https://ipapi.co/{ip}/json/') as resp:
-                    resp.raise_for_status()
-                    data = await resp.json()
+            session = self.acquire_session()
+            async with session.get(f'https://ipapi.co/{ip}/json/') as resp:
+                resp.raise_for_status()
+                data = json.loads(await resp.read(), object_hook=DictObject)
                     
             ipaddr = data["ip"]
             city = data["city"]
@@ -1182,18 +1206,11 @@ class Utilities(commands.Cog):
         except KeyError:
             await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! Make sure the IP and the formatting are correct!"))
 
-    @commands.group(invoke_without_command=True, aliases=["mrs"])
-    async def morse(self, ctx):
-        """
-        Converts ASCII Characters to Morse code and Vice Versa.
-        """
-        mainemb = discord.Embed(description="This command can help you translate morse codes.\nHere are the available commands:")
-        mainemb.add_field(name="ASCII to Morse conversion", value="`[p]morse a2m [text]`")
-        mainemb.add_field(name="Morse to ASCII conversion", value="`[p]morse m2a [text]`")
-        await ctx.send(embed=mainemb)
-
-    @morse.command(name="m2a", brief = "Convert Morse code to ASCII", aliases=["morse2ascii"])
+    @commands.command(aliases=["m2a"])
     async def morse2ascii(self, ctx, * , text:commands.clean_content = None):
+        """
+        Convert Morse code to ASCII
+        """
         if text is None:
             await ctx.send(embed=discord.Embed(description="⚠ Please specify the input."))
             return
@@ -1210,8 +1227,11 @@ class Utilities(commands.Cog):
                 decodeMessage += '<CHARACTER NOT FOUND>'
         await ctx.send(embed=discord.Embed(title="Morse to ASCII Conversion:", description=decodeMessage, timestamp=datetime.utcnow()))
 
-    @morse.command(name="a2m", brief = "Convert ASCII into Morse Code", aliases=["ascii2morse"])
+    @commands.command(aliases=["a2m"])
     async def ascii2morse(self, ctx, * ,text: commands.clean_content = None):
+        """
+        Convert ASCII into Morse Code
+        """
         if text is None:
             await ctx.send(embed=discord.Embed(description="⚠ Please specify the input."))
             return
@@ -1223,6 +1243,46 @@ class Utilities(commands.Cog):
             else:
                 encodedMessage += '<CHARACTER NOT FOUND>'
         await ctx.send(embed=discord.Embed(title="ASCII to Morse Conversion:", description=encodedMessage, timestamp=datetime.utcnow()))
+
+    @commands.command(aliases=["ascii2b64","b64e"])
+    async def base64encode(self, ctx, text: str = None):
+        """
+        Encode ASCII chars to Base64
+        """
+        if text == None:
+            await ctx.send(embed=discord.Embed(description="Please input the text!"))
+            return
+
+        try:
+            sample_string = text
+            sample_string_bytes = sample_string.encode("ascii") 
+    
+            base64_bytes = base64.b64encode(sample_string_bytes) 
+            base64_string = base64_bytes.decode("ascii") 
+        except UnicodeEncodeError:
+            await ctx.send(embed=discord.Embed(description=f"⚠️ Unable to encode the text, possible unsupported characters are found."))
+    
+        await ctx.send(embed=discord.Embed(description=f"Encoded Text: \n```{base64_string}```"))
+
+    @commands.command(aliases=["b642ascii","b64d"])
+    async def base64decode(self, ctx, text: str = None):
+        """
+        Encode Base64 chars to ASCII
+        """
+        if text == None:
+            await ctx.send(embed=discord.Embed(description="Please input the text!"))
+            return
+        
+        try:
+            base64_string = text
+            base64_bytes = base64_string.encode("ascii") 
+    
+            sample_string_bytes = base64.b64decode(base64_bytes) 
+            sample_string = sample_string_bytes.decode("ascii") 
+            await ctx.send(embed=discord.Embed(description=f"Decoded Text: \n```{sample_string}```"))
+        except UnicodeDecodeError:
+            await ctx.send(embed=discord.Embed(description=f"⚠️ Unable to decode the text, possible unsupported characters are found."))
+
 
     @commands.command(aliases=["nationalize"])
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
@@ -1238,12 +1298,13 @@ class Utilities(commands.Cog):
 
         await ctx.trigger_typing()
 
-        fin_name = name.replace(" ","+")
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f'https://api.nationalize.io/?name={fin_name}') as resp:
-                resp.raise_for_status()
-                data = json.loads(await resp.read(), object_hook=DictObject)
+        parameters = {
+            "name" : name
+        }
+        session = self.acquire_session()
+        async with session.get('https://api.nationalize.io/', params = parameters) as resp:
+            resp.raise_for_status()
+            data = json.loads(await resp.read(), object_hook=DictObject)
                 
         try:
             answer = data["name"]
@@ -1282,8 +1343,6 @@ class Utilities(commands.Cog):
             classified = json.load(json_fp)
             key = classified["key"]
 
-        locate = city.replace(" ", "+")
-
         def degToCompass(deg): # https://stackoverflow.com/a/7490772 https://www.windfinder.com/wind/windspeed.htm
             val = int((deg/22.5)+.5)
             arr = [ 
@@ -1308,55 +1367,65 @@ class Utilities(commands.Cog):
 
         def metertokilometer(meter): # https://www.asknumbers.com/meters-to-km.aspx
             km = meter * 0.001
-            return km
+            trc = trunc(km)
+            return trc
+
+        def mpstokmh(mtr): # https://www.mathworksheets4kids.com/solve/speed/conversion2.php
+            mul = mtr * 18
+            div = mul / 5
+            trc = trunc(div)
+            return trc
 
         def wind_condition(wind_speed): # In Meter/second https://www.windfinder.com/wind/windspeed.htm
-            if wind_speed > 0 and wind_speed < 0.2:
+            if wind_speed >= 0 and wind_speed <= 0.2:
                 return "Calm"
-            elif wind_speed > 0.3 and wind_speed < 1.5:
+            elif wind_speed >= 0.2 and wind_speed <= 1.5:
                 return "Light Air"
-            elif wind_speed > 1.6 and wind_speed < 3.3:
+            elif wind_speed >= 1.5 and wind_speed <= 3.3:
                 return "Light Breeze"
-            elif wind_speed > 3.4 and wind_speed < 5.4:
+            elif wind_speed >= 3.3 and wind_speed <= 5.4:
                 return "Gentle Breeze"
-            elif wind_speed > 5.5 and wind_speed < 7.9:
+            elif wind_speed >= 5.4 and wind_speed <= 7.9:
                 return "Moderate Breeze"
-            elif wind_speed > 8.0 and wind_speed < 10.7:
+            elif wind_speed >= 7.9 and wind_speed <= 10.7:
                 return "Fresh Breeze"
-            elif wind_speed > 10.8 and wind_speed < 13.8:
+            elif wind_speed >= 10.7 and wind_speed <= 13.8:
                 return "Strong Breeze"
-            elif wind_speed > 13.9 and wind_speed < 17.1:
+            elif wind_speed >= 13.8 and wind_speed <= 17.1:
                 return "Near Gale"
-            elif wind_speed > 17.2 and wind_speed < 20.7:
+            elif wind_speed >= 17.1 and wind_speed <= 20.7:
                 return "Gale"
-            elif wind_speed > 20.8 and wind_speed < 24.4:
+            elif wind_speed >= 20.7 and wind_speed <= 24.4:
                 return "Severe Gale"
-            elif wind_speed > 24.5 and wind_speed < 28.4:
+            elif wind_speed >= 24.4 and wind_speed <= 28.4:
                 return "Strong Storm"
-            elif wind_speed > 28.5 and wind_speed < 32.6:
+            elif wind_speed >= 28.4 and wind_speed <= 32.6:
                 return "Violent Storm"
-            elif wind_speed > 32.7:
+            elif wind_speed >= 32.6:
                 return "Hurricane"
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"http://api.openweathermap.org/data/2.5/weather?q={locate}&appid={key}&units=metric") as resp:
-                    resp.raise_for_status()
-                    data = json.loads(await resp.read(), object_hook=DictObject)
-                    
+            parameters = {
+                "q" : city,
+                "appid" : key,
+                "units" : "metric"
+            }
+            session = self.acquire_session()  # do NOT async with on this line!!!
+            async with session.get("http://api.openweathermap.org/data/2.5/weather", params = parameters) as resp:
+                data = json.loads(await resp.read(), object_hook=DictObject)
 
             code = data.cod
 
-            if code is not 200:
+            if code != 200:
                 msg = data.message
-                if code is 404:
+                if code == 404:
                     await ctx.send(embed=discord.Embed(description="City cannot be found!"))
                     return
-                elif code is 401:
+                elif code == 401:
                     await ctx.send(embed=discord.Embed(description="Invalid API Key!"))
                     return
                 else:
-                    await ctx.send(embed=discord.Embed(description=f"An Error Occured! `{msg}` (Code: `{code}`)"))
+                    await ctx.send(embed=discord.Embed(description=f"An Error Occured! `{msg.capitalize()}` (Code: `{code}`)"))
                     return
 
             cityname = data.name
@@ -1417,28 +1486,28 @@ class Utilities(commands.Cog):
             colours = discord.Colour(0x006BCE)
         elif temp_c > 2:
             colours = discord.Colour(0xB4CFFA)
-        elif temp_c < 2:
+        elif temp_c <= 2:
             colours = discord.Colour(0x0000FF)
         else:
             colours = discord.Colour(0x36393E)
 
         def emovisibconf(mtr):
             if mtr > 8000:
-                return "😀"
-            elif mtr < 8000 and mtr > 7000:
-                return "🙂"
-            elif mtr < 6000 and mtr > 5000:
-                return "😐"
-            elif mtr < 4000 and mtr > 3000:
-                return "🙁"
-            elif mtr < 3000 and mtr > 2500:
-                return "😧"
-            elif mtr < 2000 and mtr > 1500:
-                return "😨"
-            elif mtr < 1000 and mtr > 500:
-                return "😱"
-            elif mtr < 499:
-                return "💀"
+                return "😀 (Normal Visibility)"
+            elif mtr <= 8000 and mtr >= 7000:
+                return "🙂 (Slightly Low Visibility)"
+            elif mtr <= 6000 and mtr >= 5000:
+                return "😐 (Lower Visibility)"
+            elif mtr <= 4000 and mtr >= 3000:
+                return "🙁 (Fog)"
+            elif mtr <= 3000 and mtr >= 2500:
+                return "😧 (Fog)"
+            elif mtr <= 2000 and mtr >= 1500:
+                return "😨 (Mist)"
+            elif mtr <= 1000 and mtr >= 500:
+                return "😱 (Mist)"
+            elif mtr <= 499:
+                return "💀 (Dangerously Low)"
             else:
                 return "🤔"
 
@@ -1448,10 +1517,11 @@ class Utilities(commands.Cog):
 
         embed = discord.Embed(title="Weather Information", timestamp=datetime.utcnow(), color=colours)
         embed.set_thumbnail(url=icon)
+        embed.set_footer(text="Data provided by: OpenWeatherMap.org", icon_url="https://upload.wikimedia.org/wikipedia/commons/1/15/OpenWeatherMap_logo.png")
 
-        embed.add_field(name="🏙 City Name", value=cityname, inline=False)
-        embed.add_field(name="🏳 Country ID", value=f"{countryid} {country_flags}", inline=False)
-        embed.add_field(name="🌻 Weather Status", value=status, inline=False)
+        embed.add_field(name="🏙 City", value=cityname, inline=False)
+        embed.add_field(name="🏳 Country", value=f"{countryid} {country_flags}", inline=False)
+        embed.add_field(name="🌻 Weather", value=status, inline=False)
         embed.add_field(name="ℹ Condition", value=description.title(), inline=False)
         embed.add_field(name="🌐 Longitude", value=lon, inline=True)
         embed.add_field(name="🌐 Latitude", value=lat, inline=True)
@@ -1464,187 +1534,319 @@ class Utilities(commands.Cog):
         embed.add_field(name="☁ Cloudiness", value=f"{clouds}%", inline=True)
         embed.add_field(name="🍃Atmospheric Pressure", value=f"{pressure} hPa", inline=True)
         embed.add_field(name="🌬 Humidity", value=f"{humidity}%", inline=True)
-        embed.add_field(name="👀 Visibility", value=f"{vis} Meter ({metertokilometer(vis)} KM) {emovisibconf(vis)}", inline=True)
-        embed.add_field(name="💨 Wind Speed", value=f"{wind} m/sec ({wind_condition(wind)})", inline=True)
+        embed.add_field(name="👁️ Visibility", value=f"{vis} Meter ({metertokilometer(vis)} KM) {emovisibconf(vis)}", inline=True)
+        embed.add_field(name="💨 Wind Speed", value=f"{wind} m/sec | {mpstokmh(wind)} km/h ({wind_condition(wind)})", inline=True)
         embed.add_field(name="🧭 Wind Direction", value=f"{wind_degree}° {wind_direction}", inline=True)
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="define",aliases=["definition", "dictionary"])
+    @commands.command(name="define",aliases=["definition", "dictionary","def"])
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def _define(self, ctx, *, arg):
+    async def _define(self, ctx, *, word: str):
         msg = await ctx.send("Looking for a definition...")
         try:
             #--Connect to unofficial Google Dictionary API and get results--#
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f'https://api.dictionaryapi.dev/api/v1/entries/en/{arg}') as r:
-                    #--Now we decode the JSON and get the variables, replacing them with None if they fail to define--#
-                    result = await r.json()
-                    word = result[0]['word']
-                    try:
-                        origin = result[0]['origin']
-                    except KeyError:
-                        origin = None
-                    try:
-                        noun_def = result[0]['meaning']['noun'][0]['definition']
-                    except KeyError:
-                        noun_def = None
-                    try:
-                        noun_eg = result[0]['meaning']['noun'][0]['example']
-                    except KeyError:
-                        noun_eg = None
-                    try:
-                        verb_def = result[0]['meaning']['verb'][0]['definition']
-                    except KeyError:
-                        verb_def = None
-                    try:
-                        verb_eg = result[0]['meaning']['verb'][0]['example']
-                    except KeyError:
-                        verb_eg = None
-                    try:
-                        prep_def = result[0]['meaning']['preposition'][0]['definition']
-                    except KeyError:
-                        prep_def = None
-                    try:
-                        prep_eg = result[0]['meaning']['preposition'][0]['example']
-                    except KeyError:
-                        prep_eg = None
-                    try:
-                        adverb_def = result[0]['meaning']['adverb'][0]['definition']
-                    except KeyError:
-                        adverb_def = None
-                    try:
-                        adverb_eg = result[0]['meaning']['adverb'][0]['example']
-                    except KeyError:
-                        adverb_eg = None
-                    try:
-                        adject_def = result[0]['meaning']['adjective'][0]['definition']
-                    except KeyError:
-                        adject_def = None
-                    try:
-                        adject_eg = result[0]['meaning']['adjective'][0]['example']
-                    except KeyError:
-                        adject_eg = None
-                    try:
-                        pronoun_def = result[0]['meaning']['pronoun'][0]['definition']
-                    except KeyError:
-                        pronoun_def = None
-                    try:
-                        pronoun_eg = result[0]['meaning']['pronoun'][0]['example']
-                    except KeyError:
-                        pronoun_eg = None
-                    try:
-                        exclaim_def = result[0]['meaning']['exclamation'][0]['definition']
-                    except KeyError:
-                        exclaim_def = None
-                    try:
-                        exclaim_eg = result[0]['meaning']['exclamation'][0]['example']
-                    except KeyError:
-                        exclaim_eg = None
-                    try:
-                        poss_determ_def = result[0]['meaning']['possessive determiner'][0]['definition']
-                    except KeyError:
-                        poss_determ_def = None
-                    try:
-                        poss_determ_eg = result[0]['meaning']['possessive determiner'][0]['example']
-                    except KeyError:
-                        poss_determ_eg = None
-                    try:
-                        abbrev_def = result[0]['meaning']['abbreviation'][0]['definition']
-                    except KeyError:
-                        abbrev_def = None
-                    try:
-                        abbrev_eg = result[0]['meaning']['abbreviation'][0]['example']
-                    except KeyError:
-                        abbrev_eg = None
-                    try:
-                        crossref_def = result[0]['meaning']['crossReference'][0]['definition']
-                    except KeyError:
-                        crossref_def = None
-                    try:
-                        crossref_eg = result[0]['meaning']['crossReference'][0]['example']
-                    except KeyError:
-                        crossref_eg = None
-                    embed = discord.Embed(title=f":blue_book: Google Definition for {word}", color=0x8253c3)
-                    #--Then we add see if the variables are defined and if they are, those variables to an embed and send it back to Discord--#
-                    if origin == None:
-                        pass
+            session = self.acquire_session()
+            async with session.get(f'https://api.dictionaryapi.dev/api/v1/entries/en/{word}') as r:
+                #--Now we decode the JSON and get the variables, replacing them with None if they fail to define--#
+                result = await r.json()
+                word = result[0]['word']
+                try:
+                    origin = result[0]['origin']
+                except KeyError:
+                    origin = None
+                try:
+                    noun_def = result[0]['meaning']['noun'][0]['definition']
+                except KeyError:
+                    noun_def = None
+                try:
+                    noun_eg = result[0]['meaning']['noun'][0]['example']
+                except KeyError:
+                    noun_eg = None
+                try:
+                    verb_def = result[0]['meaning']['verb'][0]['definition']
+                except KeyError:
+                    verb_def = None
+                try:
+                    verb_eg = result[0]['meaning']['verb'][0]['example']
+                except KeyError:
+                    verb_eg = None
+                try:
+                    prep_def = result[0]['meaning']['preposition'][0]['definition']
+                except KeyError:
+                    prep_def = None
+                try:
+                    prep_eg = result[0]['meaning']['preposition'][0]['example']
+                except KeyError:
+                    prep_eg = None
+                try:
+                    adverb_def = result[0]['meaning']['adverb'][0]['definition']
+                except KeyError:
+                    adverb_def = None
+                try:
+                    adverb_eg = result[0]['meaning']['adverb'][0]['example']
+                except KeyError:
+                    adverb_eg = None
+                try:
+                    adject_def = result[0]['meaning']['adjective'][0]['definition']
+                except KeyError:
+                    adject_def = None
+                try:
+                    adject_eg = result[0]['meaning']['adjective'][0]['example']
+                except KeyError:
+                    adject_eg = None
+                try:
+                    pronoun_def = result[0]['meaning']['pronoun'][0]['definition']
+                except KeyError:
+                    pronoun_def = None
+                try:
+                    pronoun_eg = result[0]['meaning']['pronoun'][0]['example']
+                except KeyError:
+                    pronoun_eg = None
+                try:
+                    exclaim_def = result[0]['meaning']['exclamation'][0]['definition']
+                except KeyError:
+                    exclaim_def = None
+                try:
+                    exclaim_eg = result[0]['meaning']['exclamation'][0]['example']
+                except KeyError:
+                    exclaim_eg = None
+                try:
+                    poss_determ_def = result[0]['meaning']['possessive determiner'][0]['definition']
+                except KeyError:
+                    poss_determ_def = None
+                try:
+                    poss_determ_eg = result[0]['meaning']['possessive determiner'][0]['example']
+                except KeyError:
+                    poss_determ_eg = None
+                try:
+                    abbrev_def = result[0]['meaning']['abbreviation'][0]['definition']
+                except KeyError:
+                    abbrev_def = None
+                try:
+                    abbrev_eg = result[0]['meaning']['abbreviation'][0]['example']
+                except KeyError:
+                    abbrev_eg = None
+                try:
+                    crossref_def = result[0]['meaning']['crossReference'][0]['definition']
+                except KeyError:
+                    crossref_def = None
+                try:
+                    crossref_eg = result[0]['meaning']['crossReference'][0]['example']
+                except KeyError:
+                    crossref_eg = None
+                embed = discord.Embed(title=f":blue_book: Google Definition for {word}", color=0x8253c3)
+                #--Then we add see if the variables are defined and if they are, those variables to an embed and send it back to Discord--#
+                if origin == None:
+                    pass
+                else:
+                    embed.add_field(name="Origin:", value=origin, inline=False)
+                if noun_def == None:
+                    pass
+                else:
+                    if noun_eg == None:
+                        embed.add_field(name="As a Noun:", value=f"**Definition:** {noun_def}", inline=False)
                     else:
-                        embed.add_field(name="Origin:", value=origin, inline=False)
-                    if noun_def == None:
-                        pass
+                        embed.add_field(name="As a Noun:", value=f"**Definition:** {noun_def}\n**Example:** {noun_eg}", inline=False)
+                if verb_def == None:
+                    pass
+                else:
+                    if verb_eg == None:
+                        embed.add_field(name="As a Verb:", value=f"**Definition:** {verb_def}", inline=False)
                     else:
-                        if noun_eg == None:
-                            embed.add_field(name="As a Noun:", value=f"**Definition:** {noun_def}", inline=False)
-                        else:
-                            embed.add_field(name="As a Noun:", value=f"**Definition:** {noun_def}\n**Example:** {noun_eg}", inline=False)
-                    if verb_def == None:
-                        pass
+                        embed.add_field(name="As a Verb:", value=f"**Definition:** {verb_def}\n**Example:** {verb_eg}", inline=False)
+                if prep_def == None:
+                    pass
+                else:
+                    if prep_eg == None:
+                        embed.add_field(name="As a Preposition:", value=f"**Definition:** {prep_def}", inline=False)
                     else:
-                        if verb_eg == None:
-                            embed.add_field(name="As a Verb:", value=f"**Definition:** {verb_def}", inline=False)
-                        else:
-                            embed.add_field(name="As a Verb:", value=f"**Definition:** {verb_def}\n**Example:** {verb_eg}", inline=False)
-                    if prep_def == None:
-                        pass
+                        embed.add_field(name="As a Preposition:", value=f"**Definition:** {prep_def}\n**Example:** {prep_eg}", inline=False)
+                if adverb_def == None:
+                    pass
+                else:
+                    if adverb_eg == None:
+                        embed.add_field(name="As an Adverb:", value=f"**Definition:** {adverb_def}", inline=False)
                     else:
-                        if prep_eg == None:
-                            embed.add_field(name="As a Preposition:", value=f"**Definition:** {prep_def}", inline=False)
-                        else:
-                            embed.add_field(name="As a Preposition:", value=f"**Definition:** {prep_def}\n**Example:** {prep_eg}", inline=False)
-                    if adverb_def == None:
-                        pass
+                        embed.add_field(name="As a Adverb:", value=f"**Definition:** {adverb_def}\n**Example:** {adverb_eg}", inline=False)
+                if adject_def == None:
+                    pass
+                else:
+                    if adject_eg == None:
+                        embed.add_field(name="As an Adjective:", value=f"**Definition:** {adject_def}", inline=False)
                     else:
-                        if adverb_eg == None:
-                            embed.add_field(name="As an Adverb:", value=f"**Definition:** {adverb_def}", inline=False)
-                        else:
-                            embed.add_field(name="As a Adverb:", value=f"**Definition:** {adverb_def}\n**Example:** {adverb_eg}", inline=False)
-                    if adject_def == None:
-                        pass
+                        embed.add_field(name="As an Adjective:", value=f"**Definition:** {adject_def}\n**Example:** {adject_eg}", inline=False)
+                if pronoun_def == None:
+                    pass
+                else:
+                    if pronoun_eg == None:
+                        embed.add_field(name="As a Pronoun:", value=f"**Definition:** {pronoun_def}", inline=False)
                     else:
-                        if adject_eg == None:
-                            embed.add_field(name="As an Adjective:", value=f"**Definition:** {adject_def}", inline=False)
-                        else:
-                            embed.add_field(name="As an Adjective:", value=f"**Definition:** {adject_def}\n**Example:** {adject_eg}", inline=False)
-                    if pronoun_def == None:
-                        pass
+                        embed.add_field(name="As a Pronoun:", value=f"**Definition:** {pronoun_def}\n**Example:** {pronoun_eg}", inline=False)
+                if exclaim_def == None:
+                    pass
+                else:
+                    if exclaim_eg == None:
+                        embed.add_field(name="As an Exclamation:", value=f"**Definition:** {exclaim_def}", inline=False)
                     else:
-                        if pronoun_eg == None:
-                            embed.add_field(name="As a Pronoun:", value=f"**Definition:** {pronoun_def}", inline=False)
-                        else:
-                            embed.add_field(name="As a Pronoun:", value=f"**Definition:** {pronoun_def}\n**Example:** {pronoun_eg}", inline=False)
-                    if exclaim_def == None:
-                        pass
+                        embed.add_field(name="As an Exclamation:", value=f"**Definition:** {exclaim_def}\n**Example:** {exclaim_eg}", inline=False)
+                if poss_determ_def == None:
+                    pass
+                else:
+                    if poss_determ_eg == None:
+                        embed.add_field(name="As a Possessive Determiner:", value=f"**Definition:** {poss_determ_def}", inline=False)
                     else:
-                        if exclaim_eg == None:
-                            embed.add_field(name="As an Exclamation:", value=f"**Definition:** {exclaim_def}", inline=False)
-                        else:
-                            embed.add_field(name="As an Exclamation:", value=f"**Definition:** {exclaim_def}\n**Example:** {exclaim_eg}", inline=False)
-                    if poss_determ_def == None:
-                        pass
+                        embed.add_field(name="As a Possessive Determiner:", value=f"**Definition:** {poss_determ_def}\n**Example:** {poss_determ_eg}", inline=False)
+                if abbrev_def == None:
+                    pass
+                else:
+                    if abbrev_eg == None:
+                        embed.add_field(name="As an Abbreviation:", value=f"**Definition:** {abbrev_def}", inline=False)
                     else:
-                        if poss_determ_eg == None:
-                            embed.add_field(name="As a Possessive Determiner:", value=f"**Definition:** {poss_determ_def}", inline=False)
-                        else:
-                            embed.add_field(name="As a Possessive Determiner:", value=f"**Definition:** {poss_determ_def}\n**Example:** {poss_determ_eg}", inline=False)
-                    if abbrev_def == None:
-                        pass
+                        embed.add_field(name="As an Abbreviation:", value=f"**Definition:** {abbrev_def}\n**Example:** {abbrev_eg}", inline=False)
+                if crossref_def == None:
+                    pass
+                else:
+                    if crossref_eg == None:
+                        embed.add_field(name="As a Cross-Reference:", value=f"**Definition:** {crossref_def}", inline=False)
                     else:
-                        if abbrev_eg == None:
-                            embed.add_field(name="As an Abbreviation:", value=f"**Definition:** {abbrev_def}", inline=False)
-                        else:
-                            embed.add_field(name="As an Abbreviation:", value=f"**Definition:** {abbrev_def}\n**Example:** {abbrev_eg}", inline=False)
-                    if crossref_def == None:
-                        pass
-                    else:
-                        if crossref_eg == None:
-                            embed.add_field(name="As a Cross-Reference:", value=f"**Definition:** {crossref_def}", inline=False)
-                        else:
-                            embed.add_field(name="As a Cross-Reference:", value=f"**Definition:** {crossref_def}\n**Example:** {crossref_eg}", inline=False)
-                    await msg.edit(content='',embed=embed)
+                        embed.add_field(name="As a Cross-Reference:", value=f"**Definition:** {crossref_def}\n**Example:** {crossref_eg}", inline=False)
+                await msg.edit(content='',embed=embed)
         except:
             #--Send error message if command fails, as it's assumed a definition isn't found--#
             await msg.edit(content=":x: Sorry, I couldn't find that word. Check your spelling and try again.")
+
+    @commands.command(aliases=["curr"])
+    @commands.cooldown(2, 5, commands.BucketType.user)
+    async def currency(self, ctx, origin: str = None, to: str = None, amount: int = None):
+        """
+        Convert currencies from one to another
+        For the list of acceptable format go to: https://en.wikipedia.org/wiki/ISO_4217#Active_codes
+        """
+        if origin is None or to is None or amount is None:
+            await ctx.send(embed=discord.Embed(description=f"Usage: `[p]curr <from> <to> <amount>`\nHere is the list of Currency IDs: https://en.wikipedia.org/wiki/ISO_4217#Active_codes"))
+            return
+
+        await ctx.trigger_typing()
+        
+        head = {
+            "Authorization": ksoft_key
+        }
+        params = {
+            "from": origin,
+            "to": to,
+            "value": amount
+        }
+        session = self.acquire_session()
+        async with session.get('https://api.ksoft.si/kumo/currency', headers = head, params = params) as resp:
+            data = json.loads(await resp.read(), object_hook=DictObject)
+        try:
+            prt = data.pretty
+        except KeyError:
+            code = data.code
+            msg = data.message
+            await ctx.send(embed=discord.Embed(description=f"⚠ An Error Occured! **{msg.capitalize()}** (Code: {code})"))
+            return
+
+        emb = discord.Embed(timestamp=datetime.utcnow())
+        emb.add_field(name = f"Convesion from {origin.upper()} to {to.upper()}", value = prt)
+        emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png", text = "Data provided by: KSoft.Si")
+        await ctx.send(embed = emb)
+
+    @commands.command(aliases=["lyric", "ly", "lrc"])
+    @commands.cooldown(2, 5, commands.BucketType.user)
+    async def lyrics(self, ctx, * ,query: str = None):
+        """
+        Search the lyrics of a given song
+        """
+        if query is None:
+            await ctx.send(embed=discord.Embed(description=f"Usage: `[p]lyrics <query>`"))
+            return
+
+        await ctx.trigger_typing()
+
+        msg = await ctx.send(f"🔍 Looking for `{query}`")
+
+        head = {
+            "Authorization": ksoft_key
+        }
+        params = {
+            "q": query,
+            "limit": 1
+        }
+        session = self.acquire_session()
+        async with session.get('https://api.ksoft.si/lyrics/search', headers = head, params = params) as resp:
+            data = json.loads(await resp.read(), object_hook=DictObject)
+        try:
+            artist = data.data[0].artist
+            title = data.data[0].name
+            lyric = data.data[0].lyrics
+            album_art = data.data[0].album_art
+        except IndexError:
+            await ctx.send(embed=discord.Embed(description=f"⚠ An Error Occured! Cannot find the lyric for that song."))
+            return
+
+        if len(lyric) >= 2000:
+            lyric1 = lyric[:2000]
+            lyric2 = lyric[2000:]
+            emb = discord.Embed(description = f"```{lyric1}```")
+            emb2 = discord.Embed(description = f"```{lyric2}```", timestamp=datetime.utcnow())
+            emb.set_author(name=f"{title} — {artist}", icon_url = album_art)
+            emb2.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png", text = "Data provided by: KSoft.Si")
+            await msg.edit(embed = emb, content = None)
+            await ctx.send(embed = emb2, content = None)
+        else:
+            emb = discord.Embed(description = f"```{lyric}```", timestamp=datetime.utcnow())
+            emb.set_author(name=f"{title} — {artist}")
+            emb.set_thumbnail(url=album_art)
+            emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png", text = "Data provided by: KSoft.Si")
+            await msg.edit(embed = emb, content = None)
+
+    @commands.command(aliases=["cvd","covid19"])
+    @commands.cooldown(2, 5, commands.BucketType.user)
+    async def covid(self, ctx, * , country: str = None):
+        """
+        View COVID-19 Statistic for a Country.
+        Accepted values are **Country name** or **Alpha-2 ISO Code**.
+        """
+        if country is None:
+            await ctx.send(embed=discord.Embed(description=f"Please specify the country!"))
+            return
+        elif len(country) > 16:
+            await ctx.send(embed=discord.Embed(description=f"Only 16 chacarcters are allowed."))
+            return
+
+        await ctx.trigger_typing()
+        head = {
+            "accept": "application/json"
+        }
+        session = self.acquire_session()
+        async with session.get(f"https://covid2019-api.herokuapp.com/v2/country/{country.replace(' ', '_')}", headers = head) as resp:
+            data = json.loads(await resp.read(), object_hook=DictObject)
+
+        try:
+            loc = data.data.location
+            confirm = data.data.confirmed
+            dead = data.data.deaths
+            rec = data.data.recovered
+            act = data.data.active
+        except KeyError:
+            await ctx.send(embed=discord.Embed(description=f"⚠ An Error Occured! **Location not found!**"))
+            return
+
+        if rec == 0:
+            rec = "Unknown"
+
+        ts = data.ts
+
+        emb = discord.Embed(description = f"COVID-19 Statistics for **{loc}**", timestamp=datetime.fromtimestamp(ts))
+        emb.set_footer(text="Last updated:")
+        emb.set_thumbnail(url = "https://i1.wp.com/news.power102fm.com/wp-content/uploads/2020/03/coronavirus-png-image-hd-covid-19-1885x1653-1.png")
+        emb.add_field(name="Confirmed", value=confirm, inline=False)
+        emb.add_field(name="Deaths", value=dead, inline=False)
+        emb.add_field(name="Recovered", value=rec, inline=False)
+        emb.add_field(name="Active Cases", value=act, inline=False)
+        await ctx.send(embed = emb)
 
 def setup(bot):
     bot.add_cog(Utilities(bot))

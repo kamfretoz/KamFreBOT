@@ -56,11 +56,11 @@ I've tried to put the credit as much as i can on the code. If i'm missing anyone
   
 ## APIs used
 
+* KSoft.si [https://ksoft.si/]
 * TheCatAPI [https://www.thecatapi.com/]
 * TheDogAPI [https://thedogapi.com/]
 * Random Fox [https://randomfox.ca/]
 * Shibe.online [https://shibe.online/]
-* Cat Facts [https://cat-fact.herokuapp.com/]
 * Advices Slip [https://adviceslip.com/]
 * Programming Quotes [https://programming-quotes-api.herokuapp.com/]
 * QuoteGarden [https://pprathameshmore.github.io/QuoteGarden/]

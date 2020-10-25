@@ -1,20 +1,20 @@
 import discord
 import asyncio
-import aiohttp
 import libneko
 import json
 from datetime import datetime
 from discord.ext import commands
 
-class DictObject(dict):
-    def __getattr__(self, item):
-        return self[item]
+from modules.http import HttpCogBase
+from modules.dictobj import DictObject
 
-class F1MotorSport(commands.Cog):
+class F1MotorSport(HttpCogBase):
     def __init__(self, bot):
         self.bot = bot
+        self.loop = asyncio.get_event_loop()
 
     @commands.group(invoke_without_command=True)
+    @commands.cooldown(2, 5, commands.BucketType.user)
     async def f1(self, ctx):
         mainemb = discord.Embed(description="This command can provide you with information around F1™ Races.\nHere are the available command:")
         mainemb.add_field(name="Race Schedule", value="`[p]f1 schedule [season] [round]`")
@@ -22,6 +22,7 @@ class F1MotorSport(commands.Cog):
         await ctx.send(embed=mainemb)
 
     @f1.command(name="schedule", aliases=["racesched"], brief="Shows the schedule of F1™ races.")
+    @commands.cooldown(2, 5, commands.BucketType.user)
     async def f1_raceschedule(self, ctx, season: str = "current", round: str = "last"):
         """
         Shows the schedule of F1™ races.
@@ -30,10 +31,10 @@ class F1MotorSport(commands.Cog):
 
         await ctx.trigger_typing()
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"https://ergast.com/api/f1/{season}/{round}.json?limit=1") as resp:
-                resp.raise_for_status()
-                data = json.loads(await resp.read(), object_hook=DictObject)
+        session = self.acquire_session()
+        async with session.get(f"https://ergast.com/api/f1/{season}/{round}.json?limit=1") as resp:
+            resp.raise_for_status()
+            data = json.loads(await resp.read(), object_hook=DictObject)
                 
 
         try:
@@ -71,6 +72,7 @@ class F1MotorSport(commands.Cog):
         await ctx.send(embed=emb)
 
     @f1.command(name="result", aliases=["raceresult"], brief="Shows the result of an F1™ Race.")
+    @commands.cooldown(2, 5, commands.BucketType.user)
     async def f1_raceresult(self, ctx, season: str = "current", round: str = "last"):
         """
         Shows the result of an F1™ Race. (Only 1st place winner will be shown)
@@ -79,10 +81,10 @@ class F1MotorSport(commands.Cog):
     
         await ctx.trigger_typing()
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"https://ergast.com/api/f1/{season}/{round}/results.json?limit=1") as resp:
-                resp.raise_for_status()
-                data = json.loads(await resp.read(), object_hook=DictObject)
+        session = self.acquire_session()
+        async with session.get(f"https://ergast.com/api/f1/{season}/{round}/results.json?limit=1") as resp:
+            resp.raise_for_status()
+            data = json.loads(await resp.read(), object_hook=DictObject)
                 
 
         try:

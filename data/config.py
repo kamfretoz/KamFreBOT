@@ -1,4 +1,4 @@
-version = "Alpha v0.1.8"
+version = "Alpha v0.2.0"
 botname = "KamFreBOT"
 
 home = 570978148586356750 #Your Error Log Channel ID Here.

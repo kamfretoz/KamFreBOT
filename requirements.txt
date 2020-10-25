@@ -16,3 +16,4 @@ qrcode[pil]
 ciso8601
 python-dateutil
 uvloop
+owoify

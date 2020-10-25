@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v0.2.0
+
+* Added an `aiohttp` Client Session pool manager (Thanks to nekokatt!!)
+* Added many new commands (Thanks to the KSoft.si API!)
+* Now using `params` on GET methods
+* Modularized some parts of the code
+* Fixed a lot of `SyntaxWarning`s
+* Fixed a huge flaw of a ton of the moderation command and calculator command
+* Several tweaks and enhancements to `serverinfo` command
+
 ## v0.1.9
 
 * Added `uvloop`

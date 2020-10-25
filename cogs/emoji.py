@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2017 XLR
+Copyright (c) 2017 Tmpod
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -92,10 +92,10 @@ class Emoji(commands.Cog):
         """
         View, copy, add or remove emoji.
         Usage:
-        1) [p]emoji <emoji> - View a large image of a given emoji. Use [p]emoji s for additional info.
-        2) [p]emoji copy <emoji> - Copy a custom emoji on another server and add it to the current server if you have the permissions.
-        3) [p]emoji add <url> - Add a new emoji to the current server if you have the permissions.
-        4) [p]emoji remove <emoji> - Remove an emoji from the current server if you have the permissions
+        1) `[p]emoji <emoji>` - View a large image of a given emoji. Use [p]emoji s for additional info.
+        2) `[p]emoji copy <emoji>` - Copy a custom emoji on another server and add it to the current server if you have the permissions.
+        3) `[p]emoji add <url>` - Add a new emoji to the current server if you have the permissions.
+        4) `[p]emoji remove <emoji>` - Remove an emoji from the current server if you have the permissions
         """
         await ctx.trigger_typing()
         

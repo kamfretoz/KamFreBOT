@@ -6,12 +6,8 @@ import discord
 import libneko
 import psutil
 import platform
-import bs4
-import lxml
-import time
 from libneko import pag
 from discord.ext import commands
-import data.config as config
 
 ###############################
 
@@ -132,6 +128,11 @@ class Information(commands.Cog):
                 value=str(channel_count), 
                 inline=False
             )
+            em.add_field(
+                name="👥 Users",
+                value=str(len(self.bot.users)), 
+                inline=False
+            )
 
             await ctx.send(content=None, embed=em)
         except(discord.Forbidden):
@@ -145,13 +146,28 @@ class Information(commands.Cog):
 
     @commands.group(invoke_without_command=True, aliases=["server", "si"])
     @commands.guild_only()
-    async def serverinfo(self, ctx):
+    async def serverinfo(self, ctx, serverid: int = None):
         """This command will show some informations about this server"""
         await ctx.trigger_typing()
 
-        level = str(ctx.guild.premium_tier)
-        region = str(ctx.guild.region)
-        guild = ctx.guild
+        if serverid is None:
+            guild = ctx.guild
+        else:
+            guild = self.bot.get_guild(serverid)
+            if guild is None:
+                await ctx.send(embed=discord.Embed(description="Server not found!"))
+                return
+
+        if guild.unavailable:
+            await ctx.send(embed=discord.Embed(description="That server is currently unavailable"))
+            return
+
+        if guild.premium_tier == 0 or guild.premium_tier is None:
+            level = "No Level"
+        else:
+            level = f"Level {str(guild.premium_tier)}"
+            
+        region = str(guild.region)
         roles = [role.mention for role in guild.roles]
 
         booster_amount = None
@@ -179,10 +195,36 @@ class Information(commands.Cog):
             'us-west': ':flag_us: US West',
         }.get(region)
 
+
+        member_by_status = Counter(str(m.status) for m in guild.members)
+        fmt = (
+            f'🟢 Online: {member_by_status["online"]}\n'
+            f'🟡 Idle: {member_by_status["idle"]}\n'
+            f'🔴 Do Not Disturb: {member_by_status["dnd"]}\n'
+            f'⚫ Offline: {member_by_status["offline"]}\n'
+            f"➕ Total: {guild.member_count}"
+        )
+        bots = 0
+        members = 0
+        total = 0
+        for x in ctx.guild.members:
+            if x.bot is True:
+                bots += 1
+                total += 1
+            else:
+                members += 1
+                total += 1
+
         server = discord.Embed(
             color=ctx.message.author.color, timestamp=datetime.utcnow()
         )
         server.title = f"Information about {guild.name}"
+        if guild.description:
+            server.add_field(
+            name="》 Description", 
+            value=guild.description,
+            inline=False
+            )    
         server.add_field(name="》 ID", value=guild.id, inline=False)
         server.add_field(
             name="》 Owner",
@@ -202,18 +244,13 @@ class Information(commands.Cog):
         def sec2min(seconds): # https://stackoverflow.com/a/775075
             m, s = divmod(seconds, 60)
             h, m = divmod(m, 60)
-            return f'{h:d}:{m:02d}:{s:02d}'
+            return f'{h} Hour, {m} Minutes'
 
         since_created = (ctx.message.created_at - guild.created_at).days
 
         server.add_field(
-            name="》 Member count", 
-            value=f"{len(ctx.guild.members)} Members",
-            inline=False
-        )
-        server.add_field(
-            name="》 Channel count",
-            value=f"{len(ctx.guild.channels)} channels", 
+            name="》 Channel Count",
+            value=f"{len(guild.channels)} channels", 
             inline=False
         )
         server.add_field(
@@ -238,12 +275,12 @@ class Information(commands.Cog):
         )
         server.add_field(
             name="》 Server Level", 
-            value=f"Level {level}", 
+            value=level, 
             inline=False
         )
         server.add_field(
-            name="》 Is a large guild?", 
-            value=guild.large, 
+            name="》 Server size", 
+            value=f"{'Large server' if guild.large else 'Small server'}",
             inline=False
         )
         server.add_field(
@@ -254,6 +291,11 @@ class Information(commands.Cog):
         server.add_field(
             name="》 AFK Timeout", 
             value=sec2min(guild.afk_timeout), 
+            inline=False
+        )
+        server.add_field(
+            name=f"》 Members[{len(guild.members)}]", 
+            value=f"```{fmt}```",
             inline=False
         )
         server.set_footer(
@@ -342,7 +384,7 @@ class Information(commands.Cog):
         role_created = role.created_at.strftime("%d %b %Y %H:%M:%S")
         created_on = f"{role_created} ({since_created} days ago!)"
 
-        if str(role.colour) is "#000000":
+        if str(role.colour) == "#000000":
             colour = "default"
             color = "#%06x" % random.randint(0, 0xFFFFFF)
             color = int(colour[1:], 16)
@@ -426,6 +468,12 @@ class Information(commands.Cog):
 
         await ctx.send(embed=em)
 
+    @serverinfo_roleinfo.error
+    async def roleinfo_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send('Cannot find that role. Make sure the spelling and the case-sensitivity is correct!')
+            return
+
     
     @serverinfo.command(name="inrole", aliases=["inrl"], brief="Show the list of users on a particular role.")
     @commands.guild_only()
@@ -434,7 +482,7 @@ class Information(commands.Cog):
         """
         Show the list of users on a particular role.
         """
-        if str(role.colour) is "#000000":
+        if str(role.colour) == "#000000":
             colour = "default"
             color = "#%06x" % random.randint(0, 0xFFFFFF)
             color = int(colour[1:], 16)
@@ -463,6 +511,12 @@ class Information(commands.Cog):
             lst += members
             lst.start(ctx)
 
+    @serverinfo_inrole.error
+    async def inrole_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send('Cannot find that role. Make sure the spelling and the case-sensitivity is correct!')
+            return
+
 
     @serverinfo.command(name="owner", aliases=["own"], brief="Shows the owner of this server")
     @commands.guild_only()
@@ -486,7 +540,7 @@ class Information(commands.Cog):
         Shows when this server was created.
         """
         since_created = (ctx.message.created_at - ctx.guild.created_at).days
-        create = discord.Embed(description=f"**{ctx.guild.name}** was created on `{ctx.guild.created_at.strftime('%B %d, %Y at %I:%M:%S %p')}` ({since_created} Days ago!)")
+        create = discord.Embed(description=f"**{ctx.guild.name}** was created on `{ctx.guild.created_at.strftime('%B %d, %Y at %I:%M:%S %p')}` ({since_created} days ago!)")
 
         if ctx.guild.icon:
             if ctx.guild.is_icon_animated() is True:
@@ -594,13 +648,23 @@ class Information(commands.Cog):
 
     @commands.guild_only()
     @serverinfo.command(name="emoji",aliases=["emojis","emote"], brief="Shows all emojis I can see in this server.")
-    async def serverinfo_emojilibrary(self, ctx, arg=None):
-        """Shows all emojis I can see in this server. Pass the --verbose/-v flag to see names."""
+    async def serverinfo_emojilibrary(self, ctx, serverid:int = None, arg=None):
+        """
+        Shows all emojis I can see in this server. Pass the --verbose/-v flag to see names.
+        You can also supply the server ID to see their emojis, This bot needs to be on that server as well.
+        """
+        if serverid is None:
+            guild = ctx.guild
+        else:
+            guild = self.bot.get_guild(serverid)
+            if guild is None:
+                await ctx.send(embed=discord.Embed(description="Server not found!"))
+                return
         if arg:
             transform = self.transform_verbose
         else:
             transform = self.transform_mute
-        emojis = transform(ctx.guild.emojis)
+        emojis = transform(guild.emojis)
         p = pag.StringNavigatorFactory()
         for emoji in emojis:
             p += emoji
@@ -675,6 +739,12 @@ class Information(commands.Cog):
 
         await ctx.send(embed=usr)
 
+    @userinspect.error
+    async def userinspect_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send('Cannot find that user.')
+            return
+
     @commands.group(invoke_without_command=True,aliases=["user", "ui", "profile","uinf"])
     @commands.guild_only()
     async def userinfo(self, ctx, * , user: libneko.converters.InsensitiveMemberConverter = None):
@@ -695,19 +765,33 @@ class Information(commands.Cog):
             boost_stats = "Information Unavailable"
 
         member = discord.Embed(timestamp=datetime.utcnow())
-        roles = [role.mention for role in user.roles]
+
+        try:
+            status = {
+            'online': '🟢 Online',
+            'idle': '🟡 Idle',
+            'dnd': '🔴 Do Not Disturb',
+            'offline': '⚫ Offline'
+                }.get(str(user.status))
+
+            roles = [role.mention for role in user.roles]
+            voice = user.voice
+            if voice is not None:
+                vc = voice.channel
+                other_people = len(vc.members) - 1
+                voice = (
+                    f"{vc.name} with {other_people} others"
+                    if other_people
+                    else f"{vc.name} by themselves"
+                )
+            else:
+                voice = "Not connected."
+        except AttributeError:
+            roles = "Unknown"
+            voice = "Unknown"
+            status = "Unknown"
+
         shared = sum(1 for m in self.bot.get_all_members() if m.id == user.id)
-        voice = user.voice
-        if voice is not None:
-            vc = voice.channel
-            other_people = len(vc.members) - 1
-            voice = (
-                f"{vc.name} with {other_people} others"
-                if other_people
-                else f"{vc.name} by themselves"
-            )
-        else:
-            voice = "Not connected."
 
         member.set_author(name=f"Information of {str(user)}")
 
@@ -721,24 +805,38 @@ class Information(commands.Cog):
             value=f"#{user.discriminator}", 
             inline=False
         )
-        member.add_field(
-            name="》 Created",
-            value=user.created_at.strftime("%B %d, %Y at %I:%M:%S %p"),
-            inline=False,
-        )
+        try:
+            member.add_field(
+                name="》 Created",
+                value=user.created_at.strftime("%B %d, %Y at %I:%M:%S %p"),
+                inline=False,
+            )
+            member.add_field(
+                name="》 Joined",
+                value=f'{user.joined_at.strftime("%B %d, %Y at %I:%M:%S %p")}',
+                inline=False,
+            )
+        except AttributeError:
+            pass
         member.add_field(
             name="》 User ID", 
             value=user.id, 
             inline=False
         )
         member.add_field(
+            name="Account Type", 
+            value=f"{'BOT' if user.bot else 'Human'}", 
+            inline=False
+        )
+        if not user.bot:
+            member.add_field(
             name="Platform", 
             value=f"{'Mobile' if user.is_on_mobile() else 'Desktop'}", 
             inline=False
         )
         member.add_field(
-            name="Account Type", 
-            value=f"{'Bot' if user.bot else 'Human'}", 
+            name="》 Status", 
+            value=status, 
             inline=False
         )
         member.add_field(
@@ -747,23 +845,8 @@ class Information(commands.Cog):
             inline=False
         )
         member.add_field(
-            name="》 Status", 
-            value=user.status, 
-            inline=False
-        )
-        member.add_field(
-            name="》 Joined at",
-            value=f'{user.joined_at.strftime("%B %d, %Y on %I:%M:%S %p")}',
-            inline=False,
-        )
-        member.add_field(
             name="》 Shared Servers", 
             value=f"{shared} shared", 
-            inline=False
-        )
-        member.add_field(
-            name="》 Current Activity/Status", 
-            value=user.activity, 
             inline=False
         )
         member.add_field(
@@ -799,9 +882,57 @@ class Information(commands.Cog):
 
         await ctx.send(embed=member)
 
-    @userinfo.command(name="avatar", aliases=["pfp", "pp","icon"], brief="View the avatar of a member.")
+    @userinfo.error
+    async def userinfo_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send('Cannot find that user.')
+            
+            
+    @userinfo.command(name="created", aliases=["create","made"], brief="Shows when an account was made")
     @commands.guild_only()
-    async def userinfo_avatar(self, ctx, *, user: libneko.converters.InsensitiveUserConverter = None):
+    async def userinfo_created(self, ctx, user: libneko.converters.InsensitiveUserConverter = None):
+        """
+        Shows when this account was created.
+        """
+        if user is None:
+            user = ctx.message.author
+
+        since_created = (ctx.message.created_at - user.created_at).days
+        create = discord.Embed(description=f"The account of {user} was created on `{user.created_at.strftime('%B %d, %Y at %I:%M:%S %p')}` ({since_created} days ago!)")
+
+        if user.avatar:
+            if user.is_avatar_animated() is True:
+                create.set_thumbnail(url=user.avatar_url_as(format="gif", size=4096))
+            else:
+                create.set_thumbnail(url=user.avatar_url_as(format="png", size=4096))
+
+        create.set_footer(text=f"User: {user} ({user.id})")
+        await ctx.send(embed=create)
+
+    @userinfo.command(name="joined", aliases=["join"], brief="Shows when a user joined the server")
+    @commands.guild_only()
+    async def userinfo_joined(self, ctx, user: libneko.converters.InsensitiveMemberConverter = None):
+        """
+        Shows when this user joined the serve.
+        """
+        if user is None:
+            user = ctx.message.author
+
+        since_joined = (ctx.message.created_at - user.joined_at).days
+        joined = discord.Embed(description=f"{user.mention} joined the serverr on `{user.joined_at.strftime('%B %d, %Y at %I:%M:%S %p')}` ({since_joined} days ago!)")
+
+        if user.avatar:
+            if user.is_avatar_animated() is True:
+                joined.set_thumbnail(url=user.avatar_url_as(format="gif", size=4096))
+            else:
+                joined.set_thumbnail(url=user.avatar_url_as(format="png", size=4096))
+
+        joined.set_footer(text=f"User: {user} ({user.id})")
+        await ctx.send(embed=joined)
+
+    @userinfo.command(name="avatar", aliases=["pfp", "pp","icon","ava"], brief="View the avatar of a member.")
+    @commands.guild_only()
+    async def userinfo_avatar(self, ctx, user: libneko.converters.InsensitiveUserConverter = None):
         """View the avatar of a member.\nYou can either use Discord ID or ping them instead"""
         await ctx.trigger_typing()
 
@@ -846,6 +977,12 @@ class Information(commands.Cog):
             await ctx.send("Please provide a correct format!")
             await ctx.message.add_reaction("❌")
 
+    @userinfo_avatar.error
+    async def avatar_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send('Cannot find that user.')
+            return
+
     @userinfo.command(name="id", brief="Mention the user to get their ID")
     async def userinfo_id(self, ctx, user: libneko.converters.InsensitiveUserConverter = None):
         """Ping the user to get their ID, you can also type their username instead."""
@@ -857,6 +994,11 @@ class Information(commands.Cog):
                 color=user.colour
             )
         )
+    @userinfo_id.error
+    async def id_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send('Cannot find that user.')
+            return
 
     @userinfo.command(name="roles", brief="Show all roles that the member has.")
     async def userinfo_roles(self, ctx, member: libneko.converters.InsensitiveMemberConverter = None):
@@ -869,6 +1011,12 @@ class Information(commands.Cog):
         memrole.add_field(name=f"{member}'s Roles", value=", ".join(roles))
         memrole.set_footer(text=f"{len(roles)} roles in total!", icon_url=member.avatar_url)
         await ctx.send(embed=memrole)
+
+    @userinfo_roles.error
+    async def roles_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send('Cannot find that user.')
+            return
 
 
     @userinfo.command(name="mention", brief="Mention a user.",aliases=["tag"])
