@@ -59,6 +59,7 @@ I've tried to put the credit as much as i can on the code. If i'm missing anyone
 * KSoft.si [https://ksoft.si/]
 * TheCatAPI [https://www.thecatapi.com/]
 * TheDogAPI [https://thedogapi.com/]
+* Cat Facts [https://cat-fact.herokuapp.com/]
 * Random Fox [https://randomfox.ca/]
 * Shibe.online [https://shibe.online/]
 * Advices Slip [https://adviceslip.com/]
@@ -75,5 +76,9 @@ I've tried to put the credit as much as i can on the code. If i'm missing anyone
 * OpenWeatherMap [https://openweathermap.org/api]
 * Nationalize.io [https://nationalize.io/]
 * Rule34 API [https://github.com/kurozenzen/r34-json-api]
+
+## Modules used
+* Vaporwavely [https://github.com/Owanesh/vaporwavely]
+* Owoify [https://github.com/crinny/owoify]
 
 [![Built with libneko](https://img.shields.io/badge/built%20with-libneko-ff69b4.svg)](https://gitlab.com/koyagami/libneko)

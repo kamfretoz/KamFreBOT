@@ -25,7 +25,6 @@ SOFTWARE.
 import discord
 import aiohttp
 import random
-import bs4 as bs
 from discord.ext import commands
 
 class NSFW(commands.Cog):
@@ -36,11 +35,17 @@ class NSFW(commands.Cog):
     @commands.cooldown(3, 5, commands.BucketType.user)
     @commands.is_nsfw()
     async def rule34(self, ctx, *, search: str):
+        """
+        Browse the Rule34
+        """
         await ctx.trigger_typing()
         loading = await ctx.send('Looking for an image on Rule34...')
         #--Connect to Rule34 JSON API and download search data--#
+        param = {
+            "tags": search
+        }
         async with aiohttp.ClientSession() as session:
-            async with session.get(f'https://r34-json.herokuapp.com/posts?tags={search}') as r34:
+            async with session.get(f'https://r34-json.herokuapp.com/posts', params = param) as r34:
                 data = await r34.json()
                 #--Now we attempt to extract information--#
                 try:
@@ -63,11 +68,21 @@ class NSFW(commands.Cog):
     @commands.cooldown(3, 5, commands.BucketType.user)
     @commands.is_nsfw()
     async def gelbooru(self, ctx, *, search: str):
+        """
+        Browse the Gelbooru
+        """
         await ctx.trigger_typing()
         loading = await ctx.send('Looking for an image on Gelbooru...')
+        param = {
+            "page": "dapi",
+            "s": "post",
+            "q": "index",
+            "json": 1,
+            "tags": search
+        }
         #--Connect to Gelbooru JSON API and download search data--#
         async with aiohttp.ClientSession() as session:
-            async with session.get(f'https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags={search}') as gel:
+            async with session.get(f'https://gelbooru.com/index.php', params = param) as gel:
                 data = await gel.json()
                 #--Now we attempt to extract information--#
                 try:
@@ -90,6 +105,9 @@ class NSFW(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.is_nsfw()
     async def boobs(self, ctx, user: discord.Member = None):
+        """
+        Boobs!!
+        """
         boobs =[
             'https://nekos.life/api/v2/img/boobs',
             'https://nekos.life/api/v2/img/tits',
@@ -107,6 +125,9 @@ class NSFW(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.is_nsfw()
     async def fuck(self, ctx, *, user: discord.Member = None):
+        """
+        FUCC
+        """
         if user == None:
             return await ctx.send(":x: You need someone to fuck! Make sure they consent to it first...")
         if user == ctx.author:
@@ -124,11 +145,18 @@ class NSFW(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.is_nsfw()
     async def yandere(self, ctx, *, search: str):
-        loading = await ctx.send('<a:loading:598027019447435285> Looking for an image on yande.re...')
+        """
+        Browse the yandere.re
+        """
+        loading = await ctx.send('Looking for an image on yande.re...')
         #--Connect to yande.re and get first 100 results--#
         yande_agent = {'User-Agent': 'Bobert BOT: https://github.com/kamfretoz/KamFreBOT'}
+        param = {
+            "tags": search,
+            "limit": 100
+        }
         async with aiohttp.ClientSession(headers=yande_agent) as session:
-            async with session.get(f'https://yande.re/post/index.json?tags={search}&limit=100') as yande:
+            async with session.get(f'https://yande.re/post/index.json', params = param) as yande:
                 data = await yande.json()
                 #--Now we attempt to extract information--#
                 try:
@@ -149,11 +177,18 @@ class NSFW(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.is_nsfw()
     async def e621(self, ctx, *, search: str):
-        loading = await ctx.send('<a:loading:598027019447435285> Looking for an image on e621...')
+        """
+        Browse e621
+        """
+        loading = await ctx.send('Looking for an image on e621...')
         #--Connect to e621 and get first 100 results--#
         e621_agent = {'User-Agent': 'Bobert BOT: https://github.com/kamfretoz/KamFreBOT'}
+        param = {
+            "tags": search,
+            "limit": 100
+        }
         async with aiohttp.ClientSession(headers=e621_agent) as session:
-            async with session.get(f'https://e621.net/posts.json?tags={search}&limit=100') as esix:
+            async with session.get(f'https://e621.net/posts.json?', params = param) as esix:
                 data = await esix.json()
                 #--Now we attempt to extract information--#
                 try:

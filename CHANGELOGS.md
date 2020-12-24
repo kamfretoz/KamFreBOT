@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v0.2.1
+
+* Added several new commands
+* Regression Fixes
+* DOCSTRING Update
+* Import Cleanup
+* A bunch of data code cleanup, improvement and optimziations
+* Bug Fixes on `createrole` command
+* The moderator module now lets you know the cause when it failed to do something
+
 ## v0.2.0
 
 * Added an `aiohttp` Client Session pool manager (Thanks to nekokatt!!)

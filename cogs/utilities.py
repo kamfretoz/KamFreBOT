@@ -19,7 +19,6 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import asyncio
-from unicodedata import decomposition
 import aiohttp
 import inspect
 import unicodedata
@@ -30,6 +29,7 @@ from math import floor, sqrt, trunc
 from PIL import Image
 import os
 from operator import pow, truediv, mul, add, sub, itemgetter
+from discord import member
 from pytz import timezone
 from datetime import datetime
 import safygiphy
@@ -131,7 +131,7 @@ class Utilities(HttpCogBase):
                     # print("No Attachment")
                     file_attachment = None
                     attachment_name = None
-
+                # Log Stuff
                 # print(f"server:{srvid}, channel:{chid}, author:{author}, content:{content}") #PRINTS ALL DELETED MESSAGES INTO THE CONSOLE (CAN BE SPAMMY)
 
                 self.delsniped.update({
@@ -159,6 +159,7 @@ class Utilities(HttpCogBase):
                 author_mention = before.author.mention
                 msg_before = before.content
                 msg_after = after.content
+                # Log Stuff
                 #print(f"server:{srvid}, channel:{chid}, author:{author}, before:{msg_before}, after:{msg_after}")
                 self.editsniped.update({
                     srvid : {
@@ -243,6 +244,7 @@ class Utilities(HttpCogBase):
                 emb.add_field(name="After:", value=after)
                 emb.set_footer(text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
                 await ctx.send(embed=emb, delete_after=5)
+                self.editsniped.popitem()
             else:
                 await ctx.message.delete()
                 emb = discord.Embed(title="Sniped!")
@@ -251,10 +253,10 @@ class Utilities(HttpCogBase):
                 emb.add_field(name="After:", value="Empty Message.")
                 emb.set_footer(text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
                 await ctx.send(embed=emb, delete_after=5)
-            self.editsniped.popitem()
+                self.editsniped.popitem()
         except KeyError:
             await ctx.message.delete()
-            await ctx.send(embed=discord.Embed(description="⚠ No Message found! Perhaps you're too slow?"))
+            await ctx.send(embed=discord.Embed(description="⚠ No Message found! Perhaps you're too slow?"), delete_after=3)
             return
         except discord.NotFound:
             pass
@@ -271,7 +273,7 @@ class Utilities(HttpCogBase):
         if len(char) > 15:
             return await ctx.send(f'Too many characters ({len(char)}/15)')
 
-        fmt = '`\\U{0:>08}`: `\\N{{{1}}}` - `{2}` - <=http://www.fileformat.info/info/unicode/char/{0}>='
+        fmt = '`\\U{0:>08}`: `\\N{{{1}}}` - `{2}` -  http://www.fileformat.info/info/unicode/char/{0}'
 
         def to_string(c):
             digit = format(ord(c), 'x')
@@ -291,11 +293,11 @@ class Utilities(HttpCogBase):
             return servlist
         
         navi = pag.EmbedNavigatorFactory(factory=main_embed)
-        servers = ""
+        servers = []
         for guild in self.bot.guilds:
-                servers += f'{guild.name}\n'
+                servers.append(guild.name)
 
-        navi += servers
+        navi += "\n".join(servers)
         navi.start(ctx)
         
 
@@ -504,8 +506,8 @@ class Utilities(HttpCogBase):
 
         em = discord.Embed(color=0xD3D3D3, title="Calculator")
         try:
-            em.add_field(name="Input:",value=calculation.replace("**", "^").replace("x", "*"),inline=False,)
-            em.add_field(name="Output:", value=calculate(calculation.replace("**", "^").replace("x", "*")), inline=False)
+            em.add_field(name="Input:",value=calculation,inline=False,)
+            em.add_field(name="Output:", value=str(calculate(calculation.replace("**", "^").replace("x", "*").replace(" ", "").strip())), inline=False)
         except Exception as e:
             return await ctx.send(embed=discord.Embed(description=f"An Error Occured! **{e}**"))
         await ctx.send(content=None, embed=em)
@@ -590,7 +592,7 @@ class Utilities(HttpCogBase):
                 image.save(file, "PNG")
                 file.seek(0)
                 await ctx.send(
-                    "Colour with hex code {}:".format(colour_code),
+                    f"Colour with hex code `{colour_code}`:",
                     file=discord.File(file, "colour_file.png"),
                 )
 
@@ -682,10 +684,8 @@ class Utilities(HttpCogBase):
             async with ctx.typing():
                 for num, role in enumerate(sorted(server.roles, reverse=True), start=1):
                     allroles += f"[{str(num).zfill(2)}] {role.id}\t[ Users: {len(role.members)} ]\t{role.name}\t\r\n"
-                    loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
-                    data = BytesIO(allroles.encode('utf-8'))
-                    await ctx.send(content=f"Roles in **{server.name}**", file=discord.File(data, filename=f"{server.name}_Role_Lists.txt"))
-                    await loading.delete()
+                data = BytesIO(allroles.encode('utf-8'))
+                await ctx.send(content=f"Roles in **{server.name}**", file=discord.File(data, filename=f"{server.name}_Role_Lists.txt"))
 
     @commands.command(aliases=["discriminator","tagnum","tags"])
     @commands.guild_only()
@@ -696,12 +696,12 @@ class Utilities(HttpCogBase):
             await ctx.send(embed=discord.Embed(description="⚠ Please enter the desired tag number!"))
             return
 
-        elif len(tag) != 4 or tag.isdigit() != False:
+        elif len(tag) > 4 or tag.isdigit() is False:
             await ctx.send(embed=discord.Embed(description="⚠ Please enter the correct format!"))
             return
 
         else:
-            member_list = ""
+            member_list = []
     
             @pag.embed_generator(max_chars=2048)
             def main_embed(paginator, page, page_index):
@@ -715,10 +715,10 @@ class Utilities(HttpCogBase):
                 if x.discriminator == tag:
                     if x.id not in duplicates:
                         duplicates.append(x.id)
-                        member_list += f"{str(x)}\n"
+                        member_list.append(str(x))
                     
-            if member_list != "":
-                page += member_list
+            if member_list:
+                page += "\n".join(member_list)
                 page.start(ctx)
             else:
                 await ctx.send(embed=discord.Embed(description="ℹ No user found!"))
@@ -732,7 +732,7 @@ class Utilities(HttpCogBase):
         [p]poll What is your favorite anime? | Steins;Gate | Naruto | Attack on Titan | Shrek
         You can also use the "time" flag to set the amount of time in seconds the poll will last for.
         Example:
-        [p]poll What time is it? | HAMMER TIME! | SHOWTIME! | time=10
+        [p]poll What time is it? | HAMMER TIME! | SHOWTIME! | time=15
         """
         await ctx.message.delete()
         options = opt.split(" | ")
@@ -1113,27 +1113,32 @@ class Utilities(HttpCogBase):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @commands.command(hidden=True)
-    @commands.is_owner()
-    async def nickscan(self, ctx):
+    @commands.command(aliases=["ncs"])
+    async def nickscan(self, ctx, user: libneko.converters.InsensitiveUserConverter = None):
         """
-        List all the servers that i have nickname in
+        See all the servers that you have nickname in (you need to be in the same server as the bot)
+        You can also check other's nickname
         """
+
+        if user is None:
+            user = ctx.message.author
+
         @pag.embed_generator(max_chars=2048)
         def main_embed(paginator, page, page_index):
-            embed = discord.Embed(title=f'Servers I Have Nicknames In', description=page)
+            embed = discord.Embed(title=f'Servers that {user.name} have nicknames in', description=page)
             return embed
 
         nicks = pag.EmbedNavigatorFactory(factory=main_embed)
 
-        message = ""
+        message = []
         for guild in self.bot.guilds:
-            if guild.me.nick != None:
-                message += f'{guild.name} | {guild.me.nick}\n'
+            if user in guild.members:
+                mem = guild.get_member(user.id)
+                if mem.nick != None:
+                    message.append(f'**{mem.nick}** ({guild.name})')
                 
-        nicks += message
+        nicks += "\n".join(message)
         nicks.start(ctx)
-
 
     @commands.command(aliases=["ipinfo","ipaddr"])
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
@@ -1245,7 +1250,7 @@ class Utilities(HttpCogBase):
         await ctx.send(embed=discord.Embed(title="ASCII to Morse Conversion:", description=encodedMessage, timestamp=datetime.utcnow()))
 
     @commands.command(aliases=["ascii2b64","b64e"])
-    async def base64encode(self, ctx, text: str = None):
+    async def base64encode(self, ctx, *, text: str = None):
         """
         Encode ASCII chars to Base64
         """
@@ -1258,16 +1263,15 @@ class Utilities(HttpCogBase):
             sample_string_bytes = sample_string.encode("ascii") 
     
             base64_bytes = base64.b64encode(sample_string_bytes) 
-            base64_string = base64_bytes.decode("ascii") 
+            base64_string = base64_bytes.decode("ascii")
+            await ctx.send(embed=discord.Embed(description=f"```{base64_string}```"))
         except UnicodeEncodeError:
             await ctx.send(embed=discord.Embed(description=f"⚠️ Unable to encode the text, possible unsupported characters are found."))
-    
-        await ctx.send(embed=discord.Embed(description=f"Encoded Text: \n```{base64_string}```"))
 
     @commands.command(aliases=["b642ascii","b64d"])
     async def base64decode(self, ctx, text: str = None):
         """
-        Encode Base64 chars to ASCII
+        Decode Base64 chars to ASCII
         """
         if text == None:
             await ctx.send(embed=discord.Embed(description="Please input the text!"))
@@ -1279,7 +1283,7 @@ class Utilities(HttpCogBase):
     
             sample_string_bytes = base64.b64decode(base64_bytes) 
             sample_string = sample_string_bytes.decode("ascii") 
-            await ctx.send(embed=discord.Embed(description=f"Decoded Text: \n```{sample_string}```"))
+            await ctx.send(embed=discord.Embed(description=f"```{sample_string}```"))
         except UnicodeDecodeError:
             await ctx.send(embed=discord.Embed(description=f"⚠️ Unable to decode the text, possible unsupported characters are found."))
 
@@ -1491,27 +1495,6 @@ class Utilities(HttpCogBase):
         else:
             colours = discord.Colour(0x36393E)
 
-        def emovisibconf(mtr):
-            if mtr > 8000:
-                return "😀 (Normal Visibility)"
-            elif mtr <= 8000 and mtr >= 7000:
-                return "🙂 (Slightly Low Visibility)"
-            elif mtr <= 6000 and mtr >= 5000:
-                return "😐 (Lower Visibility)"
-            elif mtr <= 4000 and mtr >= 3000:
-                return "🙁 (Fog)"
-            elif mtr <= 3000 and mtr >= 2500:
-                return "😧 (Fog)"
-            elif mtr <= 2000 and mtr >= 1500:
-                return "😨 (Mist)"
-            elif mtr <= 1000 and mtr >= 500:
-                return "😱 (Mist)"
-            elif mtr <= 499:
-                return "💀 (Dangerously Low)"
-            else:
-                return "🤔"
-
-
         calculated_sunrise = datetime.fromtimestamp(sunrise + timezone_offset)
         calculated_sunset = datetime.fromtimestamp(sunset + timezone_offset)
 
@@ -1534,7 +1517,7 @@ class Utilities(HttpCogBase):
         embed.add_field(name="☁ Cloudiness", value=f"{clouds}%", inline=True)
         embed.add_field(name="🍃Atmospheric Pressure", value=f"{pressure} hPa", inline=True)
         embed.add_field(name="🌬 Humidity", value=f"{humidity}%", inline=True)
-        embed.add_field(name="👁️ Visibility", value=f"{vis} Meter ({metertokilometer(vis)} KM) {emovisibconf(vis)}", inline=True)
+        embed.add_field(name="👁️ Visibility", value=f"{vis} Meter ({metertokilometer(vis)} KM)", inline=True)
         embed.add_field(name="💨 Wind Speed", value=f"{wind} m/sec | {mpstokmh(wind)} km/h ({wind_condition(wind)})", inline=True)
         embed.add_field(name="🧭 Wind Direction", value=f"{wind_degree}° {wind_direction}", inline=True)
 
@@ -1749,7 +1732,7 @@ class Utilities(HttpCogBase):
             return
 
         emb = discord.Embed(timestamp=datetime.utcnow())
-        emb.add_field(name = f"Convesion from {origin.upper()} to {to.upper()}", value = prt)
+        emb.add_field(name = f"Conversion from {origin.upper()} to {to.upper()}", value = prt)
         emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png", text = "Data provided by: KSoft.Si")
         await ctx.send(embed = emb)
 
@@ -1848,7 +1831,27 @@ class Utilities(HttpCogBase):
         emb.add_field(name="Active Cases", value=act, inline=False)
         await ctx.send(embed = emb)
 
+    @commands.command(aliases=["cd"])
+    @commands.cooldown(2, 5, commands.BucketType.user)
+    @commands.max_concurrency(number=1, per=commands.BucketType.guild, wait=False)
+    async def countdown(self, ctx, time: int = 3):
+        """
+        A Simple countdown timer
+        """
+        if time > 300:
+            return await ctx.send("Do you even need longer than 5 mins?")
+        msg = await ctx.send(content="Preparing...")
+        await asyncio.sleep(3)
+        iteration = time
+        while iteration:
+            mins, secs = divmod(iteration, 60)
+            timer = '{:02d}:{:02d}'.format(mins, secs)
+            emb = discord.Embed(description=timer)
+            await msg.edit(embed=emb, content=None)
+            await asyncio.sleep(1)
+            iteration -= 1
+        await msg.edit(content="**End!**", embed = None)
+
 def setup(bot):
     bot.add_cog(Utilities(bot))
     print("Utilities Module has been loaded.")
-    

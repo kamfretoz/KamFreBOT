@@ -15,5 +15,6 @@ pytemperature
 qrcode[pil]
 ciso8601
 python-dateutil
-uvloop
+uvloop # Remove this if you're running on Windows.
 owoify
+vaporwavely

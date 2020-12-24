@@ -141,19 +141,23 @@ class Emoji(commands.Cog):
                     await ctx.send(url)
             file.close()
 
-    @emoji.command(aliases=["cp"], brief="Copy a custom emoji onto another server")
+    @emoji.command(aliases=["cp"], brief="Copy a custom emoji from another server")
     @commands.has_permissions(manage_emojis=True)
-    async def copy(self, ctx, *, msg):
+    async def copy(self, ctx, *, emoji):
+        """
+        Usage:
+        [p]emoji copy <emoji>
+        """
         await ctx.message.delete()
-        msg = re.sub("<:(.+):([0-9]+)>", "\\2", msg)
+        emoji = re.sub("<:(.+):([0-9]+)>", "\\2", emoji)
 
         match = None
         exact_match = False
         for guild in self.bot.guilds:
             for emoji in guild.emojis:
-                if msg.strip().lower() in str(emoji):
+                if emoji.strip().lower() in str(emoji):
                     match = emoji
-                if msg.strip() in (str(emoji.id), emoji.name):
+                if emoji.strip() in (str(emoji.id), emoji.name):
                     match = emoji
                     exact_match = True
                     break
@@ -176,6 +180,10 @@ class Emoji(commands.Cog):
     @emoji.command(brief="Add a new emoji to the current server")
     @commands.has_permissions(manage_emojis=True)
     async def add(self, ctx, name, url):
+        """
+        Usage:
+        [p]emoji add <url>
+        """
         await ctx.message.delete()
         try:
             response = requests.get(url)
@@ -205,6 +213,10 @@ class Emoji(commands.Cog):
     @emoji.command(aliases=["rm"],brief="Remove an emoji from the current server")
     @commands.has_permissions(manage_emojis=True)
     async def remove(self, ctx, name):
+        """
+        Usage:
+        [p]emoji remove <emoji>
+        """
         await ctx.message.delete()
         emotes = [x for x in ctx.guild.emojis if x.name == name]
         emote_length = len(emotes)
@@ -279,6 +291,9 @@ class Emoji(commands.Cog):
         except discord.Forbidden:
             await ctx.send(f"⛔ {ctx.message.author.name}, Your DM are disabled!", delete_after=5)
         except discord.ext.commands.BotMissingPermissions:
+            async with ctx.typing():
+                for page in paginator.pages:
+                    await ctx.author.send(page)
             return
 
     @staticmethod

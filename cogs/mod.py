@@ -22,7 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import asyncio
+from datetime import datetime
 import discord
+from discord import role
 import libneko
 from libneko import pag
 from discord.ext import commands
@@ -31,7 +33,7 @@ class Mod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def format_mod_embed(self, ctx, user, success, method, duration = None):
+    async def format_mod_embed(self, ctx, user, success, method, logs = None, duration = None):
         """Helper func to format an embed to prevent extra code"""
         emb = discord.Embed(timestamp = ctx.message.created_at)
         try:
@@ -45,14 +47,15 @@ class Mod(commands.Cog):
                     emb.description = f"**{user}** was just {method}d."
                 elif method == "mute":
                     emb.description = f"**{user}** was just {method}d for {duration}."
+                elif method == "softban":
+                    emb.description = f"**{user} was softbanned**"
                 else:
                     emb.description = f"**{user}** was just {method}ed."
             else:
-                emb.description = (
-                    f"Unable to {method} **{user}**. \nMake sure that i have the required permission or the target are correct! **(UNKNOWN ERROR)**"
-                )
-        except AttributeError:
-            emb.description = "❌ An Error Occured, The User cannot be found!"
+                if logs:
+                    emb.description = (f"{logs}")
+        except AttributeError as e:
+            emb.description = (f"❌ An Error Occured, `{e}`")
 
         return emb
 
@@ -65,11 +68,11 @@ class Mod(commands.Cog):
         if ctx.author.top_role > member.top_role or ctx.author == ctx.guild.owner:
             try:
                 await ctx.guild.kick(member, reason = reason)
-            except:
+            except Exception as e:
                 success = False
+                return await ctx.send(embed=await self.format_mod_embed(ctx, member, success, "kick", e))
             else:
                 success = True
-
             emb = await self.format_mod_embed(ctx, member, success, "kick")
 
             await ctx.send(embed = emb)
@@ -78,38 +81,37 @@ class Mod(commands.Cog):
     @commands.has_permissions(ban_members=True)
     @commands.guild_only()
     @commands.command()
-    async def ban(self, ctx, member: libneko.converters.InsensitiveMemberConverter, message_deletion: int = 0, *, reason: str = "No reason provided."):
+    async def ban(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, reason: str = "No reason provided."):
         """
-        Ban someone from the server.
-        Usage: `[p]ban <member> [message_deletion] [reason]`
-        Where you specify `message_deletion` with the amount of days where the old messages of the banned member will be deleted.
-        Default value is 0 (which is None)
-        Max value is 7 days
+        Ban someone from the server, This will delete their messages by default.
         """
         try:
             if ctx.author.top_role > member.top_role or ctx.author == ctx.guild.owner:
                     if member == ctx.author:
                         return await ctx.send("***:no_entry: You can't ban yourself...***")
                     try:
-                        await ctx.guild.ban(member, reason = reason, delete_message_days = message_deletion)
-                    except:
+                        await ctx.guild.ban(member, reason = reason, delete_message_days = 1)
+                    except Exception as e:
                         success = False
+                        return await ctx.send(embed=await self.format_mod_embed(ctx, member, success, "ban", e))
                     else:
                         success = True
 
                     emb = await self.format_mod_embed(ctx, member, success, "ban")
-    
+                    emb.add_field(name="Reason", value=reason)
                     await ctx.send(embed = emb)
         except AttributeError as e:
-            return await ctx.send(f"***:x: An Error Occured.*** {e}")
+            return await ctx.send(f"**:x: An Error Occured, that member is not in this server! use `[p]hackban` instead.")
 
     # This one is meant to be used as a joke
     @commands.guild_only()
-    @commands.command(aliases=["fban"])
+    @commands.command(aliases=["fban"], hidden=True)
     async def fakeban(self, ctx, member: libneko.converters.InsensitiveMemberConverter,  *, reason: str = "No reason provided."):
         """
         Ban someone from the server. Or is it...?
         """
+        if member.id == ctx.bot.user.id:
+            return await ctx.send("For real?")
         success = True
         emb = await self.format_mod_embed(ctx, member, success, "ban") 
         emb.add_field(name="Reason", value=reason)
@@ -118,7 +120,7 @@ class Mod(commands.Cog):
     @ban.error
     async def userinfo_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
-            await ctx.send('Invalid usage!\nUsage: `[p]ban <member> [message_deletion] [reason]`')
+            await ctx.send('Invalid usage!\nUsage: `[p]ban <member> [message_deletion_days] [reason]`')
 
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
@@ -129,14 +131,23 @@ class Mod(commands.Cog):
         Bans and unbans the user, so their messages are deleted
         """
         if ctx.author.top_role > user.top_role or ctx.author == ctx.guild.owner:
-            if user == ctx.author:
-                return await ctx.send("***:no_entry: You can't softban yourself...***")
-            await user.ban(reason=reason)
-            await user.unban(reason=reason)
-            if not reason:
-                await ctx.send(f"**{user} was softbanned :wave:**")                
-            else:
-                await ctx.send(f"**{user} was softbanned** :wave: **Reason: {reason}")
+            try:
+                if user == ctx.author:
+                    return await ctx.send("***:no_entry: You can't softban yourself...***")
+                await user.ban(reason=reason)
+                await user.unban(reason=reason)
+                if not reason:
+                    success = True
+                    emb = await self.format_mod_embed(ctx, user, success, "softban",)
+                else:
+                    success = True
+                    emb = await self.format_mod_embed(ctx, user, success, "softban", reason)
+            except Exception as e:
+                success = False
+                return await ctx.send(embed=await self.format_mod_embed(ctx, user, success, "softban", e))
+            
+            await ctx.send(embed = emb)
+
 
 
     @commands.has_permissions(ban_members=True)
@@ -198,10 +209,7 @@ class Mod(commands.Cog):
     @commands.command(aliases=["banlist"])
     async def bans(self, ctx):
         """See a list of banned users in the guild"""
-        try:
-            bans = await ctx.guild.bans()
-        except:
-            return await ctx.send("You dont have the perms to see bans.")
+        bans = await ctx.guild.bans()
 
         banned = ""
 
@@ -214,9 +222,9 @@ class Mod(commands.Cog):
         page = pag.EmbedNavigatorFactory(factory=det_embed)
 
         for users in bans:
-            banned += f"{users.user}\n"
+            banned.append(users.user)
 
-        page += banned
+        page += "\n".join(banned)
         page.start(ctx)
 
     @commands.has_permissions(ban_members=True, view_audit_log=True)
@@ -253,21 +261,19 @@ class Mod(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.guild_only()
     @commands.command(aliases=["makerole","mkrole"])
-    async def createrole(self, ctx, colour: str, * , role_name: str = None):
+    async def createrole(self, ctx, colour: libneko.converters.ColourConverter, * , role_name: str):
         """
         Creates a new role!
-        Color field only accept RGB Hex value. (Ex: 36393e)
+        Color field only accept RGB Hex value. (Ex: #36393e)
         """
         try:
             await ctx.guild.create_role(
-                name=(colour if not role_name else role_name),
-                colour=discord.Colour(eval("0x0{}".format(colour.lstrip("#").lstrip("0x")))),
+                name=role_name,
+                colour=colour,
             )
-            await ctx.send(embed=discord.Embed(description=f"Created New Role **{role_name}**!", colour=discord.Colour(eval("0x0{}".format(colour.lstrip("#").lstrip("0x"))))))
+            await ctx.send(embed=discord.Embed(description=f"Successfully created New Role **{role_name}**!", colour=colour))
         except discord.Forbidden:
             await ctx.send("Can't do that!")
-        except SyntaxError:
-            await ctx.send("Invalid color format!! Only Hex codes are allowed")
 
     @commands.has_permissions(administrator=True)
     @commands.command(disabled=True, hidden=True)
@@ -277,6 +283,8 @@ class Mod(commands.Cog):
         Give a role to everyone else.
         Can only be used by server owner.
         Can be unreliable.
+        Please don't use unless absolutely necessary
+        //TODO: Find a more reliable method
         """
         if ctx.author == ctx.guild.owner:
             if not role:
@@ -314,7 +322,7 @@ class Mod(commands.Cog):
     @commands.guild_only()
     @commands.command(aliases=["hban"])
     async def hackban(self, ctx, userid: int, *, reason = None):
-        """Ban someone not in the server"""
+        """Ban someone that are not in the server"""
         try:
             await ctx.guild.ban(discord.Object(userid), reason = reason)
         except:
@@ -325,10 +333,12 @@ class Mod(commands.Cog):
         if success:
             async for entry in ctx.guild.audit_logs(
                 limit = 1, user = ctx.guild.me, action = discord.AuditLogAction.ban
-           ):
+            ):
                 emb = await self.format_mod_embed(ctx, entry.target, success, "hackban")
+                emb.add_field(name="Reason", value=reason)
         else:
             emb = await self.format_mod_embed(ctx, userid, success, "hackban")
+            emb.add_field(name="Reason", value=reason)
         await ctx.send(embed = emb)
 
     @commands.has_permissions(kick_members=True)
@@ -466,18 +476,22 @@ class Mod(commands.Cog):
     @commands.command(aliases=['slowmo','slow'])
     async def slowmode(self, ctx, duration: str = "0s"):
         """Set the slowmode for this"""
-        unit = duration[-1]
-        if unit == "s":
-            time = int(duration[:-1])
-            longunit = "seconds"
-        elif unit == "m":
-            time = int(duration[:-1]) * 60
-            longunit = "minutes"
-        elif unit == "h":
-            time = int(duration[:-1]) * 60 * 60
-            longunit = "hours"
-        else:
-            await ctx.send("Invalid Unit! Use `s`, `m`, or `h`.")
+        try:
+            unit = duration[-1]
+            if unit == "s":
+                time = int(duration[:-1])
+                longunit = "seconds"
+            elif unit == "m":
+                time = int(duration[:-1]) * 60
+                longunit = "minutes"
+            elif unit == "h":
+                time = int(duration[:-1]) * 60 * 60
+                longunit = "hours"
+            else:
+                await ctx.send("Invalid Unit! Use `s`, `m`, or `h`.")
+                return
+        except ValueError:
+            await ctx.send("Invalid Value! Example: `30s`, `5m`, or `1h`.")
             return
 
         if len(duration) > 4:
@@ -490,13 +504,47 @@ class Mod(commands.Cog):
 
         if duration == "0s":
             await ctx.channel.edit(slowmode_delay=time)
-            a = await ctx.send(embed=discord.Embed(description="ℹ **Slowmode is off for this channel**"))
+            a = await ctx.send(embed=discord.Embed(description="ℹ **Slowmode is turned off for this channel**"))
             await a.add_reaction("⏱")
             return
         else:
             await ctx.channel.edit(slowmode_delay=time)
             confirm = await ctx.send(embed=discord.Embed(description=f"**Set the channel slow mode delay to `{str(duration[:-1])} {longunit}` \nTo turn this off, run the command without any value**"))
             await confirm.add_reaction("⏱")
+
+    @commands.command(aliases=["send", "dm"])
+    @commands.has_permissions(kick_members=True)
+    @commands.guild_only()
+    async def sendto(self, ctx, target: libneko.converters.InsensitiveMemberConverter = None, *, text:commands.clean_content = None):
+        """
+        Send a message to a user's DM
+        Can only be used by moderators
+        """
+        msg = await ctx.send("Preparing...")
+        if text is None:
+            err = discord.Embed(description="What do you want me to say?")
+            await msg.edit(embed=err, content=None)
+            await ctx.message.add_reaction("❓")
+            return
+        if target is None:
+            err = discord.Embed(description="Who do you want me to send the message to?")
+            await msg.edit(embed=err, content=None)
+            await ctx.message.add_reaction("❓")
+            return
+        try:
+            snd = discord.Embed(description="Sending Message!")
+            await msg.edit(embed=snd, content=None)
+            recv = discord.Embed(description=text, timestamp=datetime.utcnow())
+            recv.set_author(name=f"Message from {ctx.guild.name}", icon_url=ctx.guild.icon_url)
+            recv.set_footer(text=f"Sent by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
+            await target.send(embed=recv)
+            snd = discord.Embed(description="Message Sent!")
+            await msg.edit(embed=snd)
+        except discord.Forbidden:
+            err = discord.Embed(description=f"⛔ {target} has their DM disabled.")
+            await msg.edit(embed=err, content=None)
+            await ctx.message.add_reaction("❌")
+            return
 
 
 def setup(bot):

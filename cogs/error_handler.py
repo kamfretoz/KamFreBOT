@@ -1,5 +1,5 @@
 import traceback, discord, random, math
-from _datetime import datetime
+from datetime import datetime
 import data.config as config
 import data.quotes as quotes
 from discord.ext import commands
@@ -17,17 +17,21 @@ class ErrorHandler(commands.Cog):
             await ctx.send(content=None, embed=nocommand, delete_after=10)
 
         elif isinstance(error, commands.errors.MissingPermissions):
-            nopermission = discord.Embed(description=f"**:warning: You don't have permissions to use that command. \nYou'll need these permissions: ```{error.missing_perms[0].replace('_', ' ')}```**")
+            perms = []
+            for x in error.missing_perms:
+                perms.append(x)
+            nopermission = discord.Embed(description=f"**:warning: You dont have permissiont to run that command!**")
+            nopermission.add_field(name="Required Permission(s):", value=f'```{", ".join(perms)}```')
             nopermission.set_image(url="https://http.cat/403.jpg")
-            await ctx.send(content=None, embed=nopermission, delete_after=10)
+            await ctx.send(content=None, embed=nopermission, delete_after=15)
 
         elif isinstance(error, commands.errors.MissingRequiredArgument):
-            missingargs = discord.Embed(description="**:warning: You are missing required arguments, please refer to the help menu for more information.**")
+            missingargs = discord.Embed(description="**:warning: You are missing required arguments, Please refer to the help menu with `[p]help <command>` for more information.**")
             missingargs.set_image(url="https://http.cat/410.jpg")
             await ctx.send(content=None, embed=missingargs, delete_after=10)
 
         elif isinstance(error, commands.errors.BadArgument):
-            badargument = discord.Embed(description="**:warning: You have given an invalid value.**")
+            badargument = discord.Embed(description="**:warning: You have given an invalid value. Please refer to the help menu with `[p]help <command>` for more information.**")
             badargument.set_image(url="https://http.cat/400.jpg")
             await ctx.send(content=None, embed=badargument, delete_after=10)
 
@@ -37,9 +41,13 @@ class ErrorHandler(commands.Cog):
             await ctx.send(embed=cooldownerr, content=None, delete_after=10)
 
         elif isinstance(error, commands.errors.BotMissingPermissions):
-            missperm = discord.Embed(description=f"**:warning: I don't have required permission to complete that command. \nI am missing these permissions: ```{error.missing_perms[0].replace('_', ' ')}```**")
+            perms = []
+            for x in error.missing_perms:
+                perms.append(x)
+            missperm = discord.Embed(description=f"**:warning: I don't have required permission to complete that command.**")
+            missperm.add_field(name="Required Permission(s):", value=f'```{", ".join(perms)}```')
             missperm.set_image(url="https://http.cat/423.jpg")
-            await ctx.send(embed=missperm, content=None, delete_after=10)
+            await ctx.send(embed=missperm, content=None, delete_after=15)
 
         elif isinstance(error, commands.errors.TooManyArguments):
             toomanyargs = discord.Embed(description=f"**:warning: You have inputted too many arguments!**")
@@ -77,17 +85,12 @@ class ErrorHandler(commands.Cog):
             await ctx.send(embed=arg_err, content=None, delete_after=10)
 
         elif isinstance(error, commands.errors.MaxConcurrencyReached):
-            conv = discord.Embed(description=f"**:warning: This command is currently rate-limited! You can use it only {error.number} time(s) at once until it is completed.**")
-            conv.set_image(url="https://http.cat/429.jpg")
-            await ctx.send(embed=conv, content=None, delete_after=10)
+            conc = discord.Embed(description=f"**:warning: This command is currently rate-limited! You can use it only {error.number} time(s) at once until it is completed.**")
+            conc.set_image(url="https://http.cat/429.jpg")
+            await ctx.send(embed=conc, content=None, delete_after=10)
 
         elif isinstance(error, commands.errors.CheckFailure):
             conv = discord.Embed(description=f"**:warning: Command Check Failure, You are not authorized to use this command!**")
-            conv.set_image(url="https://http.cat/401.jpg")
-            await ctx.send(embed=conv, content=None, delete_after=10)
-
-        elif isinstance(error, commands.errors.BotMissingPermissions):
-            conv = discord.Embed(description=f"**:warning: I don't have enough permission to perform that command! Make sure that these permission are available for me: ```{error.missing_perms}```!**")
             conv.set_image(url="https://http.cat/401.jpg")
             await ctx.send(embed=conv, content=None, delete_after=10)
         elif isinstance(error, commands.NoPrivateMessage):

@@ -294,7 +294,7 @@ class Information(commands.Cog):
             inline=False
         )
         server.add_field(
-            name=f"》 Members[{len(guild.members)}]", 
+            name=f"》 Members", 
             value=f"```{fmt}```",
             inline=False
         )
@@ -304,21 +304,28 @@ class Information(commands.Cog):
         )
         await ctx.send(embed=server, content=None)
 
-    @serverinfo.command(name="icon", brief="Show the icon of this server.",aliases=["pfp","pp"])
+    @serverinfo.command(name="icon", brief="Show the icon of this server.", aliases=["pfp","pp"])
     @commands.guild_only()
-    async def serverinfo_icon(self, ctx):
+    async def serverinfo_icon(self, ctx, serverid: int = None):
         """
         Show the icon of this server.
         """
-        link_frmt = ""
-        icon = discord.Embed(title=f"Server icon for {ctx.guild.name}", color=ctx.message.author.color)
-
-        if ctx.guild.is_icon_animated() is True:
-            icon.set_image(url=ctx.guild.icon_url_as(format="gif", size=4096))
-            link_frmt = f"[png]({ctx.guild.icon_url_as(format='png',size=4096)}) | [gif]({ctx.guild.icon_url_as(format='gif',size=4096)}) | [jpg]({ctx.guild.icon_url_as(format='jpg',size=4096)}) | [webp]({ctx.guild.icon_url_as(format='webp',size=4096)})"
+        if serverid is None:
+            guild = ctx.guild
         else:
-            icon.set_image(url=ctx.guild.icon_url_as(format="png", size=4096))
-            link_frmt = f"[png]({ctx.guild.icon_url_as(format='png',size=4096)}) | [jpg]({ctx.guild.icon_url_as(format='jpg',size=4096)}) | [webp]({ctx.guild.icon_url_as(format='webp',size=4096)})"
+            guild = self.bot.get_guild(serverid)
+            if guild is None:
+                await ctx.send(embed=discord.Embed(description="Server not found!"))
+                return
+
+        link_frmt = ""
+        icon = discord.Embed(title=f"Server icon for {guild.name}", color=ctx.message.author.color)
+        if guild.is_icon_animated() is True:
+            icon.set_image(url=guild.icon_url_as(format="gif", size=4096))
+            link_frmt = f"[png]({guild.icon_url_as(format='png',size=4096)}) | [gif]({guild.icon_url_as(format='gif',size=4096)}) | [jpg]({guild.icon_url_as(format='jpg',size=4096)}) | [webp]({guild.icon_url_as(format='webp',size=4096)})"
+        else:
+            icon.set_image(url=guild.icon_url_as(format="png", size=4096))
+            link_frmt = f"[png]({guild.icon_url_as(format='png',size=4096)}) | [jpg]({guild.icon_url_as(format='jpg',size=4096)}) | [webp]({guild.icon_url_as(format='webp',size=4096)})"
         icon.add_field(name="Full server icon link", value=link_frmt)
         await ctx.send(embed=icon, content=None)
     
@@ -354,7 +361,6 @@ class Information(commands.Cog):
             f'🟡 Idle: {member_by_status["idle"]}\n'
             f'🔴 Do Not Disturb: {member_by_status["dnd"]}\n'
             f'⚫ Offline: {member_by_status["offline"]}\n'
-            f"➕ Total: {guild.member_count}"
         )
         bots = 0
         members = 0
@@ -483,11 +489,8 @@ class Information(commands.Cog):
         Show the list of users on a particular role.
         """
         if str(role.colour) == "#000000":
-            colour = "default"
-            color = "#%06x" % random.randint(0, 0xFFFFFF)
-            color = int(colour[1:], 16)
+            color = discord.Color(0x99AAB5)
         else:
-            colour = str(role.colour).upper()
             color = role.colour
 
         if role is None:
@@ -499,16 +502,16 @@ class Information(commands.Cog):
                 embed.set_footer(text=f"{str(len(role.members))} Members in Total.")
                 return embed
             lst = pag.EmbedNavigatorFactory(factory=det_embed)
-            members = ""
+            members = []
 
             try:
                 for user in role.members:
-                    members += f"{user}\n"
+                    members.append(f"{user.name}#{user.discriminator}")
             except discord.Forbidden:
                 await ctx.send(embed=discord.Embed(description="⚠ Role cannot be found or i dont have permission!"))
                 return
 
-            lst += members
+            lst += "\n".join(members)
             lst.start(ctx)
 
     @serverinfo_inrole.error
@@ -517,6 +520,19 @@ class Information(commands.Cog):
             await ctx.send('Cannot find that role. Make sure the spelling and the case-sensitivity is correct!')
             return
 
+    @serverinfo.command(aliases=["lsrole","listrole"], brief="Shows the list of all roles in this server")
+    @commands.has_permissions(manage_roles=True)
+    async def rolelist(self, ctx):
+        """
+        Shows the list of all roles in this server
+        """
+        roles = [role.mention for role in ctx.guild.roles]
+        emb = discord.Embed(title=f"{ctx.guild.name}'s Role list", description=", ".join(roles), timestamp=datetime.utcnow())
+        emb.set_footer(
+            text=f"Requested by {ctx.message.author} | {len(roles)} roles in total.",
+            icon_url=f"{ctx.message.author.avatar_url}",
+        )
+        await ctx.send(embed=emb)
 
     @serverinfo.command(name="owner", aliases=["own"], brief="Shows the owner of this server")
     @commands.guild_only()
@@ -627,11 +643,11 @@ class Information(commands.Cog):
 
         navi = pag.EmbedNavigatorFactory(factory=main_embed)
 
-        boosters = ""
+        boosters = []
         for x in ctx.guild.premium_subscribers:
-                boosters += f"{x.name}#{x.discriminator} ({x.mention})\n"
+                boosters.append(f"{x} ({x.mention})")
 
-        navi += boosters
+        navi += "\n".join(boosters)
         navi.start(ctx)
         
 
@@ -686,65 +702,6 @@ class Information(commands.Cog):
             nosplash = discord.Embed(description="This server doesn't have the required boost lever or has no splash image configured.")
             await ctx.send(embed=nosplash)
 
-    @commands.command(invoke_without_command=True,aliases=["uins"])
-    async def userinspect(self, ctx, * , user: libneko.converters.InsensitiveUserConverter = None):
-        """Show info about a user. If not specified, the command caller info will be shown instead. This command is meant to inspect user that aren't in current server (But they need to be in the same server as this bot)!"""
-        await ctx.trigger_typing()
-
-        if user is None:
-            user = ctx.author
-
-        usr = discord.Embed(timestamp=datetime.utcnow())
-        shared = sum(1 for m in self.bot.get_all_members() if m.id == user.id)
-
-        usr.set_author(name=f"Information of {user.name}")
-
-        usr.add_field(
-            name="》 Display Name", 
-            value=user.display_name, 
-            inline=False
-        )
-        usr.add_field(
-            name="》 Discriminator/Tag", 
-            value=f"#{user.discriminator}", 
-            inline=False
-        )
-        usr.add_field(
-            name="》 Created",
-            value=user.created_at.strftime("%B %d, %Y at %I:%M:%S %p"),
-            inline=False,
-        )
-        usr.add_field(
-            name="》 User ID", 
-            value=user.id, 
-            inline=False
-        )
-        usr.add_field(
-            name="》 Mention", 
-            value=user.mention, 
-            inline=False
-        )
-        usr.add_field(
-            name="》 Shared Servers", 
-            value=f"{shared} shared", 
-            inline=False
-        )
-        usr.set_footer(
-            text=f"Requested by {ctx.message.author}",
-            icon_url=f"{ctx.message.author.avatar_url}",
-        )
-
-        if user.avatar:
-            usr.set_thumbnail(url=user.avatar_url)
-
-        await ctx.send(embed=usr)
-
-    @userinspect.error
-    async def userinspect_error(self, ctx, error):
-        if isinstance(error, commands.BadArgument):
-            await ctx.send('Cannot find that user.')
-            return
-
     @commands.group(invoke_without_command=True,aliases=["user", "ui", "profile","uinf"])
     @commands.guild_only()
     async def userinfo(self, ctx, * , user: libneko.converters.InsensitiveMemberConverter = None):
@@ -787,19 +744,20 @@ class Information(commands.Cog):
             else:
                 voice = "Not connected."
         except AttributeError:
-            roles = "Unknown"
-            voice = "Unknown"
-            status = "Unknown"
+            pass
 
         shared = sum(1 for m in self.bot.get_all_members() if m.id == user.id)
 
         member.set_author(name=f"Information of {str(user)}")
 
-        member.add_field(
-            name="》 Display Name", 
-            value=user.display_name, 
-            inline=False
-        )
+        try:
+            member.add_field(
+                name="》 Display Name", 
+                value=user.display_name, 
+                inline=False
+            )
+        except AttributeError:
+            pass
         member.add_field(
             name="》 Discriminator/Tag", 
             value=f"#{user.discriminator}", 
@@ -828,17 +786,20 @@ class Information(commands.Cog):
             value=f"{'BOT' if user.bot else 'Human'}", 
             inline=False
         )
-        if not user.bot:
+        try:
+            if not user.bot:
+                member.add_field(
+                name="Platform", 
+                value=f"{'Mobile' if user.is_on_mobile() else 'Desktop'}", 
+                inline=False
+            )
             member.add_field(
-            name="Platform", 
-            value=f"{'Mobile' if user.is_on_mobile() else 'Desktop'}", 
-            inline=False
-        )
-        member.add_field(
-            name="》 Status", 
-            value=status, 
-            inline=False
-        )
+                name="》 Status", 
+                value=status, 
+                inline=False
+            )
+        except:
+            pass
         member.add_field(
             name="》 Mention", 
             value=user.mention, 
@@ -849,28 +810,31 @@ class Information(commands.Cog):
             value=f"{shared} shared", 
             inline=False
         )
-        member.add_field(
-            name="》 Voice", 
-            value=voice, 
-            inline=False
-        )
-        member.add_field(
-            name="》 Nitro Stats", 
-            value=boost_stats, 
-            inline=False
-        )   
-        member.add_field(
-            name=f"》 Roles [{len(roles)}]",
-            value=", ".join(roles) if len(roles) < 10 else f"{len(roles)} roles",
-            inline=False,
-        )
-        member.add_field(
-            name="》 Top Role", 
-            value=user.top_role.mention, 
-            inline=False
-        )
-        
-        member.colour = user.colour
+        try:
+            member.add_field(
+                name="》 Voice", 
+                value=voice, 
+                inline=False
+            )
+            member.add_field(
+                name="》 Nitro Stats", 
+                value=boost_stats, 
+                inline=False
+            )   
+            member.add_field(
+                name=f"》 Roles [{len(roles)}]",
+                value=", ".join(roles) if len(roles) < 10 else f"{len(roles)} roles",
+                inline=False,
+            )
+            member.add_field(
+                name="》 Top Role", 
+                value=user.top_role.mention, 
+                inline=False
+            )
+
+            member.colour = user.colour
+        except:
+            pass
 
         member.set_footer(
             text=f"Requested by {ctx.message.author}",
@@ -1031,6 +995,28 @@ class Information(commands.Cog):
             await ctx.send(f"{ctx.message.author.mention} Mentioned themselves.")
             return
         await ctx.send(f"{target.mention} has been mentioned by {ctx.message.author.mention}!")
+
+    @userinfo.command(name="shared", aliases=["share"], brief="See all the servers that you shared with the someone")
+    async def userinfo_shared(self, ctx, user: libneko.converters.InsensitiveUserConverter, user2: libneko.converters.InsensitiveUserConverter):
+        """
+        See all the servers that you shared with the someone else
+        """
+
+        @pag.embed_generator(max_chars=2048)
+        def main_embed(paginator, page, page_index):
+            embed = discord.Embed(title=f'Servers that {user} and {user2} shared with', description=page, color=ctx.message.author.color)
+            return embed
+
+        pagi = pag.EmbedNavigatorFactory(factory=main_embed)
+
+        shared = []
+        for guild in self.bot.guilds:
+            if user in guild.members:
+                if user2 in guild.members:
+                    shared.append(guild.name)
+                
+        pagi += "\n".join(shared)
+        pagi.start(ctx)
 
 def setup(bot):
     bot.add_cog(Information(bot))

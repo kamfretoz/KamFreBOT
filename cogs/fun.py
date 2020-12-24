@@ -1,6 +1,8 @@
 import asyncio
 import aiohttp
 import time
+
+from discord.ext.commands.cooldowns import BucketType
 import data.quotes as quotes
 import discord
 import libneko
@@ -13,6 +15,7 @@ from random import randint, choice
 from discord.ext import commands
 from libneko import embeds
 from owoify import Owoifator
+from vaporwavely import vaporipsum, vaporize
 
 from modules.http import HttpCogBase
 from modules.dictobj import DictObject
@@ -32,55 +35,25 @@ class Fun(HttpCogBase):
     @commands.bot_has_permissions(manage_messages=True)
     async def say(self, ctx, *, text: commands.clean_content = None):
         """Say whatever you typed in"""
-        try:
-            if text is None:
-                await ctx.send("❓ What do you want me to say?", delete_after=5.0)
-                await ctx.message.add_reaction("❓")
-            else:
-                await ctx.message.delete()
-                await ctx.trigger_typing()
-                await ctx.send(text)
-        except discord.Forbidden:
-            await ctx.author.send(":no_entry_sign: I'm not allowed to send message here!", delete_after=5)
-        except discord.NotFound:
-            await ctx.send(discord.Embed(description=":grey_exclamation: ERROR: Original message not found! (404 UNKNOWN MESSAGE)"), delete_after=5)
-        except discord.ext.commands.BotMissingPermissions:
-            await ctx.send(discord.Embed(description="I don't have permission to delete the original message!"), delete_after=5.0,)    @commands.command(aliases=["talk", "speak","s"])
-
+        if text is None:
+            await ctx.send("❓ What do you want me to say?", delete_after=5.0)
+            await ctx.message.add_reaction("❓")
+        else:
+            await ctx.message.delete()
+            await ctx.trigger_typing()
+            await ctx.send(text)
+            
     @commands.command(aliases=["sghost", "sayg","sg"])
     @commands.bot_has_permissions(manage_messages=True)
     async def sayghost(self, ctx, *, text: commands.clean_content = None):
         """Say whatever you typed in and immediately deletes it"""
-        try:
-            if text is None:
-                await ctx.send("❓ What do you want me to say?", delete_after=5.0)
-                await ctx.message.add_reaction("❓")
-            else:
-                await ctx.message.delete()
-                await ctx.trigger_typing()
-                await ctx.send(text, delete_after=1)
-        except discord.Forbidden:
-            await ctx.author.send(":no_entry_sign: I'm not allowed to send message here!", delete_after=5)
-
-    # Say to all members command
-    @commands.command(aliases=["stoall"], hidden=True)
-    @commands.has_permissions(administrator=True)
-    @commands.guild_only()
-    async def saytoall(self, ctx, *, text: commands.clean_content = None):
-        """Send a message to every member on the server (Can only be used by Administrator)"""
-        try:
-            if text is None:
-                await ctx.send("What do you want to me to send?")
-                await ctx.message.add_reaction("❓")
-            else:
-                await ctx.send(f"Now Sending to {len(ctx.guild.members)} Users!")
-                await ctx.message.add_reaction("✔")
-                for users in ctx.guild.members:
-                    if users.bot is False:
-                        await users.send(text)
-                        await asyncio.sleep(5)
-        except discord.Forbidden:
-            pass
+        if text is None:
+            await ctx.send("❓ What do you want me to say?", delete_after=5.0)
+            await ctx.message.add_reaction("❓")
+        else:
+            await ctx.message.delete()
+            await ctx.trigger_typing()
+            await ctx.send(text, delete_after=1)
 
     # Say Command with TTS
     @commands.command(aliases=["ttstalk", "speaktts","st"], hidden=True)
@@ -91,16 +64,9 @@ class Fun(HttpCogBase):
             await ctx.send("❓ What do you want me to say?", delete_after=10.0)
             await ctx.message.add_reaction("❓")
         else:
-            try:
-                await ctx.message.delete()
-                await ctx.trigger_typing()
-                await ctx.send(content=text, tts=True)
-            except discord.Forbidden:
-                await ctx.author.send(":no_entry_sign: I'm not allowed to send message here!", delete_after=5)
-            except discord.NotFound:
-                await ctx.send(discord.Embed(description=":grey_exclamation: ERROR: Original message not found! (404 UNKNOWN MESSAGE)"), delete_after=5)
-            except discord.ext.commands.BotMissingPermissions:
-                await ctx.send(discord.Embed(description="I don't have permission to delete the original message!"), delete_after=5.0,)
+            await ctx.message.delete()
+            await ctx.trigger_typing()
+            await ctx.send(content=text, tts=True)
 
     @commands.command(aliases=["embedsay","syd","emb"])
     @commands.bot_has_permissions(embed_links=True)
@@ -129,50 +95,16 @@ class Fun(HttpCogBase):
             await ctx.send("Where do you want me to send the text?", delete_after=10.0)
             await ctx.message.add_reaction("❓")
         else:
-            try:
-                await ctx.message.delete()
-                await destination.trigger_typing()
-                await destination.send(text)
-            except discord.Forbidden:
-                await ctx.send(
-                    f"I'm not allowed to send a message on #{destination}!",
-                    delete_after=10.0,
-                )
-            except discord.ext.commands.BotMissingPermissions:
-                await ctx.send(
-                    "I don't have permission to delete the original message!",
-                    delete_after=5.0,
-                )
-
-    @commands.command(aliases=["send", "dm"], hidden=True)
-    @commands.guild_only()
-    async def sendto(self, ctx, target: libneko.converters.InsensitiveUserConverter = None, *, text:commands.clean_content =None):
-        """Send whatever you want to a user's DM"""
-        if text is None:
-            await ctx.send("What do you want me to say?", delete_after=10.0)
-            await ctx.message.add_reaction("❓")
-        elif target is None:
-            await ctx.send("Where do you want me to send it?", delete_after=10.0)
-            await ctx.message.add_reaction("❓")
-        else:
-            try:
-                await ctx.send("Sending Message!", delete_after=3.0)
-                await target.send(text)
-                await ctx.send("Message Sent!", delete_after=3.0)
-                await ctx.message.delete()
-            except discord.Forbidden:
-                await ctx.send(
-                    f"I'm not allowed to send a message to {target}!", delete_after=5.0
-                )
-            except discord.HTTPException:
-                await ctx.send("Invalid User Specified!")
+            await ctx.message.delete()
+            await destination.trigger_typing()
+            await destination.send(text)
 
     # Flipcoin command
     @commands.cooldown(rate=3, per=3.0)
-    @commands.command(aliases=["flipcoin", "coin"])
+    @commands.command(aliases=["flipcoin", "coin"], hidden=True)
     async def coinflip(self, ctx):
         """Heads or Tails!"""
-        choices = ["https://i.imgur.com/vzcNPdF.png", "https://i.imgur.com/9YBSnmr.png"]
+        choices = ["https://i.imgur.com/vzcNPdF.png", "https://i.imgur.com/9YBSnmr.png"] # Put your custom coin image here.
         flip = discord.Embed(title="Flip The Coin!", color=0xFFFFFF)
         flip.set_image(url=choice(choices))
         await ctx.send(embed=flip)
@@ -648,7 +580,7 @@ class Fun(HttpCogBase):
         emb = discord.Embed(title="Here's some advice for you :)", description=adv,color = ctx.author.color, timestamp=datetime.utcnow())
         await ctx.send(embed=emb)
 
-    @commands.command(aliases=["prgquote","prqt"])
+    @commands.command(aliases=["prgquote","prqt"], disabled = True, hidden = True)
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def programmingquote(self, ctx):
         """
@@ -1001,13 +933,17 @@ class Fun(HttpCogBase):
         if name1 == "Oreo" and name2 == "TaylorSwift":
             shipnumber = 100
 
-        if name1 == "mixtape" and name2 == "calliope":
+        if name1 == "Mixtape" and name2 == "Calliope":
             shipnumber = 100
 
         if name1 == "Prisma" and name2 == "Atticus":    
             shipnumber = 100
 
         if name1 == "qwerty32" and name2 == "Penny":
+            shipnumber = 100
+        if name1 == "Vraptor" and name2 == "Sarah":
+            shipnumber = 100
+        if name1 == "IS8" and name2 == "Gumball":
             shipnumber = 100
             
         if 0 <= shipnumber <= 10:
@@ -1066,6 +1002,9 @@ class Fun(HttpCogBase):
                                                            "Love is most definitely in the air!"]))
         elif shipnumber == 100:
             status = "Forever lover! {}".format(choice(["Forever together and never be apart."]))
+
+        else:
+            status = "🤔"
 
         meter = "🖤🖤🖤🖤🖤🖤🖤🖤🖤🖤"
 
@@ -1329,13 +1268,17 @@ class Fun(HttpCogBase):
         if score == None or score == 0:
             score = "N/A"
 
+
         start = data.results[0].start_date
         end = data.results[0].end_date
         mem = data.results[0].members
 
         # Time zone converter (a few checks will depends on the presence of time_end value)
-        time_start = ciso8601.parse_datetime(start)
-        formatted_start = time_start.strftime("%B %d, %Y")
+        try:
+            time_start = ciso8601.parse_datetime(start)
+            formatted_start = time_start.strftime("%B %d, %Y")
+        except TypeError:
+            formatted_start = "Unknown"
         try:
             time_end = ciso8601.parse_datetime(end)
             formatted_end = time_end.strftime("%B %d, %Y")
@@ -1361,7 +1304,10 @@ class Fun(HttpCogBase):
         emb.set_thumbnail(url="https://cdn.myanimelist.net/img/sp/icon/apple-touch-icon-256.png")
         emb.set_footer(icon_url="https://jikan.moe/assets/images/logo/jikan.logo.png", text = "API used: Jikan")
         emb.add_field(name="📝 Title", value=f"[{anime_title}]({anime_url})", inline=False)
-        emb.add_field(name="ℹ Synopsis", value=anime_synopsis, inline=False)
+        if anime_synopsis:
+            emb.add_field(name="ℹ Synopsis", value=anime_synopsis, inline=False)
+        else:
+            emb.add_field(name="ℹ Synopsis", value="No Synopsis Found.", inline=False)
         emb.add_field(name="⌛ Status", value=anime_status, inline=False)
         emb.add_field(name="📺 Type", value=anime_type, inline=False)
         emb.add_field(name="📅 First Air Date", value=formatted_start, inline=False)
@@ -1482,7 +1428,12 @@ class Fun(HttpCogBase):
         emb.set_thumbnail(url="https://cdn.myanimelist.net/img/sp/icon/apple-touch-icon-256.png")
         emb.set_footer(icon_url="https://jikan.moe/assets/images/logo/jikan.logo.png", text = "API used: Jikan")
         emb.add_field(name="📑 Title", value=f"[{manga_title}]({manga_url})", inline=False)
-        emb.add_field(name="ℹ Synopsis", value=manga_synopsis, inline=False)
+
+        if manga_synopsis:
+            emb.add_field(name="ℹ Synopsis", value=manga_synopsis, inline=False)
+        else:
+            emb.add_field(name="ℹ Synopsis", value="No Synopsis Found.", inline=False)
+
         emb.add_field(name="⏳ Status", value=stat, inline=False)
         emb.add_field(name="📁 Type", value=manga_type, inline=False)
         emb.add_field(name="📅 Publish Date", value=formatted_start, inline=False)
@@ -1755,165 +1706,102 @@ class Fun(HttpCogBase):
 
     @commands.command(aliases=["pats", "pet"]) # https://github.com/sks316/mewtwo-bot/blob/master/cogs/fun.py#L307
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def pat(self, ctx, *, user: libneko.converters.InsensitiveMemberConverter = None):
+    async def pat(self, ctx, *, target = None):
         """
         *pats you*
         """
-        if user == None:
+        if target == None:
             return await ctx.send(":x: You need someone to give headpats to! You can give me a headpat if you want...")
-        if user == ctx.author:
+        if target == ctx.author:
             return await ctx.send(":x: You can't give yourself headpats! You can give me a headpat if you want...")
         #--Get image from NekosLife API--#
         session = self.acquire_session()
         async with session.get('https://nekos.life/api/v2/img/pat') as pat:
             data = await pat.json()
             result = data.get('url')
-            embed = discord.Embed(title=f"{ctx.author.display_name} gives {user.display_name} some headpats!",  color=0x8253c3)
+            embed = discord.Embed(description=f"{ctx.author.display_name} gives {target} some headpats!",  color=0x8253c3)
             embed.set_image(url=result)
             await ctx.send(embed=embed)
                 
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def cuddle(self, ctx, *, user: libneko.converters.InsensitiveMemberConverter = None):
+    async def cuddle(self, ctx, *, target = None):
         """
         *cuddles you*
         """
-        if user == None:
+        if target == None:
             return await ctx.send(":x: You need someone to cuddle! You can cuddle me if you want...")
-        if user == ctx.author:
+        if target == ctx.author:
             return await ctx.send(":x: You can't cuddle yourself! You can cuddle me if you want...")
         #--Get image from NekosLife API--#
         session = self.acquire_session()
         async with session.get('https://nekos.life/api/v2/img/cuddle') as cuddle:
             data = await cuddle.json()
             result = data.get('url')
-            embed = discord.Embed(title=f"🤗 {ctx.author.display_name} cuddles {user.display_name}!",  color=0x8253c3)
+            embed = discord.Embed(description=f"🤗 {ctx.author.display_name} cuddles {target}!",  color=0x8253c3)
             embed.set_image(url=result)
             await ctx.send(embed=embed)
                 
 
     @commands.command(aliases=["smooch"])
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def kiss(self, ctx, *, user: libneko.converters.InsensitiveMemberConverter = None):
+    async def kiss(self, ctx, *, target = None):
         """
         *kisses you*
         """
-        if user == None:
+        if target == None:
             return await ctx.send(":x: You need someone to kiss! You can kiss me if you want...")
-        if user == ctx.author:
+        if target == ctx.author:
             return await ctx.send(":x: You can't kiss yourself! You can kiss me if you want...")
         #--Get image from NekosLife API--#
         session = self.acquire_session()
         async with session.get('https://nekos.life/api/v2/img/kiss') as kiss:
             data = await kiss.json()
             result = data.get('url')
-            embed = discord.Embed(title=f"❤ {ctx.author.display_name} kisses {user.display_name}!",  color=0x8253c3)
+            embed = discord.Embed(description=f"❤ {ctx.author.display_name} kisses {target}!",  color=0x8253c3)
             embed.set_image(url=result)
             await ctx.send(embed=embed)
                 
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def snuggle(self, ctx, *, user: libneko.converters.InsensitiveMemberConverter = None):
+    async def snuggle(self, ctx, *, target = None):
         """
         *snuggles you*
         """
-        if user == None:
+        if target == None:
             return await ctx.send(":x: You need someone to cuddle! You can cuddle me if you want...")
-        if user == ctx.author:
+        if target == ctx.author:
             return await ctx.send(":x: You can't cuddle yourself! You can cuddle me if you want...")
         #--Get image from NekosLife API--#
         session = self.acquire_session()
         async with session.get('https://nekos.life/api/v2/img/cuddle') as snuggle:
             data = await snuggle.json()
             result = data.get('url')
-            embed = discord.Embed(title=f"🤗 {ctx.author.display_name} snuggles {user.display_name}!",  color=0x8253c3)
+            embed = discord.Embed(description=f"🤗 {ctx.author.display_name} snuggles {target}!",  color=0x8253c3)
             embed.set_image(url=result)
             await ctx.send(embed=embed)
                 
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def hug(self, ctx, *, user: libneko.converters.InsensitiveMemberConverter = None):
+    async def hug(self, ctx, *, target = None):
         """
         *hugs you*
         """
-        if user == None:
+        if target == None:
             return await ctx.send(":x: You need someone to hug! You can hug me if you want...")
-        if user == ctx.author:
+        if target == ctx.author:
             return await ctx.send(":x: You can't hug yourself! You can hug me if you want...")
         #--Get image from NekosLife API--#
         session = self.acquire_session()
         async with session.get('https://nekos.life/api/v2/img/hug') as hug:
             data = await hug.json()
             result = data.get('url')
-            embed = discord.Embed(title=f"🤗 {ctx.author.display_name} hugs {user.display_name}!",  color=0x8253c3)
+            embed = discord.Embed(description=f"🤗 {ctx.author.display_name} hugs {target}!",  color=0x8253c3)
             embed.set_image(url=result)
             await ctx.send(embed=embed)
-
-    @commands.command(aliases=["randimg","img"])
-    @commands.cooldown(2, 5, commands.BucketType.user)
-    async def tag(self, ctx, * ,tags: str):
-        """
-        Sends a random image with the specified tag
-        See `[p]taglist` for the list of available tags
-        """
-        await ctx.trigger_typing()
-        head = {
-            "Authorization": ksoft_key
-        }
-        params = {
-            "tag": tags
-        }
-        session = self.acquire_session()
-        async with session.get('https://api.ksoft.si/images/random-image', headers = head, params = params) as resp:
-            data = json.loads(await resp.read(), object_hook=DictObject)
-        try:
-            img_url = data.url
-            tag_name = data.tag
-        except KeyError:
-            code = data.code
-            msg = data.message
-            await ctx.send(embed=discord.Embed(description=f"⚠ An Error Occured! **{msg.capitalize()}** (Code: {code})"))
-            return
-
-        emb = discord.Embed(timestamp=datetime.utcnow())
-        emb.add_field(name = "Tag", value = tag_name.capitalize())
-        emb.set_image(url = img_url)
-        emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png", text = "Data provided by: KSoft.Si")
-        await ctx.send(embed = emb)
-
-
-    @commands.command(aliases=["list"])
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    async def taglist(self, ctx):
-        """
-        See the list of available tags
-        """
-        await ctx.trigger_typing()
-        head = {
-            "Authorization": ksoft_key
-        }
-        session = self.acquire_session()
-        async with session.get('https://api.ksoft.si/images/tags', headers = head) as resp:
-            data = json.loads(await resp.read(), object_hook=DictObject)
-
-        try:
-            tag_list = data.tags
-        except KeyError:
-            code = data.code
-            msg = data.message
-            await ctx.send(embed=discord.Embed(description=f"⚠ An Error Occured! **{msg.capitalize()}** (Code: {code})"))
-            return
-
-        tags = ", ".join(tag_list)
-
-        emb = discord.Embed(timestamp=datetime.utcnow())
-        emb.add_field(name="Available tags", value = f"```{tags}```")
-        emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png", text = "Data provided by: KSoft.Si")
-
-        await ctx.send(embed = emb)
 
     @commands.command(aliases=["memes", "meem"])
     @commands.cooldown(2, 5, commands.BucketType.user)
@@ -2211,11 +2099,55 @@ class Fun(HttpCogBase):
         return
 
     @commands.command(aliases=["owo"])
-    async def owoify(self, ctx, *, text: str = "Hello Friend!"):
+    async def owoify(self, ctx, *, text: commands.clean_content = "Hello Friend!"):
         """OWO-ify your text!"""
         owoifator = Owoifator()
         fin = owoifator.owoify(text)  # Hewwo fwiend (*^ω^)
+        if len(fin) > 2000:
+            shorten(fin,width=2000,placeholder="...")
         await ctx.send(embed=discord.Embed(description=fin))
+
+    @commands.command(aliases=["vwi"])
+    async def vaporipsum(self, ctx):
+        """
+        Generate a random text, like Lorem Ipsum, but more nostalgic and aesthetic.
+        """
+        vapor = vaporize(vaporipsum(2)).upper()
+        if len(vapor) > 2000:
+            shorten(vapor,width=2000,placeholder="...")
+        await ctx.send(embed=discord.Embed(description=vapor))
+
+    @commands.command(aliases=["vwy","vapor"])
+    async def vaporizer(self, ctx, *, text: commands.clean_content = "Hello World"):
+        """
+        Convert your text from this Hello World to this Ｈｅｌｌｏ Ｗｏｒｌｄ
+        """
+        if len(text) > 2000:
+            await ctx.send(embed=discord.Embed(description="Only 2000 characters or fewer are allowed."))
+            return
+
+        vapor = vaporize(text)
+        await ctx.send(embed=discord.Embed(description=vapor))
+
+    @commands.command()
+    @commands.cooldown(3, 5, commands.BucketType.user)
+    @commands.max_concurrency(number=1, per=commands.BucketType.guild, wait=False)
+    async def rps(self, ctx, time: int = 3):
+        """
+        A Simple Rock Paper Scissor countdown
+        """
+        if time > 10:
+            await ctx.send("10 Seconds ought to be enough.")
+            time = 10
+        msg = await ctx.send(content="Get Ready! countdown starts in a few moments!")
+        await asyncio.sleep(2)
+        iteration = time
+        while iteration:
+            await msg.edit(content=f"{iteration}...")
+            await asyncio.sleep(1)
+            iteration -= 1
+        await msg.edit(content="**Shoot!**")
+            
 
 def setup(bot):
     bot.add_cog(Fun(bot))

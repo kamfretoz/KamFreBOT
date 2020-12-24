@@ -43,7 +43,7 @@ print(f"Starting {config.botname}!")
 bootsplash()
 
 # setting up prefix
-print("\nRetrieving the prefix from config.py ....[OK]")
+print("Retrieving the prefix from config.py ....[OK]")
 def get_prefix(bot, message):
     """A callable Prefix for my bot."""
     prefix = config.prefix
@@ -53,11 +53,11 @@ def get_prefix(bot, message):
 bot = commands.AutoShardedBot(command_prefix=get_prefix, description=config.desc, case_insensitive=True, intents=discord.Intents.all())
 
 # Setting up logging
-print("\nSetting Log files to system.log ...[Success]")
+print("Setting Log files to system.log ...[Success]")
 logger = logging.getLogger()
 logger.setLevel(logging.ERROR)
 handler = logging.FileHandler(filename="system.log", encoding="utf-8", mode="a+")
-handler.setFormatter(logging.Formatter("\n{asctime}:{levelname}:{name}:{message}", style="{"))
+handler.setFormatter(logging.Formatter("{asctime}:{levelname}:{name}:{message}", style="{"))
 logger.addHandler(handler)
 
 # more logging stuff
@@ -65,7 +65,7 @@ setattr(bot, "logger", logging.getLogger("main.py"))
 
 # Getting the bot basic data from an external file so that it can be shared easily without having to always
 # black it out
-print("\nLoading the TOKEN...[Success]")
+print("Loading the TOKEN...[Success]")
 with open("data/coin.json") as json_fp:
     classified = json.load(json_fp)  # Loading data from the json file
     TOKEN = classified["token"]  # Getting the token
@@ -93,7 +93,7 @@ bot.load_extension("libneko.extras.superuser")
 # Loading message
 @bot.event
 async def on_connect():
-    print("\nConnected to Discord!")
+    print("Connected to Discord!")
 
 
 @bot.event
@@ -183,7 +183,7 @@ async def restart(ctx):
             openerr ="open" if sys.platform == "darwin" else "xdg-open"
             subprocess.call([openerr, core])
     except FileNotFoundError:
-        await ctx.send("❌ Unable to open the file! (is `xdg-open` installed?)\n Shutting Down.")
+        await ctx.send("❌ Unable to open the file!\n Shutting Down.")
     await ctx.bot.logout()
     sys.exit()
 
