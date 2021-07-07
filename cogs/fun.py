@@ -392,7 +392,7 @@ class Fun(HttpCogBase):
                 await asyncio.sleep(1)
                 await msg.edit(content="```Ye WOT M8```")
                 await asyncio.sleep(1)
-                await msg.edit(content="```Ye WOT M8?!?!?!")
+                await msg.edit(content="```Ye WOT M8?!?!?!```")
                 await asyncio.sleep(1)
                 await msg.edit(content="Ye WOT M8?!?!?!")
             elif Type.lower() == 'oj':
