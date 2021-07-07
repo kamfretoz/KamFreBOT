@@ -26,10 +26,9 @@ import time
 import random
 import io
 from math import floor, sqrt, trunc
-from PIL import Image
+# from PIL import Image
 import os
 from operator import pow, truediv, mul, add, sub, itemgetter
-from discord import member
 from pytz import timezone
 from datetime import datetime
 import safygiphy
@@ -37,9 +36,9 @@ import pytemperature
 import qrcode
 from io import BytesIO
 from collections import deque
-from textwrap import shorten
 import json
 import base64
+import ciso8601
 
 import libneko
 from libneko import pag, converters
@@ -77,16 +76,16 @@ morseAlphabet = {
     "Y": "-.--",
     "Z": "--..",
     " ": "/",
-    "1" : ".----",
-    "2" : "..---",
-    "3" : "...--",
-    "4" : "....-",
-    "5" : ".....",
-    "6" : "-....",
-    "7" : "--...",
-    "8" : "---..",
-    "9" : "----.",
-    "0" : "-----",
+    "1": ".----",
+    "2": "..---",
+    "3": "...--",
+    "4": "....-",
+    "5": ".....",
+    "6": "-....",
+    "7": "--...",
+    "8": "---..",
+    "9": "----.",
+    "0": "-----",
     ".": ".-.-.-",
     ",": "--..--",
     ":": "---...",
@@ -103,6 +102,7 @@ with open("cogs/data/ksoft-api_key.json") as json_fp:
     classified = json.load(json_fp)
     ksoft_key = classified["key"]
 
+
 class Utilities(HttpCogBase):
     def __init__(self, bot):
         self.bot = bot
@@ -112,7 +112,7 @@ class Utilities(HttpCogBase):
         self.editsniped = {}
         self.loop = asyncio.get_event_loop()
 
-    #Delete Snipe Listener (Setter)
+    # Delete Snipe Listener (Setter)
     @commands.Cog.listener()
     async def on_message_delete(self, message):
         try:
@@ -135,20 +135,20 @@ class Utilities(HttpCogBase):
                 # print(f"server:{srvid}, channel:{chid}, author:{author}, content:{content}") #PRINTS ALL DELETED MESSAGES INTO THE CONSOLE (CAN BE SPAMMY)
 
                 self.delsniped.update({
-                    srvid : {
-                        chid : {
-                            'Sender':author,
-                            'Mention':author_mention,
-                            'Content':content,
-                            'Attachment':file_attachment,
-                            'Filename':attachment_name
+                    srvid: {
+                        chid: {
+                            'Sender': author,
+                            'Mention': author_mention,
+                            'Content': content,
+                            'Attachment': file_attachment,
+                            'Filename': attachment_name
                         }
                     }
                 })
         except:
             pass
 
-    #Edit Snipe Listener (Setter)
+    # Edit Snipe Listener (Setter)
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         try:
@@ -162,19 +162,19 @@ class Utilities(HttpCogBase):
                 # Log Stuff
                 #print(f"server:{srvid}, channel:{chid}, author:{author}, before:{msg_before}, after:{msg_after}")
                 self.editsniped.update({
-                    srvid : {
-                        chid : {
-                            'Sender':author,
-                            'Mention':author_mention,
-                            'Before':msg_before,
-                            'After':msg_after
+                    srvid: {
+                        chid: {
+                            'Sender': author,
+                            'Mention': author_mention,
+                            'Before': msg_before,
+                            'After': msg_after
                         }
                     }
                 })
         except:
             pass
 
-    @commands.command(aliases=["sniped","snipe","delsnipe","dsnipe","ds","sn","s"])
+    @commands.command(aliases=["sniped", "snipe", "delsnipe", "dsnipe", "ds", "sn", "s"])
     @commands.cooldown(rate=3, per=30, type=commands.BucketType.user)
     @commands.guild_only()
     async def deletesnipe(self, ctx):
@@ -192,13 +192,15 @@ class Utilities(HttpCogBase):
 
             if msg:
                 await ctx.message.delete()
-                emb = discord.Embed()
+                emb = discord.Embed(description=f"{msg}")
                 emb.set_author(name="Sniped!", icon_url=author.avatar_url)
-                emb.add_field(name="Author:", value=author_mention, inline=False)
-                emb.add_field(name="Message:", value=msg)
-                emb.set_footer(text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
+                emb.add_field(name="Author:",
+                              value=author_mention, inline=False)
+                emb.set_footer(
+                    text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
                 if attachment:
-                    emb.add_field(name="Attachments", value=f"[{name}]({attachment})")
+                    emb.add_field(name="Attachments",
+                                  value=f"[{name}]({attachment})")
                     if str(name).endswith(".png") or str(name).endswith(".gif") or str(name).endswith(".jpg") or str(name).endswith(".jpeg"):
                         emb.set_image(url=attachment)
                 await ctx.send(embed=emb, delete_after=5)
@@ -206,10 +208,13 @@ class Utilities(HttpCogBase):
                 await ctx.message.delete()
                 emb = discord.Embed(title="Sniped!")
                 emb.add_field(name="Author:", value=author, inline=False)
-                emb.add_field(name="Message:", value="Empty Message.",inline=False)
-                emb.set_footer(text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
+                emb.add_field(name="Message:",
+                              value="Empty Message.", inline=False)
+                emb.set_footer(
+                    text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
                 if attachment:
-                    emb.add_field(name="Attachments",value=f"[{name}]({attachment})", inline=False)
+                    emb.add_field(name="Attachments",
+                                  value=f"[{name}]({attachment})", inline=False)
                     if str(name).endswith(".png") or str(name).endswith(".gif"):
                         emb.set_image(url=attachment)
                 await ctx.send(embed=emb, delete_after=5)
@@ -221,7 +226,7 @@ class Utilities(HttpCogBase):
         except discord.NotFound:
             pass
 
-    @commands.command(aliases=["esnipe","esniped","es","e"])
+    @commands.command(aliases=["esnipe", "esniped", "es", "e"])
     @commands.cooldown(rate=3, per=30, type=commands.BucketType.user)
     @commands.guild_only()
     async def editsnipe(self, ctx):
@@ -239,10 +244,12 @@ class Utilities(HttpCogBase):
                 await ctx.message.delete()
                 emb = discord.Embed()
                 emb.set_author(name="Sniped!", icon_url=author.avatar_url)
-                emb.add_field(name="Author:", value=author_mention, inline=False)
+                emb.add_field(name="Author:",
+                              value=author_mention, inline=False)
                 emb.add_field(name="Before:", value=before)
                 emb.add_field(name="After:", value=after)
-                emb.set_footer(text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
+                emb.set_footer(
+                    text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
                 await ctx.send(embed=emb, delete_after=5)
                 self.editsniped.popitem()
             else:
@@ -251,7 +258,8 @@ class Utilities(HttpCogBase):
                 emb.add_field(name="Author:", value=author, inline=False)
                 emb.add_field(name="Before:", value="Empty Message.")
                 emb.add_field(name="After:", value="Empty Message.")
-                emb.set_footer(text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
+                emb.set_footer(
+                    text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
                 await ctx.send(embed=emb, delete_after=5)
                 self.editsniped.popitem()
         except KeyError:
@@ -260,9 +268,9 @@ class Utilities(HttpCogBase):
             return
         except discord.NotFound:
             pass
-    
+
     @commands.command(aliases=["code"])
-    async def codeblock(self, ctx, *, msg = "I am Codeblock!"):
+    async def codeblock(self, ctx, *, msg="I am Codeblock!"):
         """Write text in code format."""
         await ctx.message.delete()
         await ctx.send("```" + msg.replace("`", "") + "```")
@@ -288,20 +296,21 @@ class Utilities(HttpCogBase):
         """Shows a list of servers that the bot is in along with member count"""
         @pag.embed_generator(max_chars=2048)
         def main_embed(paginator, page, page_index):
-            servlist = discord.Embed(title=f"Servers that I am in", description=page, color=0x00FF00)
-            servlist.set_footer(text=f"{len(self.bot.guilds)} Servers in total.")
+            servlist = discord.Embed(
+                title=f"Servers that I am in", description=page, color=0x00FF00)
+            servlist.set_footer(
+                text=f"{len(self.bot.guilds)} Servers in total.")
             return servlist
-        
+
         navi = pag.EmbedNavigatorFactory(factory=main_embed)
         servers = []
         for guild in self.bot.guilds:
-                servers.append(guild.name)
+            servers.append(guild.name)
 
         navi += "\n".join(servers)
         navi.start(ctx)
-        
 
-    @commands.command(hidden=True, aliases=["source"])
+    @commands.command(aliases=["source", "rtfc"])
     @commands.is_owner()
     async def rtfm(self, ctx, *, command):
         """Get the source code for a certain command, cog..."""
@@ -406,10 +415,9 @@ class Utilities(HttpCogBase):
         await msg.edit(embed=ping)
 
     # time command
-    # ~~Scrapped for now until~~ i can figure out how to do the customizeable timezone. EDIT: I DID IT! HURRAHH!
     @commands.cooldown(rate=3, per=10, type=commands.BucketType.user)
-    @commands.group(invoke_without_command=True, aliases=["time","date","now"])
-    async def clock(self, ctx, * ,location: str = "UTC"):
+    @commands.group(invoke_without_command=True, aliases=["time", "date", "now"])
+    async def clock(self, ctx, *, location: str = "UTC"):
         """
         Show current time. [p]time <timezone>
         For timezone list, use [p]clock list
@@ -418,7 +426,7 @@ class Utilities(HttpCogBase):
         loc = location.replace(" ", "_")
         time_fmt = "%I:%M:%S %p"
         date_fmt = "%A, %d %B %Y"
-        
+
         try:
             now = datetime.now(timezone(loc))
 
@@ -431,21 +439,23 @@ class Utilities(HttpCogBase):
             clock.add_field(name="🌐 Timezone", value=loc.title(), inline=False)
             await ctx.send(embed=clock, content=f"⏰ Tick.. Tock..")
         except:
-            err = discord.Embed(title="⚠ **Warning!** An Error Occured.", description="Make sure that the timezone format is correct and is also available.\nThe Correct format is for example: `America/New_York` \nFor timezone list, use [p]clock list")
-            await ctx.send(embed = err)
+            err = discord.Embed(title="⚠ **Warning!** An Error Occured.",
+                                description="Make sure that the timezone format is correct and is also available.\nThe Correct format is for example: `America/New_York` \nFor timezone list, use [p]clock list")
+            await ctx.send(embed=err)
 
     @commands.cooldown(rate=2, per=15, type=commands.BucketType.user)
-    @clock.command(name="list", aliases=["timezone","timezones","lists","tz","tzs"], brief="Vew the list of available timezones")
+    @clock.command(name="list", aliases=["timezone", "timezones", "lists", "tz", "tzs"], brief="Vew the list of available timezones")
     async def clock_list(self, ctx):
         """Shows the list of available timezones"""
         @pag.embed_generator(max_chars=2048)
         def emb(paginator, page, page_index):
-            embed = discord.Embed(title="🌐 Available Timezones:", description=f"```{page}```")
+            embed = discord.Embed(
+                title="🌐 Available Timezones:", description=f"```{page}```")
             return embed
 
         with open("cogs/data/timezones.txt") as tzs:
             lists = tzs.read()
-        
+
         navi = pag.EmbedNavigatorFactory(factory=emb)
         navi += lists
         navi.start(ctx)
@@ -472,7 +482,8 @@ class Utilities(HttpCogBase):
             g = safygiphy.Giphy()
             gif = g.search(tag=query)
             em = discord.Embed()
-            em.set_image(url=str(gif.get("data", {}).get("image_original_url")))
+            em.set_image(
+                url=str(gif.get("data", {}).get("image_original_url")))
             await ctx.send(embed=em)
         except AttributeError:
             await ctx.send("An Error Occured! Please try again later.")
@@ -481,7 +492,8 @@ class Utilities(HttpCogBase):
             await ctx.send("Unable to send the messages, make sure i have access to embed.")
             return
 
-    @commands.command(aliases=["math"]) # https://levelup.gitconnected.com/3-ways-to-write-a-calculator-in-python-61642f2e4a9a
+    # https://levelup.gitconnected.com/3-ways-to-write-a-calculator-in-python-61642f2e4a9a
+    @commands.command(aliases=["math"])
     async def calc(self, ctx, *, calculation):
         """Simple calculator. Ex: [p]calc 2+2"""
         if len(calculation) > 16:
@@ -489,12 +501,12 @@ class Utilities(HttpCogBase):
             return
 
         operators = {
-              '+': add,
-              '-': sub,
-              '*': mul,
-              '/': truediv,
-              '^': pow
-            }
+            '+': add,
+            '-': sub,
+            '*': mul,
+            '/': truediv,
+            '^': pow
+        }
 
         def calculate(s):
             if s.isdigit():
@@ -506,14 +518,15 @@ class Utilities(HttpCogBase):
 
         em = discord.Embed(color=0xD3D3D3, title="Calculator")
         try:
-            em.add_field(name="Input:",value=calculation,inline=False,)
-            em.add_field(name="Output:", value=str(calculate(calculation.replace("**", "^").replace("x", "*").replace(" ", "").strip())), inline=False)
+            em.add_field(name="Input:", value=calculation, inline=False,)
+            em.add_field(name="Output:", value=str(calculate(calculation.replace(
+                "**", "^").replace("x", "*").replace(" ", "").strip())), inline=False)
         except Exception as e:
             return await ctx.send(embed=discord.Embed(description=f"An Error Occured! **{e}**"))
         await ctx.send(content=None, embed=em)
         await ctx.message.delete()
 
-    @commands.command(name="sqrt", aliases=["squareroot"]) 
+    @commands.command(name="sqrt", aliases=["squareroot"])
     async def sqroot(self, ctx, x: float):
         """Calculate the squareroot of a given number"""
         try:
@@ -522,7 +535,7 @@ class Utilities(HttpCogBase):
             return await ctx.send(embed=discord.Embed(description=f"An Error Occured! **{e}**"))
 
         em = discord.Embed(color=0xD3D3D3, title="Square Root (√)")
-        em.add_field(name="Input:",value=f"√{x}",inline=False,)
+        em.add_field(name="Input:", value=f"√{x}", inline=False,)
         em.add_field(name="Output:", value=out, inline=False)
         await ctx.send(content=None, embed=em)
         await ctx.message.delete()
@@ -575,10 +588,10 @@ class Utilities(HttpCogBase):
                     ):
                         f.write(message.content + "\n")
         await ctx.send("Finished downloading!")
-    
-    @commands.cooldown(rate=1, per=600, type=commands.BucketType.user)
-    @commands.command(aliases=["getcolor","color","getcolour"])
-    async def colour(self, ctx, *, colour_codes: str):
+
+    @commands.cooldown(rate=2, per=3, type=commands.BucketType.user)
+    @commands.command(aliases=["getcolor", "colour", "getcolour"])
+    async def color(self, ctx, *, colour_codes: str):
         """Posts color of given hex"""
         colour_codes = colour_codes.split()
         size = (60, 80) if len(colour_codes) > 1 else (200, 200)
@@ -596,8 +609,8 @@ class Utilities(HttpCogBase):
                     file=discord.File(file, "colour_file.png"),
                 )
 
-    @commands.cooldown(rate=1, per=600, type=commands.BucketType.user)
-    @commands.command(aliases=["channels","allchannel"])
+    @commands.cooldown(rate=1, per=600, type=commands.BucketType.guild)
+    @commands.command(aliases=["channels", "allchannel"])
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def allchannels(self, ctx):
@@ -636,13 +649,13 @@ class Utilities(HttpCogBase):
                 await ctx.send(content=f"**{ctx.guild.name}'s Channel List**", file=discord.File(data, filename=f"{ctx.guild.name}_Channel_Lists.txt"))
                 await loading.delete()
 
-    @commands.cooldown(rate=1, per=600, type=commands.BucketType.user)
+    @commands.cooldown(rate=1, per=600, type=commands.BucketType.guild)
     @commands.command(aliases=["members"])
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
     async def allmembers(self, ctx):
         """
-        Get all members on a server
+        Get all members on the current server
         Can only be used by server owner.
         """
         if ctx.author == ctx.guild.owner:
@@ -652,7 +665,7 @@ class Utilities(HttpCogBase):
             members = ""
             members_amount = 0
             total = 0
-            everything =""
+            everything = ""
 
             for x in server.members:
                 if x.bot is True:
@@ -664,13 +677,14 @@ class Utilities(HttpCogBase):
                     members_amount += 1
                     total += 1
 
-            loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
-            everything = f"Server: {server.name}\nID: {server.id}\nMember Amount: {members_amount}\nBot Amount: {bots_amount}\nTotal: {total}\n\nMember List:\n{members + bots}"        
+            loading = await ctx.send(embed=discord.Embed(title="⌛ Please Wait..."), delete_after=3)
+            everything = f"Server: {server.name}\nServer ID: {server.id}\nMember Amount: {members_amount}\nBot Amount: {bots_amount}\nTotal: {total}\n\nMember List:\n{members + bots}"
             data = BytesIO(everything.encode('utf-8'))
             await ctx.send(content=f"**{server.name}'s Member List**", file=discord.File(data, filename=f"{server.name}_Member_Lists.txt"))
             await loading.delete()
 
-    @commands.command(aliases=["allrole","roles"])
+    @commands.cooldown(rate=1, per=600, type=commands.BucketType.guild)
+    @commands.command(aliases=["allrole", "roles"])
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
     async def allroles(self, ctx):
@@ -687,7 +701,7 @@ class Utilities(HttpCogBase):
                 data = BytesIO(allroles.encode('utf-8'))
                 await ctx.send(content=f"Roles in **{server.name}**", file=discord.File(data, filename=f"{server.name}_Role_Lists.txt"))
 
-    @commands.command(aliases=["discriminator","tagnum","tags"])
+    @commands.command(aliases=["discriminator", "tagnum", "tags"])
     @commands.guild_only()
     async def discrim(self, ctx, tag: str = None):
         """Allows you to see whose user has the certain Discriminator/Tag!"""
@@ -702,27 +716,29 @@ class Utilities(HttpCogBase):
 
         else:
             member_list = []
-    
+
             @pag.embed_generator(max_chars=2048)
             def main_embed(paginator, page, page_index):
-                emb = discord.Embed(title=f"Users who has Tag Number: #**{tag}**", description = page, color=0x00FF00)
+                emb = discord.Embed(
+                    title=f"Users who has Tag Number: #**{tag}**", description=page, color=0x00FF00)
                 return emb
-    
+
             page = pag.EmbedNavigatorFactory(factory=main_embed)
-            
+
             duplicates = deque()
             for x in self.bot.get_all_members():
                 if x.discriminator == tag:
                     if x.id not in duplicates:
                         duplicates.append(x.id)
                         member_list.append(str(x))
-                    
+
             if member_list:
                 page += "\n".join(member_list)
                 page.start(ctx)
             else:
                 await ctx.send(embed=discord.Embed(description="ℹ No user found!"))
 
+    @commands.cooldown(rate=2, per=3, type=commands.BucketType.user)
     @commands.has_permissions(add_reactions=True)
     @commands.command()
     async def poll(self, ctx, *, opt: commands.clean_content):
@@ -792,6 +808,7 @@ class Utilities(HttpCogBase):
             await ctx.send('Missing the question.')
             return
 
+    @commands.cooldown(rate=2, per=3, type=commands.BucketType.user)
     @commands.command()
     async def canirun(self, ctx, command: str):
         """
@@ -812,6 +829,7 @@ class Utilities(HttpCogBase):
                 f'You {can_run and "can" or "cannot"} run this ' "command here."
             )
 
+    @commands.cooldown(rate=2, per=3, type=commands.BucketType.user)
     @commands.command()
     @commands.guild_only()
     async def quickpoll(self, ctx, *questions_and_choices: commands.clean_content):
@@ -835,7 +853,8 @@ class Utilities(HttpCogBase):
             return await ctx.send('Need Read Message History and Add Reactions permissions.')
 
         question = questions_and_choices[0]
-        choices = [(to_emoji(e), v) for e, v in enumerate(questions_and_choices[1:])]
+        choices = [(to_emoji(e), v)
+                   for e, v in enumerate(questions_and_choices[1:])]
 
         try:
             await ctx.message.delete()
@@ -855,9 +874,10 @@ class Utilities(HttpCogBase):
         else:
             color = discord.Color(value=0x00ff00)
             em = discord.Embed(color=color, title='Your randomized number:')
-            em.description = random.randint(a,b)
+            em.description = random.randint(a, b)
             await ctx.send(embed=em)
 
+    @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)
     @commands.command(aliases=["qr"])
     async def qrmaker(self, ctx, *, data: str):
         """Allows you to make a custom QR Code"""
@@ -902,7 +922,6 @@ class Utilities(HttpCogBase):
         await ctx.send(f"{ctx.author.mention}, here is the QR Code Invite of {ctx.guild.name}", file=discord.File(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png"))
         os.remove(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png") #Feel free to disable the removal
 
-
     @commands.command(aliases=["whoisplaying"])
     @commands.guild_only()
     async def whosplaying(self, ctx, *, game: str):
@@ -938,8 +957,10 @@ class Utilities(HttpCogBase):
             else:
                 showing = f"({count_playing})"
 
-            em = discord.Embed(description=msg, colour=discord.Colour(value=0x36393e))
-            em.set_author(name=f"""Who's playing "{game}"? {showing} User(s) in total.""")
+            em = discord.Embed(
+                description=msg, colour=discord.Colour(value=0x36393e))
+            em.set_author(
+                name=f"""Who's playing "{game}"? {showing} User(s) in total.""")
             await ctx.send(embed=em)
 
     @commands.command(aliases=["currentgame"])
@@ -972,7 +993,8 @@ class Utilities(HttpCogBase):
             msg = ""
             max_games = min(len(sorted_list), 10)
 
-            em = discord.Embed(description=msg, colour=discord.Colour(value=0x36393e))
+            em = discord.Embed(
+                description=msg, colour=discord.Colour(value=0x36393e))
             for i in range(max_games):
                 game, freq = sorted_list[i]
                 if int(freq_list[game]) < 2:
@@ -981,8 +1003,10 @@ class Utilities(HttpCogBase):
                     amount = f"{int(freq_list[game])} people"
                 em.add_field(name=game, value=amount)
             em.set_thumbnail(url=guild.icon_url)
-            em.set_footer(text="Do [p]whosplaying <game> to see whos playing a specific game")
-            em.set_author(name="Top games being played right now in the server:")
+            em.set_footer(
+                text="Do [p]whosplaying <game> to see whos playing a specific game")
+            em.set_author(
+                name="Top games being played right now in the server:")
             await ctx.send(embed=em)
 
     @commands.command(aliases=['drunkify'])
@@ -1010,7 +1034,7 @@ class Utilities(HttpCogBase):
         spacing = ""
         if gap > 0 and gap <= 5:
             for _ in range(gap):
-                spacing+=" "
+                spacing += " "
             result = spacing.join(txt)
             if len(result) <= 256:
                 await ctx.send(result)
@@ -1038,7 +1062,7 @@ class Utilities(HttpCogBase):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @commands.command(aliases=["ascii2hex","a2h"])
+    @commands.command(aliases=["ascii2hex", "a2h"])
     async def texttohex(self, ctx, *, txt: str):
         """
         Converts ASCII characters into Hexadecimal value
@@ -1056,7 +1080,7 @@ class Utilities(HttpCogBase):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @commands.command(aliases=["hex2ascii","h2a"])
+    @commands.command(aliases=["hex2ascii", "h2a"])
     async def hextotext(self, ctx, *, txt: str):
         """
         Converts Hexadecimal value into ASCII characters
@@ -1075,7 +1099,7 @@ class Utilities(HttpCogBase):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @commands.command(aliases=["ascii2bin","a2b"])
+    @commands.command(aliases=["ascii2bin", "a2b"])
     async def texttobinary(self, ctx, *, txt: str):
         """
         Converts ASCII characters into Binary
@@ -1094,7 +1118,7 @@ class Utilities(HttpCogBase):
             except Exception:
                 await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
-    @commands.command(aliases=["bin2ascii","b2a"])
+    @commands.command(aliases=["bin2ascii", "b2a"])
     async def binarytotext(self, ctx, *, txt: str):
         """
         Converts Binary into ASCII Characters
@@ -1125,7 +1149,8 @@ class Utilities(HttpCogBase):
 
         @pag.embed_generator(max_chars=2048)
         def main_embed(paginator, page, page_index):
-            embed = discord.Embed(title=f'Servers that {user.name} have nicknames in', description=page)
+            embed = discord.Embed(
+                title=f'Servers that {user.name} have nicknames in', description=page)
             return embed
 
         nicks = pag.EmbedNavigatorFactory(factory=main_embed)
@@ -1136,11 +1161,11 @@ class Utilities(HttpCogBase):
                 mem = guild.get_member(user.id)
                 if mem.nick != None:
                     message.append(f'**{mem.nick}** ({guild.name})')
-                
+
         nicks += "\n".join(message)
         nicks.start(ctx)
 
-    @commands.command(aliases=["ipinfo","ipaddr"])
+    @commands.command(aliases=["ipinfo", "ipaddr"])
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     async def ip(self, ctx, ip: str = None):
         """
@@ -1162,7 +1187,7 @@ class Utilities(HttpCogBase):
             async with session.get(f'https://ipapi.co/{ip}/json/') as resp:
                 resp.raise_for_status()
                 data = json.loads(await resp.read(), object_hook=DictObject)
-                    
+
             ipaddr = data["ip"]
             city = data["city"]
             region = data["region"]
@@ -1183,27 +1208,41 @@ class Utilities(HttpCogBase):
             organization = data["org"]
             asn = data["asn"]
 
-            embd = discord.Embed(title="IP Information", color=ctx.author.color, timestamp=datetime.utcnow())
+            embd = discord.Embed(
+                title="IP Information", color=ctx.author.color, timestamp=datetime.utcnow())
             embd.add_field(name="IP Address:", value=ipaddr, inline=False)
-            embd.add_field(name="ISP Name/Organization:", value=organization, inline=False)
+            embd.add_field(name="ISP Name/Organization:",
+                           value=organization, inline=False)
             embd.add_field(name="City:", value=city, inline=False)
             embd.add_field(name="Regional Area:", value=region)
-            embd.add_field(name="Region Code:", value=region_code, inline=False)
+            embd.add_field(name="Region Code:",
+                           value=region_code, inline=False)
             embd.add_field(name="Country:", value=country, inline=False)
-            embd.add_field(name="Country Name:", value=country_name, inline=False)
-            embd.add_field(name="Country Code (ISO):", value=country_code_iso3, inline=False)
-            embd.add_field(name="Language Spoken:", value=languages, inline=False)
-            embd.add_field(name="Continent Code:", value=continent_code, inline=False)
-            embd.add_field(name="Is country a member of European Union (EU)?", value=in_eu, inline=False)
+            embd.add_field(name="Country Name:",
+                           value=country_name, inline=False)
+            embd.add_field(name="Country Code (ISO):",
+                           value=country_code_iso3, inline=False)
+            embd.add_field(name="Language Spoken:",
+                           value=languages, inline=False)
+            embd.add_field(name="Continent Code:",
+                           value=continent_code, inline=False)
+            embd.add_field(
+                name="Is country a member of European Union (EU)?", value=in_eu, inline=False)
             embd.add_field(name="Postal Code:", value=postal, inline=False)
-            embd.add_field(name="Latitude Coordinate:", value=latitude, inline=False)
-            embd.add_field(name="Longitude Coordinate:", value=longitude, inline=False)
-            embd.add_field(name="Timezone:", value=country_timezone, inline=False)
+            embd.add_field(name="Latitude Coordinate:",
+                           value=latitude, inline=False)
+            embd.add_field(name="Longitude Coordinate:",
+                           value=longitude, inline=False)
+            embd.add_field(name="Timezone:",
+                           value=country_timezone, inline=False)
             embd.add_field(name="UTC Offset:", value=utc_offset, inline=False)
-            embd.add_field(name="Country Dial Code:", value=dial_code, inline=False)
+            embd.add_field(name="Country Dial Code:",
+                           value=dial_code, inline=False)
             embd.add_field(name="Currency:", value=currency, inline=False)
-            embd.add_field(name="Autonomous System Number:", value=asn, inline=False)
-            embd.set_footer(text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
+            embd.add_field(name="Autonomous System Number:",
+                           value=asn, inline=False)
+            embd.set_footer(
+                text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
 
             await ctx.send(embed=embd)
         except IndexError:
@@ -1212,7 +1251,7 @@ class Utilities(HttpCogBase):
             await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! Make sure the IP and the formatting are correct!"))
 
     @commands.command(aliases=["m2a"])
-    async def morse2ascii(self, ctx, * , text:commands.clean_content = None):
+    async def morse2ascii(self, ctx, *, text: commands.clean_content = None):
         """
         Convert Morse code to ASCII
         """
@@ -1233,7 +1272,7 @@ class Utilities(HttpCogBase):
         await ctx.send(embed=discord.Embed(title="Morse to ASCII Conversion:", description=decodeMessage, timestamp=datetime.utcnow()))
 
     @commands.command(aliases=["a2m"])
-    async def ascii2morse(self, ctx, * ,text: commands.clean_content = None):
+    async def ascii2morse(self, ctx, *, text: commands.clean_content = None):
         """
         Convert ASCII into Morse Code
         """
@@ -1249,7 +1288,7 @@ class Utilities(HttpCogBase):
                 encodedMessage += '<CHARACTER NOT FOUND>'
         await ctx.send(embed=discord.Embed(title="ASCII to Morse Conversion:", description=encodedMessage, timestamp=datetime.utcnow()))
 
-    @commands.command(aliases=["ascii2b64","b64e"])
+    @commands.command(aliases=["ascii2b64", "b64e"])
     async def base64encode(self, ctx, *, text: str = None):
         """
         Encode ASCII chars to Base64
@@ -1260,15 +1299,15 @@ class Utilities(HttpCogBase):
 
         try:
             sample_string = text
-            sample_string_bytes = sample_string.encode("ascii") 
-    
-            base64_bytes = base64.b64encode(sample_string_bytes) 
+            sample_string_bytes = sample_string.encode("ascii")
+
+            base64_bytes = base64.b64encode(sample_string_bytes)
             base64_string = base64_bytes.decode("ascii")
             await ctx.send(embed=discord.Embed(description=f"```{base64_string}```"))
         except UnicodeEncodeError:
             await ctx.send(embed=discord.Embed(description=f"⚠️ Unable to encode the text, possible unsupported characters are found."))
 
-    @commands.command(aliases=["b642ascii","b64d"])
+    @commands.command(aliases=["b642ascii", "b64d"])
     async def base64decode(self, ctx, text: str = None):
         """
         Decode Base64 chars to ASCII
@@ -1276,21 +1315,20 @@ class Utilities(HttpCogBase):
         if text == None:
             await ctx.send(embed=discord.Embed(description="Please input the text!"))
             return
-        
+
         try:
             base64_string = text
-            base64_bytes = base64_string.encode("ascii") 
-    
-            sample_string_bytes = base64.b64decode(base64_bytes) 
-            sample_string = sample_string_bytes.decode("ascii") 
+            base64_bytes = base64_string.encode("ascii")
+
+            sample_string_bytes = base64.b64decode(base64_bytes)
+            sample_string = sample_string_bytes.decode("ascii")
             await ctx.send(embed=discord.Embed(description=f"```{sample_string}```"))
         except UnicodeDecodeError:
             await ctx.send(embed=discord.Embed(description=f"⚠️ Unable to decode the text, possible unsupported characters are found."))
 
-
     @commands.command(aliases=["nationalize"])
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
-    async def nationality(self, ctx, * ,name: str = None):
+    async def nationality(self, ctx, *, name: str = None):
         """
         This command predicts the nationality of a person given their name.
         API Provided by: `https://nationalize.io/`
@@ -1303,13 +1341,13 @@ class Utilities(HttpCogBase):
         await ctx.trigger_typing()
 
         parameters = {
-            "name" : name
+            "name": name
         }
         session = self.acquire_session()
-        async with session.get('https://api.nationalize.io/', params = parameters) as resp:
+        async with session.get('https://api.nationalize.io/', params=parameters) as resp:
             resp.raise_for_status()
             data = json.loads(await resp.read(), object_hook=DictObject)
-                
+
         try:
             answer = data["name"]
             country = data.country[0].country_id
@@ -1317,15 +1355,18 @@ class Utilities(HttpCogBase):
         except IndexError:
             await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! Cannot determine the result."))
             return
-            
+
         percentage = float(probability) * 100
         floorPercentage = floor(percentage)
 
-        emb = discord.Embed(description="Predict the nationality of a name!", color = ctx.author.color, timestamp = datetime.utcnow())
+        emb = discord.Embed(description="Predict the nationality of a name!",
+                            color=ctx.author.color, timestamp=datetime.utcnow())
         emb.add_field(name="Name", value=answer.title())
-        emb.add_field(name="Country", value=f"{country} :flag_{country.lower()}:")
+        emb.add_field(name="Country",
+                      value=f"{country} :flag_{country.lower()}:")
         emb.add_field(name="Probability", value=f"{floorPercentage}%")
-        emb.set_footer(text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
+        emb.set_footer(
+            text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
 
         await ctx.send(embed=emb)
 
@@ -1347,40 +1388,42 @@ class Utilities(HttpCogBase):
             classified = json.load(json_fp)
             key = classified["key"]
 
-        def degToCompass(deg): # https://stackoverflow.com/a/7490772 https://www.windfinder.com/wind/windspeed.htm
+        # https://stackoverflow.com/a/7490772 https://www.windfinder.com/wind/windspeed.htm
+        def degToCompass(deg):
             val = int((deg/22.5)+.5)
-            arr = [ 
-                    "North (N)",
-                    "North-Northeast (NNE)",
-                    "Northeast (NE)",
-                    "East-Northeast (ENE)",
-                    "East (E)",
-                    "East-Southeast (ESE)",
-                    "Southeast (SE)",
-                    "South-Southeast (SSE)",
-                    "South (S)",
-                    "South-Southwest (SSW)",
-                    "Southwest (SW)",
-                    "West-Southwest (WSW)",
-                    "West (W)",
-                    "West-Northwest (WNW)",
-                    "Northwest (NW)",
-                    "North-Northwest (NNW)"
-                    ]
+            arr = [
+                "North (N)",
+                "North-Northeast (NNE)",
+                "Northeast (NE)",
+                "East-Northeast (ENE)",
+                "East (E)",
+                "East-Southeast (ESE)",
+                "Southeast (SE)",
+                "South-Southeast (SSE)",
+                "South (S)",
+                "South-Southwest (SSW)",
+                "Southwest (SW)",
+                "West-Southwest (WSW)",
+                "West (W)",
+                "West-Northwest (WNW)",
+                "Northwest (NW)",
+                "North-Northwest (NNW)"
+            ]
             return arr[(val % 16)]
 
-        def metertokilometer(meter): # https://www.asknumbers.com/meters-to-km.aspx
+        def metertokilometer(meter):  # https://www.asknumbers.com/meters-to-km.aspx
             km = meter * 0.001
             trc = trunc(km)
             return trc
 
-        def mpstokmh(mtr): # https://www.mathworksheets4kids.com/solve/speed/conversion2.php
+        def mpstokmh(mtr):  # https://www.mathworksheets4kids.com/solve/speed/conversion2.php
             mul = mtr * 18
             div = mul / 5
             trc = trunc(div)
             return trc
 
-        def wind_condition(wind_speed): # In Meter/second https://www.windfinder.com/wind/windspeed.htm
+        # In Meter/second https://www.windfinder.com/wind/windspeed.htm
+        def wind_condition(wind_speed):
             if wind_speed >= 0 and wind_speed <= 0.2:
                 return "Calm"
             elif wind_speed >= 0.2 and wind_speed <= 1.5:
@@ -1410,12 +1453,12 @@ class Utilities(HttpCogBase):
 
         try:
             parameters = {
-                "q" : city,
-                "appid" : key,
-                "units" : "metric"
+                "q": city,
+                "appid": key,
+                "units": "metric"
             }
             session = self.acquire_session()  # do NOT async with on this line!!!
-            async with session.get("http://api.openweathermap.org/data/2.5/weather", params = parameters) as resp:
+            async with session.get("http://api.openweathermap.org/data/2.5/weather", params=parameters) as resp:
                 data = json.loads(await resp.read(), object_hook=DictObject)
 
             code = data.cod
@@ -1447,7 +1490,7 @@ class Utilities(HttpCogBase):
             feels_c = data.main.feels_like
             t_min_c = data.main.temp_min
             t_max_c = data.main.temp_max
-            temp_f =  pytemperature.c2f(temp_c)
+            temp_f = pytemperature.c2f(temp_c)
             feels_f = pytemperature.c2f(feels_c)
             t_min_f = pytemperature.c2f(t_min_c)
             t_max_f = pytemperature.c2f(t_max_c)
@@ -1498,32 +1541,46 @@ class Utilities(HttpCogBase):
         calculated_sunrise = datetime.fromtimestamp(sunrise + timezone_offset)
         calculated_sunset = datetime.fromtimestamp(sunset + timezone_offset)
 
-        embed = discord.Embed(title="Weather Information", timestamp=datetime.utcnow(), color=colours)
+        embed = discord.Embed(title="Weather Information",
+                              timestamp=datetime.utcnow(), color=colours)
         embed.set_thumbnail(url=icon)
-        embed.set_footer(text="Data provided by: OpenWeatherMap.org", icon_url="https://upload.wikimedia.org/wikipedia/commons/1/15/OpenWeatherMap_logo.png")
+        embed.set_footer(text="Data provided by: OpenWeatherMap.org",
+                         icon_url="https://upload.wikimedia.org/wikipedia/commons/1/15/OpenWeatherMap_logo.png")
 
         embed.add_field(name="🏙 City", value=cityname, inline=False)
-        embed.add_field(name="🏳 Country", value=f"{countryid} {country_flags}", inline=False)
+        embed.add_field(name="🏳 Country",
+                        value=f"{countryid} {country_flags}", inline=False)
         embed.add_field(name="🌻 Weather", value=status, inline=False)
-        embed.add_field(name="ℹ Condition", value=description.title(), inline=False)
+        embed.add_field(name="ℹ Condition",
+                        value=description.title(), inline=False)
         embed.add_field(name="🌐 Longitude", value=lon, inline=True)
         embed.add_field(name="🌐 Latitude", value=lat, inline=True)
-        embed.add_field(name="🌄 Sunrise", value=f"{calculated_sunrise} (UTC)", inline=True)
-        embed.add_field(name="🌇 Sunset", value=f"{calculated_sunset} (UTC)", inline=True)
-        embed.add_field(name="🌡 Current Temperature", value=f"{temp_c} °C ({temp_f} °F)", inline=True)
-        embed.add_field(name="🌡 Feels Like", value=f"{feels_c} °C ({feels_f} °F)", inline=True)
-        embed.add_field(name="🌡 Min Temperature", value=f"{t_min_c} °C ({t_min_f} °F)", inline=True)
-        embed.add_field(name="🌡 Max Temperature", value=f"{t_max_c} °C ({t_max_f} °F)", inline=True)
+        embed.add_field(name="🌄 Sunrise",
+                        value=f"{calculated_sunrise} (UTC)", inline=True)
+        embed.add_field(name="🌇 Sunset",
+                        value=f"{calculated_sunset} (UTC)", inline=True)
+        embed.add_field(name="🌡 Current Temperature",
+                        value=f"{temp_c} °C ({temp_f} °F)", inline=True)
+        embed.add_field(name="🌡 Feels Like",
+                        value=f"{feels_c} °C ({feels_f} °F)", inline=True)
+        embed.add_field(name="🌡 Min Temperature",
+                        value=f"{t_min_c} °C ({t_min_f} °F)", inline=True)
+        embed.add_field(name="🌡 Max Temperature",
+                        value=f"{t_max_c} °C ({t_max_f} °F)", inline=True)
         embed.add_field(name="☁ Cloudiness", value=f"{clouds}%", inline=True)
-        embed.add_field(name="🍃Atmospheric Pressure", value=f"{pressure} hPa", inline=True)
+        embed.add_field(name="🍃Atmospheric Pressure",
+                        value=f"{pressure} hPa", inline=True)
         embed.add_field(name="🌬 Humidity", value=f"{humidity}%", inline=True)
-        embed.add_field(name="👁️ Visibility", value=f"{vis} Meter ({metertokilometer(vis)} KM)", inline=True)
-        embed.add_field(name="💨 Wind Speed", value=f"{wind} m/sec | {mpstokmh(wind)} km/h ({wind_condition(wind)})", inline=True)
-        embed.add_field(name="🧭 Wind Direction", value=f"{wind_degree}° {wind_direction}", inline=True)
+        embed.add_field(name="👁️ Visibility",
+                        value=f"{vis} Meter ({metertokilometer(vis)} KM)", inline=True)
+        embed.add_field(
+            name="💨 Wind Speed", value=f"{wind} m/sec | {mpstokmh(wind)} km/h ({wind_condition(wind)})", inline=True)
+        embed.add_field(name="🧭 Wind Direction",
+                        value=f"{wind_degree}° {wind_direction}", inline=True)
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="define",aliases=["definition", "dictionary","def"])
+    @commands.command(name="define", aliases=["definition", "dictionary", "def"])
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def _define(self, ctx, *, word: str):
         msg = await ctx.send("Looking for a definition...")
@@ -1618,7 +1675,8 @@ class Utilities(HttpCogBase):
                     crossref_eg = result[0]['meaning']['crossReference'][0]['example']
                 except KeyError:
                     crossref_eg = None
-                embed = discord.Embed(title=f":blue_book: Google Definition for {word}", color=0x8253c3)
+                embed = discord.Embed(
+                    title=f":blue_book: Google Definition for {word}", color=0x8253c3)
                 #--Then we add see if the variables are defined and if they are, those variables to an embed and send it back to Discord--#
                 if origin == None:
                     pass
@@ -1628,73 +1686,93 @@ class Utilities(HttpCogBase):
                     pass
                 else:
                     if noun_eg == None:
-                        embed.add_field(name="As a Noun:", value=f"**Definition:** {noun_def}", inline=False)
+                        embed.add_field(
+                            name="As a Noun:", value=f"**Definition:** {noun_def}", inline=False)
                     else:
-                        embed.add_field(name="As a Noun:", value=f"**Definition:** {noun_def}\n**Example:** {noun_eg}", inline=False)
+                        embed.add_field(
+                            name="As a Noun:", value=f"**Definition:** {noun_def}\n**Example:** {noun_eg}", inline=False)
                 if verb_def == None:
                     pass
                 else:
                     if verb_eg == None:
-                        embed.add_field(name="As a Verb:", value=f"**Definition:** {verb_def}", inline=False)
+                        embed.add_field(
+                            name="As a Verb:", value=f"**Definition:** {verb_def}", inline=False)
                     else:
-                        embed.add_field(name="As a Verb:", value=f"**Definition:** {verb_def}\n**Example:** {verb_eg}", inline=False)
+                        embed.add_field(
+                            name="As a Verb:", value=f"**Definition:** {verb_def}\n**Example:** {verb_eg}", inline=False)
                 if prep_def == None:
                     pass
                 else:
                     if prep_eg == None:
-                        embed.add_field(name="As a Preposition:", value=f"**Definition:** {prep_def}", inline=False)
+                        embed.add_field(
+                            name="As a Preposition:", value=f"**Definition:** {prep_def}", inline=False)
                     else:
-                        embed.add_field(name="As a Preposition:", value=f"**Definition:** {prep_def}\n**Example:** {prep_eg}", inline=False)
+                        embed.add_field(
+                            name="As a Preposition:", value=f"**Definition:** {prep_def}\n**Example:** {prep_eg}", inline=False)
                 if adverb_def == None:
                     pass
                 else:
                     if adverb_eg == None:
-                        embed.add_field(name="As an Adverb:", value=f"**Definition:** {adverb_def}", inline=False)
+                        embed.add_field(
+                            name="As an Adverb:", value=f"**Definition:** {adverb_def}", inline=False)
                     else:
-                        embed.add_field(name="As a Adverb:", value=f"**Definition:** {adverb_def}\n**Example:** {adverb_eg}", inline=False)
+                        embed.add_field(
+                            name="As a Adverb:", value=f"**Definition:** {adverb_def}\n**Example:** {adverb_eg}", inline=False)
                 if adject_def == None:
                     pass
                 else:
                     if adject_eg == None:
-                        embed.add_field(name="As an Adjective:", value=f"**Definition:** {adject_def}", inline=False)
+                        embed.add_field(
+                            name="As an Adjective:", value=f"**Definition:** {adject_def}", inline=False)
                     else:
-                        embed.add_field(name="As an Adjective:", value=f"**Definition:** {adject_def}\n**Example:** {adject_eg}", inline=False)
+                        embed.add_field(
+                            name="As an Adjective:", value=f"**Definition:** {adject_def}\n**Example:** {adject_eg}", inline=False)
                 if pronoun_def == None:
                     pass
                 else:
                     if pronoun_eg == None:
-                        embed.add_field(name="As a Pronoun:", value=f"**Definition:** {pronoun_def}", inline=False)
+                        embed.add_field(
+                            name="As a Pronoun:", value=f"**Definition:** {pronoun_def}", inline=False)
                     else:
-                        embed.add_field(name="As a Pronoun:", value=f"**Definition:** {pronoun_def}\n**Example:** {pronoun_eg}", inline=False)
+                        embed.add_field(
+                            name="As a Pronoun:", value=f"**Definition:** {pronoun_def}\n**Example:** {pronoun_eg}", inline=False)
                 if exclaim_def == None:
                     pass
                 else:
                     if exclaim_eg == None:
-                        embed.add_field(name="As an Exclamation:", value=f"**Definition:** {exclaim_def}", inline=False)
+                        embed.add_field(
+                            name="As an Exclamation:", value=f"**Definition:** {exclaim_def}", inline=False)
                     else:
-                        embed.add_field(name="As an Exclamation:", value=f"**Definition:** {exclaim_def}\n**Example:** {exclaim_eg}", inline=False)
+                        embed.add_field(
+                            name="As an Exclamation:", value=f"**Definition:** {exclaim_def}\n**Example:** {exclaim_eg}", inline=False)
                 if poss_determ_def == None:
                     pass
                 else:
                     if poss_determ_eg == None:
-                        embed.add_field(name="As a Possessive Determiner:", value=f"**Definition:** {poss_determ_def}", inline=False)
+                        embed.add_field(name="As a Possessive Determiner:",
+                                        value=f"**Definition:** {poss_determ_def}", inline=False)
                     else:
-                        embed.add_field(name="As a Possessive Determiner:", value=f"**Definition:** {poss_determ_def}\n**Example:** {poss_determ_eg}", inline=False)
+                        embed.add_field(name="As a Possessive Determiner:",
+                                        value=f"**Definition:** {poss_determ_def}\n**Example:** {poss_determ_eg}", inline=False)
                 if abbrev_def == None:
                     pass
                 else:
                     if abbrev_eg == None:
-                        embed.add_field(name="As an Abbreviation:", value=f"**Definition:** {abbrev_def}", inline=False)
+                        embed.add_field(
+                            name="As an Abbreviation:", value=f"**Definition:** {abbrev_def}", inline=False)
                     else:
-                        embed.add_field(name="As an Abbreviation:", value=f"**Definition:** {abbrev_def}\n**Example:** {abbrev_eg}", inline=False)
+                        embed.add_field(
+                            name="As an Abbreviation:", value=f"**Definition:** {abbrev_def}\n**Example:** {abbrev_eg}", inline=False)
                 if crossref_def == None:
                     pass
                 else:
                     if crossref_eg == None:
-                        embed.add_field(name="As a Cross-Reference:", value=f"**Definition:** {crossref_def}", inline=False)
+                        embed.add_field(
+                            name="As a Cross-Reference:", value=f"**Definition:** {crossref_def}", inline=False)
                     else:
-                        embed.add_field(name="As a Cross-Reference:", value=f"**Definition:** {crossref_def}\n**Example:** {crossref_eg}", inline=False)
-                await msg.edit(content='',embed=embed)
+                        embed.add_field(
+                            name="As a Cross-Reference:", value=f"**Definition:** {crossref_def}\n**Example:** {crossref_eg}", inline=False)
+                await msg.edit(content='', embed=embed)
         except:
             #--Send error message if command fails, as it's assumed a definition isn't found--#
             await msg.edit(content=":x: Sorry, I couldn't find that word. Check your spelling and try again.")
@@ -1711,7 +1789,7 @@ class Utilities(HttpCogBase):
             return
 
         await ctx.trigger_typing()
-        
+
         head = {
             "Authorization": ksoft_key
         }
@@ -1721,7 +1799,7 @@ class Utilities(HttpCogBase):
             "value": amount
         }
         session = self.acquire_session()
-        async with session.get('https://api.ksoft.si/kumo/currency', headers = head, params = params) as resp:
+        async with session.get('https://api.ksoft.si/kumo/currency', headers=head, params=params) as resp:
             data = json.loads(await resp.read(), object_hook=DictObject)
         try:
             prt = data.pretty
@@ -1732,13 +1810,15 @@ class Utilities(HttpCogBase):
             return
 
         emb = discord.Embed(timestamp=datetime.utcnow())
-        emb.add_field(name = f"Conversion from {origin.upper()} to {to.upper()}", value = prt)
-        emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png", text = "Data provided by: KSoft.Si")
-        await ctx.send(embed = emb)
+        emb.add_field(
+            name=f"Conversion from {origin.upper()} to {to.upper()}", value=prt)
+        emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png",
+                       text="Data provided by: KSoft.Si")
+        await ctx.send(embed=emb)
 
     @commands.command(aliases=["lyric", "ly", "lrc"])
     @commands.cooldown(2, 5, commands.BucketType.user)
-    async def lyrics(self, ctx, * ,query: str = None):
+    async def lyrics(self, ctx, *, query: str = None):
         """
         Search the lyrics of a given song
         """
@@ -1758,7 +1838,7 @@ class Utilities(HttpCogBase):
             "limit": 1
         }
         session = self.acquire_session()
-        async with session.get('https://api.ksoft.si/lyrics/search', headers = head, params = params) as resp:
+        async with session.get('https://api.ksoft.si/lyrics/search', headers=head, params=params) as resp:
             data = json.loads(await resp.read(), object_hook=DictObject)
         try:
             artist = data.data[0].artist
@@ -1772,22 +1852,26 @@ class Utilities(HttpCogBase):
         if len(lyric) >= 2000:
             lyric1 = lyric[:2000]
             lyric2 = lyric[2000:]
-            emb = discord.Embed(description = f"```{lyric1}```")
-            emb2 = discord.Embed(description = f"```{lyric2}```", timestamp=datetime.utcnow())
-            emb.set_author(name=f"{title} — {artist}", icon_url = album_art)
-            emb2.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png", text = "Data provided by: KSoft.Si")
-            await msg.edit(embed = emb, content = None)
-            await ctx.send(embed = emb2, content = None)
+            emb = discord.Embed(description=f"```{lyric1}```")
+            emb2 = discord.Embed(
+                description=f"```{lyric2}```", timestamp=datetime.utcnow())
+            emb.set_author(name=f"{title} — {artist}", icon_url=album_art)
+            emb2.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png",
+                            text="Data provided by: KSoft.Si")
+            await msg.edit(embed=emb, content=None)
+            await ctx.send(embed=emb2, content=None)
         else:
-            emb = discord.Embed(description = f"```{lyric}```", timestamp=datetime.utcnow())
+            emb = discord.Embed(
+                description=f"```{lyric}```", timestamp=datetime.utcnow())
             emb.set_author(name=f"{title} — {artist}")
             emb.set_thumbnail(url=album_art)
-            emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png", text = "Data provided by: KSoft.Si")
-            await msg.edit(embed = emb, content = None)
+            emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png",
+                           text="Data provided by: KSoft.Si")
+            await msg.edit(embed=emb, content=None)
 
-    @commands.command(aliases=["cvd","covid19"])
+    @commands.command(aliases=["cvd", "covid19"])
     @commands.cooldown(2, 5, commands.BucketType.user)
-    async def covid(self, ctx, * , country: str = None):
+    async def covid(self, ctx, *, country: str = None):
         """
         View COVID-19 Statistic for a Country.
         Accepted values are **Country name** or **Alpha-2 ISO Code**.
@@ -1804,7 +1888,7 @@ class Utilities(HttpCogBase):
             "accept": "application/json"
         }
         session = self.acquire_session()
-        async with session.get(f"https://covid2019-api.herokuapp.com/v2/country/{country.replace(' ', '_')}", headers = head) as resp:
+        async with session.get(f"https://covid2019-api.herokuapp.com/v2/country/{country.replace(' ', '_')}", headers=head) as resp:
             data = json.loads(await resp.read(), object_hook=DictObject)
 
         try:
@@ -1822,16 +1906,20 @@ class Utilities(HttpCogBase):
 
         ts = data.ts
 
-        emb = discord.Embed(description = f"COVID-19 Statistics for **{loc}**", timestamp=datetime.fromtimestamp(ts))
+        emb = discord.Embed(
+            description=f"COVID-19 Statistics for **{loc}**", timestamp=datetime.fromtimestamp(ts))
         emb.set_footer(text="Last updated:")
-        emb.set_thumbnail(url = "https://i1.wp.com/news.power102fm.com/wp-content/uploads/2020/03/coronavirus-png-image-hd-covid-19-1885x1653-1.png")
+        emb.set_thumbnail(
+            url="https://i1.wp.com/news.power102fm.com/wp-content/uploads/2020/03/coronavirus-png-image-hd-covid-19-1885x1653-1.png")
+        emb.set_image(
+            url="https://i.ibb.co/rfjn4zP/file-20200803-24-50u91u.png")
         emb.add_field(name="Confirmed", value=confirm, inline=False)
         emb.add_field(name="Deaths", value=dead, inline=False)
         emb.add_field(name="Recovered", value=rec, inline=False)
         emb.add_field(name="Active Cases", value=act, inline=False)
-        await ctx.send(embed = emb)
+        await ctx.send(embed=emb)
 
-    @commands.command(aliases=["cd"])
+    @commands.command(aliases=["cd", "timer"])
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.max_concurrency(number=1, per=commands.BucketType.guild, wait=False)
     async def countdown(self, ctx, time: int = 3):
@@ -1850,7 +1938,70 @@ class Utilities(HttpCogBase):
             await msg.edit(embed=emb, content=None)
             await asyncio.sleep(1)
             iteration -= 1
-        await msg.edit(content="**End!**", embed = None)
+        await msg.edit(content="**End!**", embed=None)
+
+    @commands.command()
+    @commands.cooldown(2, 5, commands.BucketType.user)
+    async def scp(self, ctx, query: str = None):
+        """
+        SCP Database, Requires Access Clearance Level 4 or Higher.
+        """
+        if query is None:
+            return await ctx.send(embed=discord.Embed(description=f":x: ERROR: **Please insert your query.**"))
+
+        await ctx.trigger_typing()
+
+        msg = await ctx.send(f"💿 Accessing Database... Please Wait.")
+
+        params = {
+            "q": query,
+        }
+        session = self.acquire_session()
+        async with session.get('https://crom-dev.avn.sh/search', params=params) as resp:
+            data = json.loads(await resp.read(), object_hook=DictObject)
+
+        try:
+            scp_url = data.url
+        except KeyError:
+            return await msg.edit(embed=discord.Embed(description=f":x: ERROR: **Entry not found.**"), content=None)
+        scp_title = data.title
+
+        scp_rating = data.rating
+        scp_image = data.image
+
+        scp_firstseen = data.first_seen_at
+        scp_lastupdated = data.last_updated_at
+
+        emb = discord.Embed(
+            title=f"Database entry for {scp_title}", timestamp=datetime.utcnow())
+
+        try:
+            scp_name = data.scp_title
+            emb.add_field(
+                name="Name", value=f"[{scp_name}]({scp_url})", inline=False)
+        except:
+            pass
+
+        if scp_image is not None:
+            emb.set_image(url=scp_image)
+
+        emb.set_thumbnail(url="https://i.ibb.co/PxGsCJT/scp.png")
+
+        try:
+            scp_class = data.object_class
+            emb.add_field(name="Object Classification",
+                          value=scp_class, inline=False)
+        except KeyError:
+            pass
+
+        emb.add_field(name="Dated", value=ciso8601.parse_datetime(
+            scp_firstseen).strftime("%B %d, %Y"), inline=True)
+
+        emb.set_footer(
+            text=f"Last Updated: {ciso8601.parse_datetime(scp_lastupdated).strftime('%B %d, %Y')} | Rating: {scp_rating}")
+
+        await msg.edit(embed=emb, content=None)
+
 
 def setup(bot):
     bot.add_cog(Utilities(bot))

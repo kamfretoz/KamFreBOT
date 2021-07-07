@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-python3 -O main.py
+screen -S bobert python3 -O main.py

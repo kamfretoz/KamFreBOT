@@ -1,15 +1,10 @@
-git+https://github.com/Rapptz/discord.py#egg=discord.py[voice]
+#git+https://github.com/Rapptz/discord.py#egg=discord.py[voice]
+discord.py[voice]
 git+https://gitlab.com/Tmpod/libneko
-git+https://github.com/LiBa001/disputils
 psutil
-bs4
-lxml
 pytz
 datetime
-safygiphy
 youtube-dl
-urbandict
-bs4
 google-api-python-client
 pytemperature
 qrcode[pil]

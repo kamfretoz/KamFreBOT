@@ -289,7 +289,7 @@ class Emoji(commands.Cog):
             )
             await ctx.message.delete()
         except discord.Forbidden:
-            await ctx.send(f"⛔ {ctx.message.author.name}, Your DM are disabled!", delete_after=5)
+            return await ctx.send(f"⛔ {ctx.message.author.name}, Your DM are disabled!", delete_after=5)
         except discord.ext.commands.BotMissingPermissions:
             async with ctx.typing():
                 for page in paginator.pages:

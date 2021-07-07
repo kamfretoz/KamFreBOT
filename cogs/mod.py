@@ -24,16 +24,16 @@ SOFTWARE.
 import asyncio
 from datetime import datetime
 import discord
-from discord import role
 import libneko
 from libneko import pag
 from discord.ext import commands
+from random import choice
 
 class Mod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def format_mod_embed(self, ctx, user, success, method, logs = None, duration = None):
+    async def format_mod_embed(self, ctx, user, success, method, logs = None):
         """Helper func to format an embed to prevent extra code"""
         emb = discord.Embed(timestamp = ctx.message.created_at)
         try:
@@ -46,7 +46,7 @@ class Mod(commands.Cog):
                 elif method == "unmute":
                     emb.description = f"**{user}** was just {method}d."
                 elif method == "mute":
-                    emb.description = f"**{user}** was just {method}d for {duration}."
+                    emb.description = f"**{user}** was just {method}d."
                 elif method == "softban":
                     emb.description = f"**{user} was softbanned**"
                 else:
@@ -89,6 +89,8 @@ class Mod(commands.Cog):
             if ctx.author.top_role > member.top_role or ctx.author == ctx.guild.owner:
                     if member == ctx.author:
                         return await ctx.send("***:no_entry: You can't ban yourself...***")
+                    if member.id == ctx.bot.user.id:
+                        return await ctx.send("For real?")
                     try:
                         await ctx.guild.ban(member, reason = reason, delete_message_days = 1)
                     except Exception as e:
@@ -101,7 +103,7 @@ class Mod(commands.Cog):
                     emb.add_field(name="Reason", value=reason)
                     await ctx.send(embed = emb)
         except AttributeError as e:
-            return await ctx.send(f"**:x: An Error Occured, that member is not in this server! use `[p]hackban` instead.")
+            return await ctx.send(f":x: An Error Occured, that member is not in this server! use `[p]hackban` instead.")
 
     # This one is meant to be used as a joke
     @commands.guild_only()
@@ -120,7 +122,7 @@ class Mod(commands.Cog):
     @ban.error
     async def userinfo_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
-            await ctx.send('Invalid usage!\nUsage: `[p]ban <member> [message_deletion_days] [reason]`')
+            await ctx.send('Invalid usage!\nUsage: `[p]ban <member> [reason]`')
 
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
@@ -182,18 +184,24 @@ class Mod(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     @commands.guild_only()
-    @commands.command(aliases = ["del", "p", "prune"])
+    @commands.command(aliases = ["del", "pr", "prune"])
     async def purge(self, ctx, amount: int, member: libneko.converters.InsensitiveMemberConverter = None):
         """
         Clean a number of messages from a channel.
         You can also clean messages of a specific member.
         """
         try:
+            msg = ["**Kirra Queen, Daisan no Bakudan: Bites za dusto** 💥","⚠ **TACTICAL NUKE INCOMING** ⚠","**ZA WARUDO**"]
+            await ctx.send(choice(msg))
+            await asyncio.sleep(3)
+        except:
+            pass
+        try:
             if amount <= 500:
                 if member is None:
-                    await ctx.channel.purge(limit = amount + 1)
+                    await ctx.channel.purge(limit = amount + 2)
                 else:
-                    async for message in ctx.channel.history(limit = amount + 1):
+                    async for message in ctx.channel.history(limit = amount + 2):
                         if message.author is member:
                             await message.delete()
             elif amount == 0:
@@ -211,7 +219,7 @@ class Mod(commands.Cog):
         """See a list of banned users in the guild"""
         bans = await ctx.guild.bans()
 
-        banned = ""
+        banned = []
 
         @pag.embed_generator(max_chars=2048)
         def det_embed(paginator, page, page_index):
@@ -222,7 +230,7 @@ class Mod(commands.Cog):
         page = pag.EmbedNavigatorFactory(factory=det_embed)
 
         for users in bans:
-            banned.append(users.user)
+            banned.append(str(users.user))
 
         page += "\n".join(banned)
         page.start(ctx)
@@ -346,7 +354,11 @@ class Mod(commands.Cog):
     @commands.guild_only()
     @commands.command()
     async def mute(self, ctx, member: libneko.converters.InsensitiveMemberConverter, duration, *, reason: str = None):
-        """Denies someone from chatting in all text channels and talking in voice channels for a specified duration"""
+        """
+        Denies someone from chatting in all text channels and talking in voice channels for a specified duration
+
+        Warning! This command will spam your Audit Logs!
+        """
         if ctx.author.top_role > member.top_role or ctx.author == ctx.guild.owner:
             unit = duration[-1]
             if unit == "s":
@@ -385,8 +397,9 @@ class Mod(commands.Cog):
             emb = await self.format_mod_embed(
                 ctx, member, success, "mute", f"{str(duration[:-1])} {longunit}"
             )
+            emb.add_field(name="Reason", value=reason)
             await progress.delete()
-            await ctx.send(embed = emb)
+            await ctx.send(embed = emb, content="💀 You're gonna have a bad time")
             await asyncio.sleep(time)
             try:
                 for channel in ctx.guild.channels:

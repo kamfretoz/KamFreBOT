@@ -48,15 +48,18 @@ class Information(commands.Cog):
 
         try:
             mem_usage = "{:.2f} MiB".format(
-                __import__("psutil").Process().memory_full_info().uss / 1024 ** 2
+                __import__("psutil").Process(
+                ).memory_full_info().uss / 1024 ** 2
             )
         except AttributeError:
             # OS doesn't support retrieval of USS (probably BSD or Solaris)
             mem_usage = "{:.2f} MiB".format(
-                __import__("psutil").Process().memory_full_info().rss / 1024 ** 2
+                __import__("psutil").Process(
+                ).memory_full_info().rss / 1024 ** 2
             )
 
-        sysboot = datetime.fromtimestamp(psutil.boot_time()).strftime("%B %d, %Y at %I:%M:%S %p")
+        sysboot = datetime.fromtimestamp(
+            psutil.boot_time()).strftime("%B %d, %Y at %I:%M:%S %p")
 
         uptime = datetime.now() - self.counter
         hours, rem = divmod(int(uptime.total_seconds()), 3600)
@@ -70,14 +73,15 @@ class Information(commands.Cog):
                 seconds,
             )
         else:
-            time = "%s hours, %s minutes, and %s seconds" % (hours, minutes, seconds)
-            
+            time = "%s hours, %s minutes, and %s seconds" % (
+                hours, minutes, seconds)
+
         channel_count = 0
         for guild in self.bot.guilds:
             channel_count += len(guild.channels)
         try:
             em = discord.Embed(title="System Status", color=0x32441C)
-            
+
             em.add_field(
                 name=":desktop: CPU Usage",
                 value=f"{psutil.cpu_percent():.2f}% ({psutil.cpu_count(logical=False)} Cores) \nload avg: {psutil.getloadavg()}",
@@ -99,8 +103,8 @@ class Information(commands.Cog):
                 inline=False,
             )
             em.add_field(
-                name="\U0001F4BE BOT Memory usage", 
-                value=mem_usage, 
+                name="\U0001F4BE BOT Memory usage",
+                value=mem_usage,
                 inline=False
             )
             em.add_field(
@@ -110,27 +114,27 @@ class Information(commands.Cog):
             )
             em.add_field(
                 name="\U0001F553 BOT Uptime",
-                value=time, 
+                value=time,
                 inline=False
             )
             em.add_field(
-                name="⏲️ Last System Boot Time", 
-                value=sysboot, 
+                name="⏲️ Last System Boot Time",
+                value=sysboot,
                 inline=False
             )
             em.add_field(
-                name="\u2694 Servers (Guilds)", 
-                value=str(len(self.bot.guilds)), 
+                name="\u2694 Servers (Guilds)",
+                value=str(len(self.bot.guilds)),
                 inline=False
             )
             em.add_field(
-                name="\ud83d\udcd1 Channels", 
-                value=str(channel_count), 
+                name="\ud83d\udcd1 Channels",
+                value=str(channel_count),
                 inline=False
             )
             em.add_field(
                 name="👥 Users",
-                value=str(len(self.bot.users)), 
+                value=str(len(self.bot.users)),
                 inline=False
             )
 
@@ -166,7 +170,7 @@ class Information(commands.Cog):
             level = "No Level"
         else:
             level = f"Level {str(guild.premium_tier)}"
-            
+
         region = str(guild.region)
         roles = [role.mention for role in guild.roles]
 
@@ -178,7 +182,7 @@ class Information(commands.Cog):
             booster_amount = (
                 f"This server has {guild.premium_subscription_count} boost(s)!"
             )
-            
+
         sregion = {
             'brazil': ':flag_br: Brazil',
             'europe': ':flag_eu: Europe',
@@ -194,7 +198,6 @@ class Information(commands.Cog):
             'us-south': ':flag_us: US South',
             'us-west': ':flag_us: US West',
         }.get(region)
-
 
         member_by_status = Counter(str(m.status) for m in guild.members)
         fmt = (
@@ -221,10 +224,10 @@ class Information(commands.Cog):
         server.title = f"Information about {guild.name}"
         if guild.description:
             server.add_field(
-            name="》 Description", 
-            value=guild.description,
-            inline=False
-            )    
+                name="》 Description",
+                value=guild.description,
+                inline=False
+            )
         server.add_field(name="》 ID", value=guild.id, inline=False)
         server.add_field(
             name="》 Owner",
@@ -235,13 +238,15 @@ class Information(commands.Cog):
 
         if guild.icon:
             if guild.is_icon_animated() is True:
-                server.set_thumbnail(url=guild.icon_url_as(format="gif", size=4096))
+                server.set_thumbnail(
+                    url=guild.icon_url_as(format="gif", size=4096))
             else:
-                server.set_thumbnail(url=guild.icon_url_as(format="png", size=4096))
+                server.set_thumbnail(
+                    url=guild.icon_url_as(format="png", size=4096))
         if guild.splash:
-            server.set_image(url=guild.splash_url_as(format="png",size=4096))
+            server.set_image(url=guild.splash_url_as(format="png", size=4096))
 
-        def sec2min(seconds): # https://stackoverflow.com/a/775075
+        def sec2min(seconds):  # https://stackoverflow.com/a/775075
             m, s = divmod(seconds, 60)
             h, m = divmod(m, 60)
             return f'{h} Hour, {m} Minutes'
@@ -250,12 +255,13 @@ class Information(commands.Cog):
 
         server.add_field(
             name="》 Channel Count",
-            value=f"{len(guild.channels)} channels", 
+            value=f"{len(guild.channels)} channels",
             inline=False
         )
         server.add_field(
             name="》 Roles",
-            value=", ".join(roles) if len(roles) < 10 else f"{len(roles)} roles",
+            value=", ".join(roles) if len(
+                roles) < 10 else f"{len(roles)} roles",
             inline=False,
         )
         server.add_field(
@@ -264,37 +270,37 @@ class Information(commands.Cog):
             inline=False,
         )
         server.add_field(
-            name="》 Region", 
-            value=sregion, 
+            name="》 Region",
+            value=sregion,
             inline=False
         )
         server.add_field(
-            name="》 Server Boost Status", 
-            value=booster_amount, 
+            name="》 Server Boost Status",
+            value=booster_amount,
             inline=False
         )
         server.add_field(
-            name="》 Server Level", 
-            value=level, 
+            name="》 Server Level",
+            value=level,
             inline=False
         )
         server.add_field(
-            name="》 Server size", 
+            name="》 Server size",
             value=f"{'Large server' if guild.large else 'Small server'}",
             inline=False
         )
         server.add_field(
-            name="》 AFK Channel", 
-            value=guild.afk_channel, 
+            name="》 AFK Channel",
+            value=guild.afk_channel,
             inline=False
         )
         server.add_field(
-            name="》 AFK Timeout", 
-            value=sec2min(guild.afk_timeout), 
+            name="》 AFK Timeout",
+            value=sec2min(guild.afk_timeout),
             inline=False
         )
         server.add_field(
-            name=f"》 Members", 
+            name=f"》 Members",
             value=f"```{fmt}```",
             inline=False
         )
@@ -304,7 +310,7 @@ class Information(commands.Cog):
         )
         await ctx.send(embed=server, content=None)
 
-    @serverinfo.command(name="icon", brief="Show the icon of this server.", aliases=["pfp","pp"])
+    @serverinfo.command(name="icon", brief="Show the icon of this server.", aliases=["pfp", "pp"])
     @commands.guild_only()
     async def serverinfo_icon(self, ctx, serverid: int = None):
         """
@@ -319,7 +325,8 @@ class Information(commands.Cog):
                 return
 
         link_frmt = ""
-        icon = discord.Embed(title=f"Server icon for {guild.name}", color=ctx.message.author.color)
+        icon = discord.Embed(
+            title=f"Server icon for {guild.name}", color=ctx.message.author.color)
         if guild.is_icon_animated() is True:
             icon.set_image(url=guild.icon_url_as(format="gif", size=4096))
             link_frmt = f"[png]({guild.icon_url_as(format='png',size=4096)}) | [gif]({guild.icon_url_as(format='gif',size=4096)}) | [jpg]({guild.icon_url_as(format='jpg',size=4096)}) | [webp]({guild.icon_url_as(format='webp',size=4096)})"
@@ -328,7 +335,7 @@ class Information(commands.Cog):
             link_frmt = f"[png]({guild.icon_url_as(format='png',size=4096)}) | [jpg]({guild.icon_url_as(format='jpg',size=4096)}) | [webp]({guild.icon_url_as(format='webp',size=4096)})"
         icon.add_field(name="Full server icon link", value=link_frmt)
         await ctx.send(embed=icon, content=None)
-    
+
     @serverinfo.command(name="banner", brief="Show this server's banner, if any")
     @commands.guild_only()
     async def serverinfo_banner(self, ctx):
@@ -338,15 +345,17 @@ class Information(commands.Cog):
         link_frmt = f"[png]({ctx.guild.banner_url_as(format='png',size=4096)}) | [jpg]({ctx.guild.banner_url_as(format='jpg',size=4096)}) | [webp]({ctx.guild.banner_url_as(format='webp',size=4096)})"
 
         if "BANNER" in ctx.guild.features and ctx.guild.banner_url is not None:
-            bannerembed = discord.Embed(title=f"Server Banner for **{ctx.guild.name}**")
+            bannerembed = discord.Embed(
+                title=f"Server Banner for **{ctx.guild.name}**")
             bannerembed.add_field(name="Full image link", value=link_frmt)
-            bannerembed.set_image(url=ctx.guild.banner_url_as(format="png", size=4096))
+            bannerembed.set_image(
+                url=ctx.guild.banner_url_as(format="png", size=4096))
             await ctx.send(embed=bannerembed, content=None)
-            
-        else:
-            nobanner = discord.Embed(description="This server either doesn't have the Boost level Required to set a banner or no splash image have been set.")
-            await ctx.send(embed=nobanner)
 
+        else:
+            nobanner = discord.Embed(
+                description="This server either doesn't have the Boost level Required to set a banner or no splash image have been set.")
+            await ctx.send(embed=nobanner)
 
     @serverinfo.command(name="membercount", aliases=["count", "memcount", "members", "member", "mem"], brief="shows the amount of members on this server.")
     @commands.guild_only()
@@ -461,7 +470,8 @@ class Information(commands.Cog):
         else:
             perms = perms.strip(", ")
 
-        em = discord.Embed(title=f"`{role.name}` Role Information",colour=color, timestamp=datetime.utcnow())
+        em = discord.Embed(
+            title=f"`{role.name}` Role Information", colour=color, timestamp=datetime.utcnow())
         em.add_field(name="Users", value=len(role.members))
         em.add_field(name="Mentionable", value=role.mentionable)
         em.add_field(name="Hoisted", value=role.hoist)
@@ -480,11 +490,10 @@ class Information(commands.Cog):
             await ctx.send('Cannot find that role. Make sure the spelling and the case-sensitivity is correct!')
             return
 
-    
     @serverinfo.command(name="inrole", aliases=["inrl"], brief="Show the list of users on a particular role.")
     @commands.guild_only()
     @commands.bot_has_permissions(manage_roles=True)
-    async def serverinfo_inrole(self, ctx, * , role:libneko.converters.RoleConverter = None):
+    async def serverinfo_inrole(self, ctx, *, role: libneko.converters.RoleConverter = None):
         """
         Show the list of users on a particular role.
         """
@@ -498,8 +507,10 @@ class Information(commands.Cog):
         else:
             @pag.embed_generator(max_chars=2048)
             def det_embed(paginator, page, page_index):
-                embed = discord.Embed(description=page, title=f"Members on `{role.name}` role:", color=color, timestamp=datetime.utcnow())
-                embed.set_footer(text=f"{str(len(role.members))} Members in Total.")
+                embed = discord.Embed(
+                    description=page, title=f"Members on `{role.name}` role:", color=color, timestamp=datetime.utcnow())
+                embed.set_footer(
+                    text=f"{str(len(role.members))} Members in Total.")
                 return embed
             lst = pag.EmbedNavigatorFactory(factory=det_embed)
             members = []
@@ -520,14 +531,15 @@ class Information(commands.Cog):
             await ctx.send('Cannot find that role. Make sure the spelling and the case-sensitivity is correct!')
             return
 
-    @serverinfo.command(aliases=["lsrole","listrole"], brief="Shows the list of all roles in this server")
+    @serverinfo.command(aliases=["lsrole", "listrole"], brief="Shows the list of all roles in this server")
     @commands.has_permissions(manage_roles=True)
     async def rolelist(self, ctx):
         """
         Shows the list of all roles in this server
         """
         roles = [role.mention for role in ctx.guild.roles]
-        emb = discord.Embed(title=f"{ctx.guild.name}'s Role list", description=", ".join(roles), timestamp=datetime.utcnow())
+        emb = discord.Embed(title=f"{ctx.guild.name}'s Role list", description=", ".join(
+            roles), timestamp=datetime.utcnow())
         emb.set_footer(
             text=f"Requested by {ctx.message.author} | {len(roles)} roles in total.",
             icon_url=f"{ctx.message.author.avatar_url}",
@@ -545,8 +557,10 @@ class Information(commands.Cog):
             pic_frmt = "gif"
         else:
             pic_frmt = "png"
-        own.add_field(name=f"Who own {ctx.guild.name}?", value=f"{ctx.guild.owner} ({ctx.guild.owner.mention}) owns the server!")
-        own.set_thumbnail(url=ctx.guild.owner.avatar_url_as(format=pic_frmt, size=4096))
+        own.add_field(name=f"Who own {ctx.guild.name}?",
+                      value=f"{ctx.guild.owner} ({ctx.guild.owner.mention}) owns the server!")
+        own.set_thumbnail(url=ctx.guild.owner.avatar_url_as(
+            format=pic_frmt, size=4096))
         await ctx.send(embed=own)
 
     @serverinfo.command(name="created", aliases=["madeon", "born"], brief="Shows when this server was created")
@@ -556,17 +570,20 @@ class Information(commands.Cog):
         Shows when this server was created.
         """
         since_created = (ctx.message.created_at - ctx.guild.created_at).days
-        create = discord.Embed(description=f"**{ctx.guild.name}** was created on `{ctx.guild.created_at.strftime('%B %d, %Y at %I:%M:%S %p')}` ({since_created} days ago!)")
+        create = discord.Embed(
+            description=f"**{ctx.guild.name}** was created on `{ctx.guild.created_at.strftime('%B %d, %Y at %I:%M:%S %p')}` ({since_created} days ago!)")
 
         if ctx.guild.icon:
             if ctx.guild.is_icon_animated() is True:
-                create.set_thumbnail(url=ctx.guild.icon_url_as(format="gif", size=4096))
+                create.set_thumbnail(
+                    url=ctx.guild.icon_url_as(format="gif", size=4096))
             else:
-                create.set_thumbnail(url=ctx.guild.icon_url_as(format="png", size=4096))
+                create.set_thumbnail(
+                    url=ctx.guild.icon_url_as(format="png", size=4096))
 
-        await ctx.send(embed = create)
+        await ctx.send(embed=create)
 
-    @serverinfo.command(name="administrators", aliases=["admin", "admins","adm"], brief="Check which admins are online on current server")
+    @serverinfo.command(name="administrators", aliases=["admin", "admins", "adm"], brief="Check which admins are online on current server")
     @commands.guild_only()
     async def serverinfo_administrators(self, ctx):
         """ Check which admins are online on current guild """
@@ -594,10 +611,11 @@ class Information(commands.Cog):
         if offline:
             admins += f"⚫ {', '.join(offline)}\n"
 
-        emb = discord.Embed(title=f"Admins in `{ctx.guild.name}`", description=f"```{admins}```")
+        emb = discord.Embed(
+            title=f"Admins in `{ctx.guild.name}`", description=f"```{admins}```")
         await ctx.send(embed=emb)
 
-    @serverinfo.command(name="moderators", aliases=["moderator", "mod","mods"], brief="Check which mods are online on current server")
+    @serverinfo.command(name="moderators", aliases=["moderator", "mod", "mods"], brief="Check which mods are online on current server")
     @commands.guild_only()
     async def serverinfo_moderators(self, ctx):
         """ Check which mods are online on current guild """
@@ -626,7 +644,8 @@ class Information(commands.Cog):
         if offline:
             mods += f"⚫ {', '.join(offline)}\n"
 
-        emb = discord.Embed(title=f"Moderators in `{ctx.guild.name}`", description=f"```{mods}```")
+        emb = discord.Embed(
+            title=f"Moderators in `{ctx.guild.name}`", description=f"```{mods}```")
         await ctx.send(embed=emb)
 
     @commands.guild_only()
@@ -637,19 +656,20 @@ class Information(commands.Cog):
         """
         @pag.embed_generator(max_chars=2048)
         def main_embed(paginator, page, page_index):
-            boost = discord.Embed(title=f"Nitro Booster on **{ctx.guild.name}**.",description = page, color=0x00FF00)
-            boost.set_footer(text=f"{len(ctx.guild.premium_subscribers)} Users in total ({ctx.guild.premium_subscription_count} Boost(s))")
+            boost = discord.Embed(
+                title=f"Nitro Booster on **{ctx.guild.name}**.", description=page, color=0x00FF00)
+            boost.set_footer(
+                text=f"{len(ctx.guild.premium_subscribers)} Users in total ({ctx.guild.premium_subscription_count} Boost(s))")
             return boost
 
         navi = pag.EmbedNavigatorFactory(factory=main_embed)
 
         boosters = []
         for x in ctx.guild.premium_subscribers:
-                boosters.append(f"{x} ({x.mention})")
+            boosters.append(f"{x} ({x.mention})")
 
         navi += "\n".join(boosters)
         navi.start(ctx)
-        
 
     @staticmethod
     def transform_mute(emojis):
@@ -663,8 +683,8 @@ class Information(commands.Cog):
         ]
 
     @commands.guild_only()
-    @serverinfo.command(name="emoji",aliases=["emojis","emote"], brief="Shows all emojis I can see in this server.")
-    async def serverinfo_emojilibrary(self, ctx, serverid:int = None, arg=None):
+    @serverinfo.command(name="emoji", aliases=["emojis", "emote"], brief="Shows all emojis I can see in this server.")
+    async def serverinfo_emojilibrary(self, ctx, serverid: int = None, arg=None):
         """
         Shows all emojis I can see in this server. Pass the --verbose/-v flag to see names.
         You can also supply the server ID to see their emojis, This bot needs to be on that server as well.
@@ -686,25 +706,27 @@ class Information(commands.Cog):
             p += emoji
         p.start(ctx)
 
-    
     @commands.guild_only()
-    @serverinfo.command(name="splash", aliases=["splashes","images"], brief="Show the splash image of this server, if any")
+    @serverinfo.command(name="splash", aliases=["splashes", "images"], brief="Show the splash image of this server, if any")
     async def serverinfo_splash(self, ctx):
         """Show the splash image of this server, if any"""
         link_frmt = f"[png]({ctx.guild.splash_url_as(format='png',size=4096)}) | [jpg]({ctx.guild.splash_url_as(format='jpg',size=4096)}) | [webp]({ctx.guild.splash_url_as(format='webp',size=4096)})"
 
         if "INVITE_SPLASH" in ctx.guild.features and ctx.guild.splash is not None:
-            splashembed = discord.Embed(title=f"{ctx.guild.name}'s Splash Image.")
+            splashembed = discord.Embed(
+                title=f"{ctx.guild.name}'s Splash Image.")
             splashembed.add_field(name="Full image link", value=link_frmt)
-            splashembed.set_image(url=ctx.guild.splash_url_as(format="png", size=4096))
+            splashembed.set_image(
+                url=ctx.guild.splash_url_as(format="png", size=4096))
             await ctx.send(embed=splashembed, content=None)
         else:
-            nosplash = discord.Embed(description="This server doesn't have the required boost lever or has no splash image configured.")
+            nosplash = discord.Embed(
+                description="This server doesn't have the required boost lever or has no splash image configured.")
             await ctx.send(embed=nosplash)
 
-    @commands.group(invoke_without_command=True,aliases=["user", "ui", "profile","uinf"])
+    @commands.group(invoke_without_command=True, aliases=["user", "ui", "profile", "uinf"])
     @commands.guild_only()
-    async def userinfo(self, ctx, * , user: libneko.converters.InsensitiveMemberConverter = None):
+    async def userinfo(self, ctx, *, user: libneko.converters.InsensitiveMemberConverter = None):
         """Show info about the user. If not specified, the command caller info will be shown instead."""
         await ctx.trigger_typing()
 
@@ -725,11 +747,11 @@ class Information(commands.Cog):
 
         try:
             status = {
-            'online': '🟢 Online',
-            'idle': '🟡 Idle',
-            'dnd': '🔴 Do Not Disturb',
-            'offline': '⚫ Offline'
-                }.get(str(user.status))
+                'online': '🟢 Online',
+                'idle': '🟡 Idle',
+                'dnd': '🔴 Do Not Disturb',
+                'offline': '⚫ Offline'
+            }.get(str(user.status))
 
             roles = [role.mention for role in user.roles]
             voice = user.voice
@@ -752,15 +774,15 @@ class Information(commands.Cog):
 
         try:
             member.add_field(
-                name="》 Display Name", 
-                value=user.display_name, 
+                name="》 Display Name",
+                value=user.display_name,
                 inline=False
             )
         except AttributeError:
             pass
         member.add_field(
-            name="》 Discriminator/Tag", 
-            value=f"#{user.discriminator}", 
+            name="》 Discriminator/Tag",
+            value=f"#{user.discriminator}",
             inline=False
         )
         try:
@@ -777,58 +799,59 @@ class Information(commands.Cog):
         except AttributeError:
             pass
         member.add_field(
-            name="》 User ID", 
-            value=user.id, 
+            name="》 User ID",
+            value=user.id,
             inline=False
         )
         member.add_field(
-            name="Account Type", 
-            value=f"{'BOT' if user.bot else 'Human'}", 
+            name="Account Type",
+            value=f"{'BOT' if user.bot else 'Human'}",
             inline=False
         )
         try:
-            if not user.bot:
+            if not user.bot and user.status is not discord.Status.offline:
                 member.add_field(
-                name="Platform", 
-                value=f"{'Mobile' if user.is_on_mobile() else 'Desktop'}", 
-                inline=False
-            )
+                    name="Platform",
+                    value=f"{'Mobile' if user.is_on_mobile() else 'Desktop'}",
+                    inline=False
+                )
             member.add_field(
-                name="》 Status", 
-                value=status, 
+                name="》 Status",
+                value=status,
                 inline=False
             )
         except:
             pass
         member.add_field(
-            name="》 Mention", 
-            value=user.mention, 
+            name="》 Mention",
+            value=user.mention,
             inline=False
         )
         member.add_field(
-            name="》 Shared Servers", 
-            value=f"{shared} shared", 
+            name="》 Shared Servers",
+            value=f"{shared} shared",
             inline=False
         )
         try:
             member.add_field(
-                name="》 Voice", 
-                value=voice, 
+                name="》 Voice",
+                value=voice,
                 inline=False
             )
             member.add_field(
-                name="》 Nitro Stats", 
-                value=boost_stats, 
+                name="》 Nitro Stats",
+                value=boost_stats,
                 inline=False
-            )   
+            )
             member.add_field(
                 name=f"》 Roles [{len(roles)}]",
-                value=", ".join(roles) if len(roles) < 10 else f"{len(roles)} roles",
+                value=", ".join(roles) if len(
+                    roles) < 10 else f"{len(roles)} roles",
                 inline=False,
             )
             member.add_field(
-                name="》 Top Role", 
-                value=user.top_role.mention, 
+                name="》 Top Role",
+                value=user.top_role.mention,
                 inline=False
             )
 
@@ -850,9 +873,8 @@ class Information(commands.Cog):
     async def userinfo_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
             await ctx.send('Cannot find that user.')
-            
-            
-    @userinfo.command(name="created", aliases=["create","made"], brief="Shows when an account was made")
+
+    @userinfo.command(name="created", aliases=["create", "made"], brief="Shows when an account was made")
     @commands.guild_only()
     async def userinfo_created(self, ctx, user: libneko.converters.InsensitiveUserConverter = None):
         """
@@ -862,13 +884,16 @@ class Information(commands.Cog):
             user = ctx.message.author
 
         since_created = (ctx.message.created_at - user.created_at).days
-        create = discord.Embed(description=f"The account of {user} was created on `{user.created_at.strftime('%B %d, %Y at %I:%M:%S %p')}` ({since_created} days ago!)")
+        create = discord.Embed(
+            description=f"The account of {user} was created on `{user.created_at.strftime('%B %d, %Y at %I:%M:%S %p')}` ({since_created} days ago!)")
 
         if user.avatar:
             if user.is_avatar_animated() is True:
-                create.set_thumbnail(url=user.avatar_url_as(format="gif", size=4096))
+                create.set_thumbnail(
+                    url=user.avatar_url_as(format="gif", size=4096))
             else:
-                create.set_thumbnail(url=user.avatar_url_as(format="png", size=4096))
+                create.set_thumbnail(
+                    url=user.avatar_url_as(format="png", size=4096))
 
         create.set_footer(text=f"User: {user} ({user.id})")
         await ctx.send(embed=create)
@@ -883,18 +908,21 @@ class Information(commands.Cog):
             user = ctx.message.author
 
         since_joined = (ctx.message.created_at - user.joined_at).days
-        joined = discord.Embed(description=f"{user.mention} joined the serverr on `{user.joined_at.strftime('%B %d, %Y at %I:%M:%S %p')}` ({since_joined} days ago!)")
+        joined = discord.Embed(
+            description=f"{user.mention} joined the serverr on `{user.joined_at.strftime('%B %d, %Y at %I:%M:%S %p')}` ({since_joined} days ago!)")
 
         if user.avatar:
             if user.is_avatar_animated() is True:
-                joined.set_thumbnail(url=user.avatar_url_as(format="gif", size=4096))
+                joined.set_thumbnail(
+                    url=user.avatar_url_as(format="gif", size=4096))
             else:
-                joined.set_thumbnail(url=user.avatar_url_as(format="png", size=4096))
+                joined.set_thumbnail(
+                    url=user.avatar_url_as(format="png", size=4096))
 
         joined.set_footer(text=f"User: {user} ({user.id})")
         await ctx.send(embed=joined)
 
-    @userinfo.command(name="avatar", aliases=["pfp", "pp","icon","ava"], brief="View the avatar of a member.")
+    @userinfo.command(name="avatar", aliases=["pfp", "pp", "icon", "ava"], brief="View the avatar of a member.")
     @commands.guild_only()
     async def userinfo_avatar(self, ctx, user: libneko.converters.InsensitiveUserConverter = None):
         """View the avatar of a member.\nYou can either use Discord ID or ping them instead"""
@@ -921,9 +949,11 @@ class Information(commands.Cog):
                     color=ctx.author.color,
                     timestamp=datetime.utcnow(),
                 )
-                pfp.add_field(name="User", value=f"{ctx.message.author} ({ctx.message.author.id})")
+                pfp.add_field(
+                    name="User", value=f"{ctx.message.author} ({ctx.message.author.id})")
                 pfp.add_field(name="Full avatar link", value=link_frmt)
-                pfp.set_image(url=ctx.message.author.avatar_url_as(format=pic_frmt, size=4096))
+                pfp.set_image(url=ctx.message.author.avatar_url_as(
+                    format=pic_frmt, size=4096))
                 await ctx.send(embed=pfp)
             else:  # This is what normally executed.
                 pfp = discord.Embed(
@@ -933,7 +963,8 @@ class Information(commands.Cog):
                     timestamp=datetime.utcnow(),
                 )
                 pfp.add_field(name="Full avatar link", value=link_frmt)
-                pfp.set_image(url=user.avatar_url_as(format=pic_frmt, size=4096))
+                pfp.set_image(url=user.avatar_url_as(
+                    format=pic_frmt, size=4096))
                 pfp.set_footer(text=f"User: {user} ({user.id})")
                 pfp.colour = user.colour
                 await ctx.send(embed=pfp)
@@ -958,6 +989,7 @@ class Information(commands.Cog):
                 color=user.colour
             )
         )
+
     @userinfo_id.error
     async def id_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
@@ -973,7 +1005,8 @@ class Information(commands.Cog):
         roles = [role.mention for role in member.roles]
         memrole = discord.Embed(title=f"Role Viewer.", color=member.colour)
         memrole.add_field(name=f"{member}'s Roles", value=", ".join(roles))
-        memrole.set_footer(text=f"{len(roles)} roles in total!", icon_url=member.avatar_url)
+        memrole.set_footer(
+            text=f"{len(roles)} roles in total!", icon_url=member.avatar_url)
         await ctx.send(embed=memrole)
 
     @userinfo_roles.error
@@ -982,8 +1015,7 @@ class Information(commands.Cog):
             await ctx.send('Cannot find that user.')
             return
 
-
-    @userinfo.command(name="mention", brief="Mention a user.",aliases=["tag"])
+    @userinfo.command(name="mention", brief="Mention a user.", aliases=["tag"])
     async def userinfo_mention(self, ctx, target: libneko.converters.InsensitiveUserConverter = None):
         """
         Mention a user.
@@ -1004,7 +1036,8 @@ class Information(commands.Cog):
 
         @pag.embed_generator(max_chars=2048)
         def main_embed(paginator, page, page_index):
-            embed = discord.Embed(title=f'Servers that {user} and {user2} shared with', description=page, color=ctx.message.author.color)
+            embed = discord.Embed(
+                title=f'Servers that {user} and {user2} shared with', description=page, color=ctx.message.author.color)
             return embed
 
         pagi = pag.EmbedNavigatorFactory(factory=main_embed)
@@ -1014,9 +1047,10 @@ class Information(commands.Cog):
             if user in guild.members:
                 if user2 in guild.members:
                     shared.append(guild.name)
-                
+
         pagi += "\n".join(shared)
         pagi.start(ctx)
+
 
 def setup(bot):
     bot.add_cog(Information(bot))

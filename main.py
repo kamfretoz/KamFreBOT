@@ -15,13 +15,15 @@ import random
 from textwrap import dedent
 from discord.ext import commands
 
-print("Importing Modules....[Success]")
-
 if os.name != "nt":
     import uvloop
     uvloop.install()
 
+print("Importing Modules....[Success]")
+
 # bootup logo, use the bootup_logo.txt to modify it
+
+
 def bootsplash():
     if config.bootsplash is True:
         try:
@@ -39,25 +41,32 @@ def bootsplash():
         finally:
             bootlogo.close()
 
+
 print(f"Starting {config.botname}!")
 bootsplash()
 
 # setting up prefix
 print("Retrieving the prefix from config.py ....[OK]")
+
+
 def get_prefix(bot, message):
     """A callable Prefix for my bot."""
     prefix = config.prefix
     return commands.when_mentioned_or(*prefix)(bot, message)
 
+
 # Bot client initialization
-bot = commands.AutoShardedBot(command_prefix=get_prefix, description=config.desc, case_insensitive=True, intents=discord.Intents.all())
+bot = commands.AutoShardedBot(command_prefix=get_prefix, description=config.desc,
+                              case_insensitive=True, intents=discord.Intents.all())
 
 # Setting up logging
 print("Setting Log files to system.log ...[Success]")
 logger = logging.getLogger()
 logger.setLevel(logging.ERROR)
-handler = logging.FileHandler(filename="system.log", encoding="utf-8", mode="a+")
-handler.setFormatter(logging.Formatter("{asctime}:{levelname}:{name}:{message}", style="{"))
+handler = logging.FileHandler(
+    filename="system.log", encoding="utf-8", mode="a+")
+handler.setFormatter(logging.Formatter(
+    "{asctime}:{levelname}:{name}:{message}", style="{"))
 logger.addHandler(handler)
 
 # more logging stuff
@@ -77,14 +86,15 @@ for extension in os.listdir("cogs"):
         try:
             bot.load_extension("cogs." + extension[:-3])
         except Exception as e:
-            print("Failed to load extension {}\n{}: {}".format(extension, type(e).__name__, e))
+            print("Failed to load extension {}\n{}: {}".format(
+                extension, type(e).__name__, e))
 
 bot.load_extension("libneko.extras.help")
 bot.load_extension("libneko.extras.superuser")
 
 # Listener setup                    [RESPONSE ON MENTION WAS A MISTAKE]
-#@bot.listen("on_message")
-#async def on_mention_reply_prefix(message: discord.Message) -> None:
+# @bot.listen("on_message")
+# async def on_mention_reply_prefix(message: discord.Message) -> None:
 #    """Replies the bot's prefix when mentioned"""
 #    if bot.user.mentioned_in(message):
 #        await message.channel.send(f"**Hello! My prefix is `{config.prefix[0]}`.**")
@@ -100,7 +110,8 @@ async def on_connect():
 async def on_resumed():
     print("WARNING: connection error was occurred and Successfully Resumed/Reconnected the Session.")
     print(f"Current time: {time.ctime()}")
-    print(f"Still watching {len(bot.users)} users across {len(bot.guilds)} servers.")
+    print(
+        f"Still watching {len(bot.users)} users across {len(bot.guilds)} servers.")
 
 
 @bot.event
@@ -125,34 +136,42 @@ async def on_ready():
         """
         )
     )
-    print(f"List of servers i'm in ({len(bot.guilds)} Servers in total):\n===========================")
+    print(
+        f"List of servers i'm in ({len(bot.guilds)} Servers in total):\n===========================")
     for x in bot.guilds:
         print(f"{x.name} (ID: {x.id}) (Membert Count: {x.member_count})")
     print("===========================")
+
 
 async def change_activities():
     """Quite self-explanatory. It changes the bot activities"""
     statuses = (discord.Status.online, discord.Status.idle, discord.Status.dnd)
     while True:  # Infinite loop
-        game = discord.Game(name=config.playing_status)  # Pick a choice from 'playopt'.
+        # Pick a choice from 'playopt'.
+        game = discord.Game(name=config.playing_status)
         # Watch out for how you import 'random.choice', as that might affect how this line needs to be written.
         # For more help refer to the Python Docs.
         watch = discord.Activity(
             type=discord.ActivityType.watching,
             name=config.watching_status
         )  # Pick a choice from 'watchopt'
-        stream = discord.Streaming(url=config.streaming_url, name=config.streaming_status)  # Pick a choice from 'streamopt'
+        # Pick a choice from 'streamopt'
+        stream = discord.Streaming(
+            url=config.streaming_url, name=config.streaming_status)
         listen = discord.Activity(
             type=discord.ActivityType.listening, name=config.listening_status
         )  # Pick a choice from 'listenopt'
         kind = random.choice(
             [game, watch, listen, stream]
         )  # Pick a choice from all the possibilities: "Playing", "Watching", "Streaming", "Listening"
-        for s in statuses: # actually changes the status of the bots every (n) of a second
+        # actually changes the status of the bots every (n) of a second
+        for s in statuses:
             await bot.change_presence(activity=kind, status=s)
             await asyncio.sleep(config.status_timeout)
 
 # About command
+
+
 @bot.command()
 async def about(ctx):
     """Information about this bot."""
@@ -160,7 +179,8 @@ async def about(ctx):
     about = discord.Embed(
         title=f"{config.botname}", description=f"{config.desc}", color=0xFFFFFF
     )
-    about.add_field(name="GitHub Link.", value=f"[Click Here!]({config.about_github_link})")
+    about.add_field(name="GitHub Link.",
+                    value=f"[Click Here!]({config.about_github_link})")
     about.set_thumbnail(url=config.about_thumbnail_img)
     about.set_footer(text=f"Made by {creator}")
     await ctx.send(embed=about)
@@ -168,6 +188,7 @@ async def about(ctx):
 ###################################
 # DEBUGGING and SYSTEM UTILITIES #
 #################################
+
 
 @bot.command(aliases=["reboot"])
 @commands.is_owner()
@@ -180,21 +201,22 @@ async def restart(ctx):
         if sys.platform == "win32":
             os.startfile(core)
         else:
-            openerr ="open" if sys.platform == "darwin" else "xdg-open"
+            openerr = "open" if sys.platform == "darwin" else "xdg-open"
             subprocess.call([openerr, core])
     except FileNotFoundError:
         await ctx.send("❌ Unable to open the file!\n Shutting Down.")
-    await ctx.bot.logout()
+    await ctx.bot.close()
     sys.exit()
 
-@bot.command(aliases=["poweroff", "shutdown","kms","altf4","fuckmylife","fml"])
+
+@bot.command(aliases=["poweroff", "shutdown", "kms", "altf4", "fuckmylife", "fml", "fuckoff"])
 @commands.is_owner()
 async def poweroof(ctx):
     """Turn the bot Off"""
     await ctx.send("Goodbye Cruel World...")
-    await ctx.bot.logout()
-    await ctx.bot.clear()
+    await ctx.bot.close()
     exit()
+
 
 @bot.command(aliases=["clist"])
 @commands.is_owner()
@@ -224,7 +246,8 @@ async def loaded(ctx):
         embed.add_field(name="Not Loaded", value="None!", inline=True)
     await ctx.send(embed=embed)
 
-@bot.command(aliases=["clearconsole", "cc","cls"])
+
+@bot.command(aliases=["clearconsole", "cc", "cls"])
 @commands.is_owner()
 async def clear(ctx):
     """Clear the console."""
@@ -250,7 +273,7 @@ async def clear(ctx):
 
 
 # This one is for testing error messages only
-@bot.command(aliases=["dummy","error"])
+@bot.command(aliases=["dummy", "error"])
 @commands.is_owner()
 async def crash(ctx):
     """Use to generate an error message for debugging purpose"""
@@ -258,6 +281,8 @@ async def crash(ctx):
     raise ValueError('This is an Exception that are manually generated.')
 
 # Bot and System control command
+
+
 @bot.command(aliases=["load"])
 @commands.is_owner()
 async def loadcog(ctx, name):
