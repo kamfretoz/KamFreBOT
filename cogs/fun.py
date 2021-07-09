@@ -607,7 +607,6 @@ class Fun(HttpCogBase):
 
         emb = discord.Embed(
             description=fact, color=ctx.author.color, timestamp=datetime.utcnow())
-        emb.set_image(url="https://i.imgur.com/9RGJ5Ea.png")
 
         await ctx.send(embed=emb)
 
