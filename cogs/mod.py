@@ -235,7 +235,7 @@ class Mod(commands.Cog):
         page += "\n".join(banned)
         page.start(ctx)
 
-    @commands.has_permissions(ban_members=True, view_audit_log=True)
+    @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
     @commands.guild_only()
     @commands.command()
@@ -249,6 +249,32 @@ class Mod(commands.Cog):
         em.set_footer(text=f"User ID: {ban.user.id}")
 
         await ctx.send(embed=em)
+
+    @commands.bot_has_permissions(ban_members=True)
+    @commands.has_permissions(ban_members=True)
+    @commands.guild_only()
+    @commands.command()
+    async def banfinder(self, ctx:commands.Context, *, string: str):
+        """Count the amount of bans in the guild that contain the search in their reasons."""
+        if string == "" or string == " ":
+            await ctx.send("Type something to search!", delete_after=5)
+        
+        n = 0
+        async with ctx.typing():
+            bans = await ctx.guild.bans()
+            for ban in bans:
+                if not ban.reason:
+                    continue
+                if string.lower() in ban.reason.lower():
+                    n += 1
+        
+        await ctx.send(
+            embed = discord.Embed(
+                title="Done!",
+                description=f"``{n}`` Bans corresponding to ``{string}``.",
+                color=discord.Color.green()
+            )
+        )
 
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
