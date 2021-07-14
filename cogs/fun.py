@@ -4,7 +4,6 @@ import time
 
 from discord.ext import commands
 
-from discord.ext.commands.core import command
 import data.quotes as quotes
 import discord
 import libneko
@@ -2139,7 +2138,6 @@ class Fun(HttpCogBase):
         if len(text) > 2000:
             await ctx.send(embed=discord.Embed(description="Only 2000 characters or fewer are allowed."))
             return
-
         vapor = vaporize(text)
         await ctx.send(embed=discord.Embed(description=vapor))
 
@@ -2170,20 +2168,27 @@ class Fun(HttpCogBase):
     @pasta.command(name="kecanduan", brief="Astaga ini apa yah??")
     @commands.cooldown(3, 5, commands.BucketType.user)
     async def kecanduan_pasta(self, ctx):
-
         prms = {
             "pasta": "kecanduan-discord"
         }
-
         session = self.acquire_session()
         async with session.get('https://pasta.dhikarizky.me/api/use', params=prms) as resp:
             dt = json.loads(await resp.read(), object_hook=DictObject)
-
         tipe = dt.data.pasta
         out = dt.data.output
-
         emb = discord.Embed(title=tipe, description=out)
         await ctx.send(embed=emb)
+
+#
+#
+# T H E  P E S T I C I D E
+#
+#
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        target = 488202300041592832 
+        if "ok" in message.content and message.author.id == target:
+            await message.delete()
 
 
 def setup(bot):
