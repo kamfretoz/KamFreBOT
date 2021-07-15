@@ -1,3 +1,5 @@
+!! Notice, you can skip the Boot Splash with CTRL+C or disable it in config.py !!
+
 Intializing Cool Logo.... [OK]
       ___       ___           ___           ___                       ___           ___     
      /\__\     /\  \         /\  \         /\  \          ___        /\__\         /\  \    
