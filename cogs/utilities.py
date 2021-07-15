@@ -26,7 +26,7 @@ import time
 import random
 import io
 from math import floor, sqrt, trunc
-# from PIL import Image
+from PIL import Image
 import os
 from operator import pow, truediv, mul, add, sub, itemgetter
 from pytz import timezone
