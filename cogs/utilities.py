@@ -311,7 +311,6 @@ class Utilities(HttpCogBase):
         navi.start(ctx)
 
     @commands.command(aliases=["source", "rtfc"])
-    @commands.is_owner()
     async def rtfm(self, ctx, *, command):
         """Get the source code for a certain command, cog..."""
         try:
