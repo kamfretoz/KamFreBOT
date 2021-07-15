@@ -1260,31 +1260,15 @@ class Fun(HttpCogBase):
 
         await ctx.trigger_typing()
 
-        try:
-            parameters = {
-                "q": name,
-                "limit": 1
-            }
-            session = self.acquire_session()
-            async with session.get('https://api.jikan.moe/v3/search/anime', params=parameters, timeout=5) as resp:
-                data = json.loads(await resp.read(), object_hook=DictObject)
 
-        except aiohttp.client_exceptions.ClientResponseError:
-            if resp.status == 404:
-                await ctx.send(embed=discord.Embed(description="⚠ Not Found."))
-                return
-            if resp.status == 429:
-                await ctx.send(embed=discord.Embed(description="⚠ We are being rate limited! calm your horses."))
-                return
-            if resp.status == 403:
-                await ctx.send(embed=discord.Embed(description="⚠ Forbidden."))
-                return
-            elif resp.status == 500:
-                await ctx.send(embed=discord.Embed(description="⚠ Unable to access Jikan API, it may be down or inaccessible at the moment."))
-                return
-            elif resp.status == 503:
-                await ctx.send(embed=discord.Embed(description="⚠ MyAnimeList is down at the moment, please try again later."))
-                return
+        parameters = {
+            "q": name,
+            "limit": 1
+        }
+        session = self.acquire_session()
+        async with session.get('https://api.jikan.moe/v3/search/anime', params=parameters, timeout=5) as resp:
+            data = json.loads(await resp.read(), object_hook=DictObject)
+
 
         try:
             anime_id = data.results[0].mal_id
@@ -1403,31 +1387,13 @@ class Fun(HttpCogBase):
 
         await ctx.trigger_typing()
 
-        try:
-            parameters = {
-                "q": name,
-                "limit": 1
-            }
-            session = self.acquire_session()
-            async with session.get(f'https://api.jikan.moe/v3/search/manga', params=parameters, timeout=5) as resp:
-                data = json.loads(await resp.read(), object_hook=DictObject)
-
-        except aiohttp.client_exceptions.ClientResponseError:
-            if resp.status == 404:
-                await ctx.send(embed=discord.Embed(description="⚠ Not Found."))
-                return
-            if resp.status == 429:
-                await ctx.send(embed=discord.Embed(description="⚠ We are being rate limited! calm your horses."))
-                return
-            if resp.status == 403:
-                await ctx.send(embed=discord.Embed(description="⚠ Forbidden."))
-                return
-            elif resp.status == 500:
-                await ctx.send(embed=discord.Embed(description="⚠ Unable to access Jikan API, it may be down or inaccessible at the moment."))
-                return
-            elif resp.status == 503:
-                await ctx.send(embed=discord.Embed(description="⚠ MyAnimeList is down at the moment, please try again later."))
-                return
+        parameters = {
+            "q": name,
+            "limit": 1
+        }
+        session = self.acquire_session()
+        async with session.get(f'https://api.jikan.moe/v3/search/manga', params=parameters, timeout=5) as resp:
+            data = json.loads(await resp.read(), object_hook=DictObject)
 
         if not data.results:
             await ctx.send(embed=discord.Embed(description="⚠ Not Found."))
@@ -1514,34 +1480,14 @@ class Fun(HttpCogBase):
 
         await ctx.trigger_typing()
 
-        try:
-            parameters = {
-                "q": name,
-                "limit": 1
-            }
-            session = self.acquire_session()
-            async with session.get(f'https://api.jikan.moe/v3/search/character', params=parameters, timeout=5) as resp:
-                data = json.loads(await resp.read(), object_hook=DictObject)
+        parameters = {
+            "q": name,
+            "limit": 1
+        }
+        session = self.acquire_session()
+        async with session.get(f'https://api.jikan.moe/v3/search/character', params=parameters, timeout=5) as resp:
+            data = json.loads(await resp.read(), object_hook=DictObject)
 
-        except aiohttp.client_exceptions.ClientResponseError:
-            if resp.status == 404:
-                await ctx.send(embed=discord.Embed(description="⚠ Not Found."))
-                return
-            if resp.status == 429:
-                await ctx.send(embed=discord.Embed(description="⚠ We are being rate limited! calm your horses."))
-                return
-            if resp.status == 403:
-                await ctx.send(embed=discord.Embed(description="⚠ Forbidden."))
-                return
-            elif resp.status == 500:
-                await ctx.send(embed=discord.Embed(description="⚠ Unable to access Jikan API, it may be down or inaccessible at the moment."))
-                return
-            elif resp.status == 503:
-                await ctx.send(embed=discord.Embed(description="⚠ MyAnimeList is down at the moment, please try again later."))
-                return
-            else:
-                await ctx.send(embed=discord.Embed(description=f"⚠ An Unknown error occured.)"))
-                return
         try:
             char_id = data.results[0].mal_id
             char_url = data.results[0].url
