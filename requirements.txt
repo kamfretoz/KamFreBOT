@@ -1,6 +1,7 @@
 #git+https://github.com/Rapptz/discord.py#egg=discord.py[voice]
 discord.py[voice]
 git+https://gitlab.com/Tmpod/libneko
+discord-py-slash-command
 psutil
 pytz
 datetime

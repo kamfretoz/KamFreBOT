@@ -1,8 +1,8 @@
 import asyncio
-import aiohttp
 import time
 
 from discord.ext import commands
+from discord_slash import SlashContext, cog_ext
 
 import data.quotes as quotes
 import discord
@@ -10,7 +10,6 @@ import libneko
 import json
 import ciso8601
 import data.topics as topics
-#import discord_argparse
 from textwrap import shorten
 from datetime import datetime
 from random import randint, choice
@@ -19,14 +18,12 @@ from libneko import embeds
 from owoify import Owoifator
 from vaporwavely import vaporipsum, vaporize
 
-
 from modules.http import HttpCogBase
 from modules.dictobj import DictObject
 
 with open("cogs/data/ksoft-api_key.json") as json_fp:
     classified = json.load(json_fp)
     ksoft_key = classified["key"]
-
 
 class Fun(HttpCogBase):
     def __init__(self, bot):
@@ -1534,16 +1531,13 @@ class Fun(HttpCogBase):
 
         await ctx.send(embed=emb)
 
-    @commands.command(aliases=["uboxgen", "ubox"], name="undertalebox")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    async def unboxgen(self, ctx, *, text):
-
+    @cog_ext.cog_slash(name="ubox")
+    async def unboxgen(self, ctx: SlashContext, character, * ,text):
+        """Create an undertale Text Box"""
         parameters = {
             "message": text,
-            "character": "sans"
+            "character": character
         }
-
-        await ctx.trigger_typing()
         session = self.acquire_session()
 
         async with session.get(f"https://demirramon.com/utgen.png", params=parameters) as resp:
