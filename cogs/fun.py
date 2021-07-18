@@ -1533,7 +1533,7 @@ class Fun(HttpCogBase):
 
     @cog_ext.cog_slash(name="ubox")
     async def unboxgen(self, ctx: SlashContext, character, * ,text):
-        """Create an undertale Text Box"""
+        """Create an Undertale textbox"""
         parameters = {
             "message": text,
             "character": character
