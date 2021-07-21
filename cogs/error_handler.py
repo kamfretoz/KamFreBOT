@@ -137,7 +137,7 @@ class ErrorHandler(commands.Cog):
                 errormsg.add_field(name="📑 Channel", value=f"#{ctx.channel}")
                 errormsg.add_field(name="👥 User", value=ctx.message.author)
                 errormsg.add_field(
-                    name="🕓 Time", value=f"{now.strftime('%B %d, %Y - %H:%M:%S')} GMT+7")
+                    name="🕓 Time", value=f"<t:{int(datetime.utcnow().timestamp())}:f>")
                 #errormsg.add_field(name="📜 Log", value=trace)
                 errormsg.set_image(url="https://http.cat/500.jpg")
                 await self.bot.get_channel(config.home).send(content=f"{random.choice(quotes.errors)}", embed=errormsg)
