@@ -1,156 +1,124 @@
 import traceback
 import discord
 import random
-import math
 from datetime import datetime
-import data.config as config
 import data.quotes as quotes
+import data.config as config
 from discord.ext import commands
-
 
 class ErrorHandler(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.error_message = {
+            "CommandNotFound": "Invalid Command!",
+            "MissingPermissions": "You dont have `{}` permission to run that command!",
+            "MissingRequiredArgument": "You are missing required arguments: `{}`, Please refer to the help menu for more information.",
+            "BadArgument": "You have given an invalid value, please refer to the help menu for more information.",
+            "CommandOnCooldown": "That command is on cooldown. Please try again after `{}` seconds.",
+            "BotMissingPermissions": "I don't have required permission `{}` to complete that command.",
+            "NotOwner": "You are not my owner!",
+            "DisabledCommand": "This command are disabled.",
+            "Forbidden": "I'm not allowed to do that!",
+            "NotFound": "Can't find the target!.",
+            "ConversionError": "Lookup error, target `{}` not found!",
+            "ArgumentParsingError": "An Error occured during the parsing of user's argument!",
+            "MaxConcurrencyReached": "This command is currently rate-limited! You can use it only `{}` time(s) at once",
+            "NoPrivateMessage": "The command `{}` cannot be used in DMs!",
+            "NSFWChannelRequired": "You can only use this command on channels that are marked as NSFW.",
+            "CheckFailure": "Command Check Failure, You are not authorized to use this command!"
+        }
 
     # Main Exception
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
+        async def send_embed(name, code, *args):
+            message = self.error_message[name]
+            if args:
+                message = message.format(args)
+            err = discord.Embed(description=f"**:warning: {message}**", timestamp=datetime.utcnow(), color=0xFF0000)
+            if code:
+                err.set_image(url=f"https://http.cat/{code}.jpg")
+            await ctx.send(content=f"{random.choice(quotes.errors)}", embed=err, delete_after=15)
+            
+        
         if isinstance(error, commands.errors.CommandNotFound):
-            nocommand = discord.Embed(
-                description=":warning: **Invalid Command!**")
-            nocommand.set_image(url="https://http.cat/404.jpg")
-            await ctx.send(content=None, embed=nocommand, delete_after=10)
+            await send_embed("CommandNotFound", 404)
 
         elif isinstance(error, commands.errors.MissingPermissions):
-            perms = []
-            for x in error.missing_perms:
-                perms.append(x)
-            nopermission = discord.Embed(
-                description=f"**:warning: You dont have permissiont to run that command!**")
-            nopermission.add_field(
-                name="Required Permission(s):", value=f'```{", ".join(perms)}```')
-            nopermission.set_image(url="https://http.cat/403.jpg")
-            await ctx.send(content=None, embed=nopermission, delete_after=15)
+            await send_embed("MissingPermissions", 403, error.missing_perms)
 
         elif isinstance(error, commands.errors.MissingRequiredArgument):
-            missingargs = discord.Embed(
-                description="**:warning: You are missing required arguments, Please refer to the help menu with `[p]help <command>` for more information.**")
-            missingargs.set_image(url="https://http.cat/410.jpg")
-            await ctx.send(content=None, embed=missingargs, delete_after=10)
+            await send_embed("MissingRequiredArgument", 410 ,error.param)
 
         elif isinstance(error, commands.errors.BadArgument):
-            badargument = discord.Embed(
-                description="**:warning: You have given an invalid value. Please refer to the help menu with `[p]help <command>` for more information.**")
-            badargument.set_image(url="https://http.cat/400.jpg")
-            await ctx.send(content=None, embed=badargument, delete_after=10)
+            await send_embed("BadArgument", 400)
 
         elif isinstance(error, commands.CommandOnCooldown):
-            cooldownerr = discord.Embed(
-                description=f"**:warning: That command is on cooldown. Please try again after {math.ceil(error.retry_after) + 1} second(s).**")
-            cooldownerr.set_image(url="https://http.cat/429.jpg")
-            await ctx.send(embed=cooldownerr, content=None, delete_after=10)
+            await send_embed("CommandOnCooldown", 429, int(error.retry_after))
 
         elif isinstance(error, commands.errors.BotMissingPermissions):
-            perms = []
-            for x in error.missing_perms:
-                perms.append(x)
-            missperm = discord.Embed(
-                description=f"**:warning: I don't have required permission to complete that command.**")
-            missperm.add_field(name="Required Permission(s):",
-                               value=f'```{", ".join(perms)}```')
-            missperm.set_image(url="https://http.cat/423.jpg")
-            await ctx.send(embed=missperm, content=None, delete_after=15)
+            await send_embed("BotMissingPermissions", 423, error.missing_perms)
 
         elif isinstance(error, commands.errors.TooManyArguments):
-            toomanyargs = discord.Embed(
-                description=f"**:warning: You have inputted too many arguments!**")
-            toomanyargs.set_image(url="https://http.cat/413.jpg")
-            await ctx.send(embed=toomanyargs, content=None, delete_after=10)
+            await send_embed("TooManyArguments", 413)
 
         elif isinstance(error, commands.errors.DisabledCommand):
-            ded = discord.Embed(
-                description=f"**:warning: This command are disabled.**")
-            ded.set_image(url="https://http.cat/503.jpg")
-            await ctx.send(embed=ded, content=None, delete_after=10)
+            await send_embed("DisabledCommand", 503)
 
         elif isinstance(error, discord.Forbidden):
-            missaccess = discord.Embed(
-                description=f"**:no_entry_sign: I'm not allowed to do that!**")
-            missaccess.set_image(url="https://http.cat/403.jpg")
-            await ctx.send(embed=missaccess, content=None, delete_after=10)
+            await send_embed("Forbidden", 403)
 
         elif isinstance(error, commands.errors.NotOwner):
-            notowner = discord.Embed(
-                description=f"**:warning: You are not my owner!**")
-            notowner.set_image(url="https://http.cat/401.jpg")
-            await ctx.send(embed=notowner, content=None, delete_after=10)
+            await send_embed("NotOwner", 401)
 
         elif isinstance(error, discord.NotFound):
-            notfound = discord.Embed(
-                description=f"**:warning: Can't find the target message!**")
-            notfound.set_image(url="https://http.cat/404.jpg")
-            await ctx.send(embed=notfound, content=None, delete_after=10)
+            await send_embed("NotFound", 404)
 
         elif isinstance(error, commands.errors.ConversionError):
-            conv = discord.Embed(
-                description=f"**:warning: Lookup error, target not found! (is the syntax correct?)**")
-            conv.set_image(url="https://http.cat/404.jpg")
-            await ctx.send(embed=conv, content=None, delete_after=10)
+            await send_embed("ConversionError", 404, error.converter)
 
         elif isinstance(error, commands.errors.ArgumentParsingError):
-            arg_err = discord.Embed(
-                description=f"**:warning: An Error occured during parsing of user's argument! (is the input correct?)**")
-            arg_err.set_image(url="https://http.cat/417.jpg")
-            await ctx.send(embed=arg_err, content=None, delete_after=10)
+            await send_embed("ArgumentParsingError", 417)
 
         elif isinstance(error, commands.errors.MaxConcurrencyReached):
-            conc = discord.Embed(
-                description=f"**:warning: This command is currently rate-limited! You can use it only {error.number} time(s) at once until it is completed.**")
-            conc.set_image(url="https://http.cat/429.jpg")
-            await ctx.send(embed=conc, content=None, delete_after=10)
+            await send_embed("MaxConcurrencyReached", 420, error.number)
 
         elif isinstance(error, commands.NoPrivateMessage):
-            await ctx.author.send(f'**:no_entry: `{ctx.command}` can not be used in Private Messages.**')
+            await send_embed("NoPrivateMessage", 423, ctx.command.name)
 
         elif isinstance(error, commands.errors.NSFWChannelRequired):
-            conc = discord.Embed(
-                description=f"**:warning: You can only use this command on channels that are marked as NSFW.**")
-            conc.set_image(url="https://http.cat/423.jpg")
-            await ctx.send(embed=conc, content=None, delete_after=10)
+            await send_embed("NSFWChannelRequired", 423)
 
         elif isinstance(error, commands.errors.CheckFailure):
-            conv = discord.Embed(
-                description=f"**:warning: Command Check Failure, You are not authorized to use this command!**")
-            conv.set_image(url="https://http.cat/401.jpg")
-            await ctx.send(embed=conv, content=None, delete_after=10)
+            await send_embed("CheckFailure", 401)
 
         else:
             try:
-                now = datetime.now()
                 print(f"Ignoring exception in command {ctx.command.name}")
-                trace = traceback.format_exception(
-                    type(error), error, error.__traceback__)
-                print("".join(trace))
-                errormsg = discord.Embed(
-                    title=f"🛑 An error occurred with the `{ctx.command.name}` command.", description=f"ℹ More Information")
+                trace = traceback.format_exception(type(error), error, error.__traceback__)
+                full_traceback = "".join(trace)
+                print(full_traceback)
+                
+                errormsg = discord.Embed(title=f"🛑 An error occurred with the `{ctx.command.name}` command.", description=f"ℹ More Information", color=0xFF0000)
                 errormsg.add_field(name="🖥 Server", value=ctx.guild.name)
                 errormsg.add_field(name="📑 Channel", value=f"#{ctx.channel}")
                 errormsg.add_field(name="👥 User", value=ctx.message.author)
-                errormsg.add_field(
-                    name="🕓 Time", value=f"<t:{int(datetime.utcnow().timestamp())}:f>")
-                #errormsg.add_field(name="📜 Log", value=trace)
+                errormsg.add_field(name="🕓 Time", value=f"<t:{int(datetime.utcnow().timestamp())}:F>")
                 errormsg.set_image(url="https://http.cat/500.jpg")
-                await self.bot.get_channel(config.home).send(content=f"{random.choice(quotes.errors)}", embed=errormsg)
                 await ctx.send(content=f"{random.choice(quotes.errors)}", embed=errormsg)
-                await self.bot.get_channel(config.home).send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```")
                 await ctx.send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```")
+                
+                # This is for personal logging of the error message for further debugging
+                await self.bot.get_channel(config.home).send(content=f"{random.choice(quotes.errors)}", embed=errormsg) 
+                await self.bot.get_channel(config.home).send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```")
+                
             except discord.HTTPException:
-                fuckeduperr = discord.Embed(
-                    title="💥 An error occurred while displaying the previous error.")
-                fuckeduperr.set_image(url="https://http.cat/500.jpg")
-                trace = traceback.format_exception(
-                    type(error), error, error.__traceback__)
-                print("".join(trace))
+                trace = traceback.format_exception(type(error), error, error.__traceback__)
+                full = "".join(trace)
+                print(full)
+                
+                fuckeduperr = discord.Embed(title="💥 An error occurred while displaying the previous error.")
+                fuckeduperr.set_image(url="https://assets.hongkiat.com/uploads/funny_error_messages/operation-completed-succesfully-error-funny-error-messages.jpg")
                 await ctx.send(embed=fuckeduperr, delete_after=5)
 
 
