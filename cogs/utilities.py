@@ -29,6 +29,7 @@ from math import floor, sqrt, trunc
 from PIL import Image
 import os
 from operator import pow, truediv, mul, add, sub, itemgetter
+import pytz
 from pytz import timezone
 from datetime import datetime
 import safygiphy
@@ -423,6 +424,13 @@ class Utilities(HttpCogBase):
         """
 
         loc = location.replace(" ", "_")
+        if "/" not in loc:
+            loc = "_".join([word.capitalize() for word in loc.split("_")])
+            for x in pytz.all_timezones:
+                if loc == x.split("/")[-1]:
+                    loc = x
+                    break
+
         time_fmt = "%I:%M:%S %p"
         date_fmt = "%A, %d %B %Y"
 
@@ -439,7 +447,9 @@ class Utilities(HttpCogBase):
             await ctx.send(embed=clock, content=f"⏰ Tick.. Tock..")
         except:
             err = discord.Embed(title="⚠ **Warning!** An Error Occured.",
-                                description="Make sure that the timezone format is correct and is also available.\nThe Correct format is for example: `America/New_York` \nFor timezone list, use [p]clock list")
+                                description="""Make sure that the timezone format is correct and is also available.
+                                            Take the following examples for formatting: `New York`, `America/New_York` 
+                                            For timezone list, use [p]clock list""")
             await ctx.send(embed=err)
 
     @commands.cooldown(rate=2, per=15, type=commands.BucketType.user)
