@@ -348,7 +348,7 @@ class Utilities(HttpCogBase):
     # pingstorm command
     @commands.cooldown(rate=2, per=1800.0, type=commands.BucketType.guild)
     @commands.max_concurrency(number=1, per=commands.BucketType.guild, wait=False)
-    @commands.command(hidden=True, aliases=["pingmachine", "pingspam"], enabled=False)
+    @commands.command(hidden=True, aliases=["pingmachine", "pingspam","spamping"], enabled=False)
     @commands.guild_only()
     async def pingstorm(self, ctx, user: libneko.converters.InsensitiveMemberConverter, amount: int = 5):
         """Ping specified user number of times, 5 if no amount specified, Maximum amount is 200. (Cooldown: 1 use per 60 mins, Use wisely.)"""
