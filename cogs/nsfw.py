@@ -42,7 +42,8 @@ class NSFW(commands.Cog):
         loading = await ctx.send('Looking for an image on Rule34...')
         #--Connect to Rule34 JSON API and download search data--#
         param = {
-            "tags": search
+            "tags": search,
+            "limit": 1
         }
         async with aiohttp.ClientSession() as session:
             async with session.get(f'https://r34-json.herokuapp.com/posts', params = param) as r34:
@@ -104,7 +105,7 @@ class NSFW(commands.Cog):
     @commands.command(aliases=["booby", "tiddy", "tits"])
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.is_nsfw()
-    async def boobs(self, ctx, user: discord.Member = None):
+    async def boobs(self, ctx):
         """
         Boobs!!
         """
