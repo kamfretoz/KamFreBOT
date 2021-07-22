@@ -191,12 +191,6 @@ class Mod(commands.Cog):
         You can also clean messages of a specific member.
         """
         try:
-            msg = ["**Kirra Queen, Daisan no Bakudan: Bites za dusto** 💥","⚠ **TACTICAL NUKE INCOMING** ⚠","**ZA WARUDO**"]
-            await ctx.send(choice(msg))
-            await asyncio.sleep(3)
-        except:
-            pass
-        try:
             if amount <= 500:
                 if member is None:
                     await ctx.channel.purge(limit = amount + 2)
