@@ -34,7 +34,7 @@ class ErrorHandler(commands.Cog):
         async def send_embed(name, code, *args):
             message = self.error_message[name]
             if args:
-                message = message.format(args)
+                message = message.format(*args)
             err = discord.Embed(description=f"**:warning: {message}**", timestamp=datetime.utcnow(), color=0xFF0000)
             if code:
                 err.set_image(url=f"https://http.cat/{code}.jpg")
