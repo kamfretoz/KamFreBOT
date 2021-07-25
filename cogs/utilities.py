@@ -509,6 +509,8 @@ class Utilities(HttpCogBase):
             await ctx.send(embed=discord.Embed(description="⚠ You can only input 16 characters at most!"))
             return
 
+        calculation.strip()
+        
         operators = {
             '+': add,
             '-': sub,
