@@ -554,7 +554,7 @@ class Utilities(HttpCogBase):
     @commands.command(aliases=["msgdump"])
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def messagedump(self, ctx, filename, limit, details="yes", reverse="no"):
+    async def messagedump(self, ctx, filename, limit, details="yes", reverse="yes"):
         """Dump messages into a text file."""
         await ctx.send("Downloading messages...")
         if not os.path.isdir("data/message_dump"):
