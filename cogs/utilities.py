@@ -554,19 +554,16 @@ class Utilities(HttpCogBase):
     @commands.command(aliases=["msgdump"])
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def messagedump(self, ctx, filename, limit, details="yes", reverse="yes"):
+    async def messagedump(self, ctx, filename, limit: int = 50, details="yes", reverse="yes"):
         """Dump messages into a text file."""
-        await ctx.send("Downloading messages...")
+        await ctx.send("Now downloading messages...")
         if not os.path.isdir("data/message_dump"):
             os.mkdir("data/message_dump")
-        with open(
-            "data/message_dump/" + filename.rsplit(".", 1)[0] + ".txt",
-            "w+",
-            encoding="utf-8",
-        ) as f:
+            
+        with open("data/message_dump/" + filename.rsplit(".", 1)[0] + ".txt","w+",encoding="utf-8",) as f:
             if reverse == "yes":
                 if details == "yes":
-                    async for message in ctx.message.channel.history(limit=int(limit)):
+                    async for message in ctx.message.channel.history(limit=limit):
                         f.write(
                             "<{} at {} on {}> {}\n".format(
                                 message.author.name,
@@ -598,7 +595,11 @@ class Utilities(HttpCogBase):
                         limit=int(limit), oldest_first=True
                     ):
                         f.write(message.content + "\n")
+                        
         await ctx.send("Finished downloading!")
+        
+        with open("data/message_dump/" + filename.rsplit(".", 1)[0] + ".txt","r",encoding="utf-8",) as dump:
+            await ctx.send(file=discord.File(dump), content="Here is the message dump.")
 
     @commands.cooldown(rate=2, per=3, type=commands.BucketType.user)
     @commands.command(aliases=["getcolor", "colour", "getcolour"])
