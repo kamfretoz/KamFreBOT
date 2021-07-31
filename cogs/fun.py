@@ -2121,7 +2121,7 @@ class Fun(HttpCogBase):
 
 #
 #
-# T H E  P E S T I C I D E
+# T H E   H E R B I C I D E
 #
 #
     @commands.Cog.listener()
