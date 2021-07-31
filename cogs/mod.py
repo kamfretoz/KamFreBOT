@@ -110,12 +110,15 @@ class Mod(commands.Cog):
     @commands.command(aliases=["fban"], hidden=True)
     async def fakeban(self, ctx, member: libneko.converters.InsensitiveMemberConverter,  *, reason: str = "No reason provided."):
         """
-        Ban someone from the server. Or is it...?
+        Ban (or mute) someone from the server. Or is it...?
         """
         if member.id == ctx.bot.user.id:
             return await ctx.send("For real?")
         success = True
-        emb = await self.format_mod_embed(ctx, member, success, "ban") 
+        if ctx.invoked_with == "fmute" or "fakemute":
+            emb = await self.format_mod_embed(ctx, member, success, "mute")
+        else:
+            emb = await self.format_mod_embed(ctx, member, success, "ban")
         emb.add_field(name="Reason", value=reason)
         await ctx.send(embed = emb)
 
