@@ -498,3 +498,6 @@ MigrationBackup/
 
 # Visual Studio Code Project Specific Setting Folder
 .vscode/
+
+# Server-specific cogs that are not needed anywhere else.
+cogs/personal.py
