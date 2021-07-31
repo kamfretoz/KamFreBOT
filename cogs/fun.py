@@ -2119,18 +2119,6 @@ class Fun(HttpCogBase):
         emb = discord.Embed(title=tipe, description=out)
         await ctx.send(embed=emb)
 
-#
-#
-# T H E   H E R B I C I D E
-#
-#
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        target = 488202300041592832 
-        if "ok" in message.content and message.author.id == target:
-            await message.delete()
-
-
 def setup(bot):
     bot.add_cog(Fun(bot))
     print("Fun Module has been loaded.")
