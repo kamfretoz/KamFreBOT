@@ -195,13 +195,11 @@ class Utilities(HttpCogBase):
                 await ctx.message.delete()
                 emb = discord.Embed(description=f"{msg}")
                 emb.set_author(name="Sniped!", icon_url=author.avatar_url)
-                emb.add_field(name="Author:",
-                              value=author_mention, inline=False)
+                emb.add_field(name="Author:",value=author_mention, inline=False)
                 emb.set_footer(
                     text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
                 if attachment:
-                    emb.add_field(name="Attachments",
-                                  value=f"[{name}]({attachment})")
+                    emb.add_field(name="Attachments",value=f"[{name}]({attachment})")
                     if str(name).endswith(".png") or str(name).endswith(".gif") or str(name).endswith(".jpg") or str(name).endswith(".jpeg"):
                         emb.set_image(url=attachment)
                 await ctx.send(embed=emb, delete_after=5)
@@ -209,13 +207,11 @@ class Utilities(HttpCogBase):
                 await ctx.message.delete()
                 emb = discord.Embed(title="Sniped!")
                 emb.add_field(name="Author:", value=author, inline=False)
-                emb.add_field(name="Message:",
-                              value="Empty Message.", inline=False)
+                emb.add_field(name="Message:",value="Empty Message.", inline=False)
                 emb.set_footer(
                     text=f"Sniped by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
                 if attachment:
-                    emb.add_field(name="Attachments",
-                                  value=f"[{name}]({attachment})", inline=False)
+                    emb.add_field(name="Attachments",value=f"[{name}]({attachment})", inline=False)
                     if str(name).endswith(".png") or str(name).endswith(".gif"):
                         emb.set_image(url=attachment)
                 await ctx.send(embed=emb, delete_after=5)
@@ -245,8 +241,7 @@ class Utilities(HttpCogBase):
                 await ctx.message.delete()
                 emb = discord.Embed()
                 emb.set_author(name="Sniped!", icon_url=author.avatar_url)
-                emb.add_field(name="Author:",
-                              value=author_mention, inline=False)
+                emb.add_field(name="Author:",value=author_mention, inline=False)
                 emb.add_field(name="Before:", value=before)
                 emb.add_field(name="After:", value=after)
                 emb.set_footer(
@@ -994,9 +989,7 @@ class Utilities(HttpCogBase):
                 freq_list[member.activity.name] = 0
             freq_list[member.activity.name] += 1
 
-        sorted_list = sorted(freq_list.items(),
-                             key=itemgetter(1),
-                             reverse=True)
+        sorted_list = sorted(freq_list.items(),key=itemgetter(1),reverse=True)
 
         if not freq_list:
             await ctx.send("```Search results:\nNo users are currently playing any games. Odd...```")
@@ -1223,36 +1216,24 @@ class Utilities(HttpCogBase):
             embd = discord.Embed(
                 title="IP Information", color=ctx.author.color, timestamp=datetime.utcnow())
             embd.add_field(name="IP Address:", value=ipaddr, inline=False)
-            embd.add_field(name="ISP Name/Organization:",
-                           value=organization, inline=False)
+            embd.add_field(name="ISP Name/Organization:",value=organization, inline=False)
             embd.add_field(name="City:", value=city, inline=False)
             embd.add_field(name="Regional Area:", value=region)
-            embd.add_field(name="Region Code:",
-                           value=region_code, inline=False)
+            embd.add_field(name="Region Code:",value=region_code, inline=False)
             embd.add_field(name="Country:", value=country, inline=False)
-            embd.add_field(name="Country Name:",
-                           value=country_name, inline=False)
-            embd.add_field(name="Country Code (ISO):",
-                           value=country_code_iso3, inline=False)
-            embd.add_field(name="Language Spoken:",
-                           value=languages, inline=False)
-            embd.add_field(name="Continent Code:",
-                           value=continent_code, inline=False)
-            embd.add_field(
-                name="Is country a member of European Union (EU)?", value=in_eu, inline=False)
+            embd.add_field(name="Country Name:",value=country_name, inline=False)
+            embd.add_field(name="Country Code (ISO):",value=country_code_iso3, inline=False)
+            embd.add_field(name="Language Spoken:",value=languages, inline=False)
+            embd.add_field(name="Continent Code:",value=continent_code, inline=False)
+            embd.add_field(name="Is country a member of European Union (EU)?", value=in_eu, inline=False)
             embd.add_field(name="Postal Code:", value=postal, inline=False)
-            embd.add_field(name="Latitude Coordinate:",
-                           value=latitude, inline=False)
-            embd.add_field(name="Longitude Coordinate:",
-                           value=longitude, inline=False)
-            embd.add_field(name="Timezone:",
-                           value=country_timezone, inline=False)
+            embd.add_field(name="Latitude Coordinate:",value=latitude, inline=False)
+            embd.add_field(name="Longitude Coordinate:",value=longitude, inline=False)
+            embd.add_field(name="Timezone:",value=country_timezone, inline=False)
             embd.add_field(name="UTC Offset:", value=utc_offset, inline=False)
-            embd.add_field(name="Country Dial Code:",
-                           value=dial_code, inline=False)
+            embd.add_field(name="Country Dial Code:",value=dial_code, inline=False)
             embd.add_field(name="Currency:", value=currency, inline=False)
-            embd.add_field(name="Autonomous System Number:",
-                           value=asn, inline=False)
+            embd.add_field(name="Autonomous System Number:",value=asn, inline=False)
             embd.set_footer(
                 text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
 
@@ -1374,8 +1355,7 @@ class Utilities(HttpCogBase):
         emb = discord.Embed(description="Predict the nationality of a name!",
                             color=ctx.author.color, timestamp=datetime.utcnow())
         emb.add_field(name="Name", value=answer.title())
-        emb.add_field(name="Country",
-                      value=f"{country} :flag_{country.lower()}:")
+        emb.add_field(name="Country",value=f"{country} :flag_{country.lower()}:")
         emb.add_field(name="Probability", value=f"{floorPercentage}%")
         emb.set_footer(
             text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
@@ -1553,11 +1533,9 @@ class Utilities(HttpCogBase):
         calculated_sunrise = datetime.fromtimestamp(sunrise + timezone_offset)
         calculated_sunset = datetime.fromtimestamp(sunset + timezone_offset)
 
-        embed = discord.Embed(title="Weather Information",
-                              timestamp=datetime.utcnow(), color=colours)
+        embed = discord.Embed(title="Weather Information",timestamp=datetime.utcnow(), color=colours)
         embed.set_thumbnail(url=icon)
-        embed.set_footer(text="Data provided by: OpenWeatherMap.org",
-                         icon_url="https://upload.wikimedia.org/wikipedia/commons/1/15/OpenWeatherMap_logo.png")
+        embed.set_footer(text="Data provided by: OpenWeatherMap.org",icon_url="https://upload.wikimedia.org/wikipedia/commons/1/15/OpenWeatherMap_logo.png")
 
         embed.add_field(name="🏙 City", value=cityname, inline=False)
         embed.add_field(name="🏳 Country",
@@ -1824,8 +1802,7 @@ class Utilities(HttpCogBase):
         emb = discord.Embed(timestamp=datetime.utcnow())
         emb.add_field(
             name=f"Conversion from {origin.upper()} to {to.upper()}", value=prt)
-        emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png",
-                       text="Data provided by: KSoft.Si")
+        emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png",text="Data provided by: KSoft.Si")
         await ctx.send(embed=emb)
 
     @commands.command(aliases=["lyric", "ly", "lrc"])
@@ -1877,8 +1854,7 @@ class Utilities(HttpCogBase):
                 description=f"```{lyric}```", timestamp=datetime.utcnow())
             emb.set_author(name=f"{title} — {artist}")
             emb.set_thumbnail(url=album_art)
-            emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png",
-                           text="Data provided by: KSoft.Si")
+            emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png", text="Data provided by: KSoft.Si")
             await msg.edit(embed=emb, content=None)
 
     @commands.command(aliases=["cvd", "covid19"])
@@ -2001,8 +1977,7 @@ class Utilities(HttpCogBase):
 
         try:
             scp_class = data.object_class
-            emb.add_field(name="Object Classification",
-                          value=scp_class, inline=False)
+            emb.add_field(name="Object Classification",value=scp_class, inline=False)
         except KeyError:
             pass
 
