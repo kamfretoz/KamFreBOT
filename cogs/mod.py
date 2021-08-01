@@ -241,7 +241,7 @@ class Mod(commands.Cog):
         ban = await ctx.guild.fetch_ban(userid)
         em = discord.Embed()
         em.set_author(name=str(ban.user), icon_url=ban.user.avatar_url)
-        em.add_field(name="Reason", value=ban.reason or "None")
+        em.add_field(name="Ban Reason", value=ban.reason or "None")
         em.set_thumbnail(url=ban.user.avatar_url)
         em.set_footer(text=f"User ID: {ban.user.id}")
 
