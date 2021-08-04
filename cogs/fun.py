@@ -955,20 +955,7 @@ class Fun(HttpCogBase):
         shipnumber = randint(0, 100)
 
         # A Small Easter Egg for a server
-        if name1 == "Oreo" and name2 == "TaylorSwift":
-            shipnumber = 100
-
         if name1 == "Mixtape" and name2 == "Calliope":
-            shipnumber = 100
-
-        if name1 == "Prisma" and name2 == "Atticus":
-            shipnumber = 100
-
-        if name1 == "qwerty32" and name2 == "Penny":
-            shipnumber = 100
-        if name1 == "Vraptor" and name2 == "Sarah":
-            shipnumber = 100
-        if name1 == "IS8" and name2 == "Gumball":
             shipnumber = 100
 
         if 0 <= shipnumber <= 10:
