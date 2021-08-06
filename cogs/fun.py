@@ -1480,6 +1480,12 @@ class Fun(HttpCogBase):
         except UnboundLocalError:
             await ctx.send(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
             return
+        except IndexError:
+            await ctx.send(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+            return
+        except KeyError:
+            await ctx.send(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+            return
 
         emb = discord.Embed(
             title="MyAnimeList Character Information", timestamp=datetime.utcnow())
