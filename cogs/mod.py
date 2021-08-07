@@ -572,7 +572,7 @@ class Mod(commands.Cog):
             await msg.edit(embed=snd, content=None)
             recv = discord.Embed(description=text, timestamp=datetime.utcnow())
             recv.set_author(name=f"Message from {ctx.guild.name}", icon_url=ctx.guild.icon_url)
-            recv.set_footer(text=f"Sent by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
+            #recv.set_footer(text=f"Sent by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
             await target.send(embed=recv)
             snd = discord.Embed(description="Message Sent!")
             await msg.edit(embed=snd)
