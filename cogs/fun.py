@@ -2,7 +2,6 @@ import asyncio
 import time
 
 from discord.ext import commands
-from discord_slash import SlashContext, cog_ext
 
 import data.quotes as quotes
 import discord
@@ -1524,16 +1523,19 @@ class Fun(HttpCogBase):
 
         await ctx.send(embed=emb)
 
-    @cog_ext.cog_slash(name="ubox")
-    async def unboxgen(self, ctx: SlashContext, character, * ,text):
-        """Create an Undertale textbox"""
+    @commands.command(aliases=["uboxgen","ubox"], name="undertalebox")
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def unboxgen(self, ctx, *, text):
+        """Creates an Undertale textbox (Sans)"""
         parameters = {
             "message": text,
-            "character": character
+            "character": "sans"
         }
+
+        await ctx.trigger_typing()
         session = self.acquire_session()
 
-        async with session.get(f"https://demirramon.com/utgen.png", params=parameters) as resp:
+        async with session.get(f"https://demirramon.com/utgen.png", params = parameters) as resp:
             image_data = await resp.read()
 
         img = BytesIO(image_data)
