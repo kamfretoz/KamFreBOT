@@ -157,7 +157,7 @@ class GuildVoiceState:
 
         # Queue state info field
         if self.queue == []:
-            fmt_queue = "No Queue"
+            fmt_queue = "**No Queue**"
         else:
             fmt_queue = "".join(
                 [
@@ -556,7 +556,6 @@ class Music(commands.Cog):
 
         def check(m):
             try:  # '/^*[0-9][0-9 ]*$/'
-                picked_entry_number = int(m.content)
                 return m.channel == request_channel and m.author == request_author
             except:
                 return False
@@ -567,8 +566,10 @@ class Music(commands.Cog):
             # TIMEOUT ERROR EXCEPTION
             await embedded_list.delete()
             return
-        await request_channel.send(f'Picked entry number: **{msg.content}**')
+        await ctx.message.add_reaction("✅")
         await self.play(ctx=ctx, video=search_result[int(msg.content) - 1])
+        await msg.delete()
+        await embedded_list.delete()
 
     @commands.command()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
@@ -615,14 +616,14 @@ class Music(commands.Cog):
             )
         state.voice_client = ctx.voice_client
         state.current = player
-        await ctx.send("Now playing: {}".format(player.title))
+        await ctx.send(embed=discord.Embed(description="Now playing: {}".format(player.title)))
 
     @commands.command(aliases=["str"])
     async def stream(self, ctx, *, url):
         """Streams from a url (doesn't predownload)"""
 
         if ctx.author.voice is None:
-            await ctx.send("You are not connected to a voice channel.")
+            await ctx.send(embed=discord.Embed(description="You are not connected to a voice channel."))
             return
 
         state = self.get_guild_state(ctx.guild.id)
@@ -631,7 +632,7 @@ class Music(commands.Cog):
             video = ys.search(url)[0]
             entry = VoiceEntry(player=player, requester=ctx.message.author, video=video)
             state.queue.append(entry)
-            await ctx.send("Enqueued " + player.title)
+            await ctx.send(embed=discord.Embed(description=f"Enqueued **{player.title}**"))
             return
 
         async with ctx.typing():
@@ -642,7 +643,7 @@ class Music(commands.Cog):
 
         state.voice_client = ctx.voice_client
         state.current = player
-        await ctx.send("Now playing: {}".format(player.title))
+        await ctx.send(embed=discord.Embed(description=f"Now playing: {player.title}"))
 
     @commands.command(aliases=["vol"])
     async def volume(self, ctx, volume: int = None):
@@ -676,7 +677,7 @@ class Music(commands.Cog):
         """Stops and disconnects the bot from voice"""
 
         if ctx.author.voice is None:
-            await ctx.send("You are not connected to a voice channel.")
+            await ctx.send(embed=discord.Embed(description="You are not connected to a voice channel."))
             return
 
         self.guild_states[ctx.guild.id].channel = None
@@ -725,7 +726,7 @@ class Music(commands.Cog):
 
         state = self.get_guild_state(ctx.guild.id)
         if state.voice_client is None or not state.voice_client.is_playing():
-            await ctx.send(":x: | Not playing any song.")
+            await ctx.send(embed=discord.Embed(description=":x: | Not playing any song."))
             return
         await ctx.message.add_reaction("\U000023F8")
         state.voice_client.pause()
@@ -735,7 +736,7 @@ class Music(commands.Cog):
         """Resumes paused song"""
 
         if ctx.author.voice is None:
-            await ctx.send("You are not connected to a voice channel.")
+            await ctx.send(embed=discord.Embed(description="You are not connected to a voice channel."))
             return
 
         state = self.get_guild_state(ctx.guild.id)
@@ -752,7 +753,7 @@ class Music(commands.Cog):
         """Shows current queue state"""
 
         if ctx.author.voice is None:
-            await ctx.send("You are not connected to a voice channel.")
+            await ctx.send(embed=discord.Embed(description="You are not connected to a voice channel."))
             return
 
         state = self.get_guild_state(ctx.guild.id)
@@ -763,7 +764,7 @@ class Music(commands.Cog):
         """Repeats song after done playing or add to queue"""
 
         if ctx.author.voice is None:
-            await ctx.send("You are not connected to a voice channel.")
+            await ctx.send(embed=discord.Embed(description="You are not connected to a voice channel."))
             return
 
         state = self.get_guild_state(ctx.guild.id)
@@ -792,7 +793,7 @@ class Music(commands.Cog):
         """Shuffles guild states song queue"""
 
         if ctx.author.voice is None:
-            await ctx.send("You are not connected to a voice channel.")
+            await ctx.send(embed=discord.Embed(description="You are not connected to a voice channel."))
             return
 
         state = self.get_guild_state(ctx.guild.id)
