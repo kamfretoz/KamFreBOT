@@ -789,20 +789,6 @@ class Fun(HttpCogBase):
         )
         await ctx.send(embed=dis)
 
-    @commands.command(hidden=True)
-    @commands.cooldown(rate=2, per=3, type=commands.BucketType.user)
-    async def slap(self, ctx, member: libneko.converters.InsensitiveMemberConverter = None):
-        """IRC Style Trout Slap"""
-        if member is None:
-            await ctx.send("You have slapped yourself.")
-        elif member.id == ctx.bot.user.id:
-            await ctx.send(f'You rolled a Critical Fail...\nThe trout bounces off and rebounds on the attacker.')
-            await ctx.send(f'{ctx.author.mention} '
-                           f'you shoot yourself')
-        else:
-            await ctx.send(f'*slapping noises* I slapped you! '
-                           f'{member.mention} ')
-
     @commands.command(hidden=True, aliases=["rw"])
     async def rewind(self, ctx):
         """Rewind the time!"""
@@ -1677,6 +1663,66 @@ class Fun(HttpCogBase):
             embed.set_image(url=result)
             await ctx.send(embed=embed)
 
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def poke(self, ctx, *, target=None):
+        """
+        *pokes you*
+        """
+        if target == None:
+            return await ctx.send(":x: You need someone to poke!")
+        if target == ctx.author:
+            return await ctx.send(":x: You can't poke yourself.")
+        #--Get image from NekosLife API--#
+        session = self.acquire_session()
+        async with session.get('https://nekos.life/api/v2/img/poke') as poke:
+            data = await poke.json()
+            result = data.get('url')
+            embed = discord.Embed(
+                description=f"👉 {ctx.author.display_name} poked {target}!",  color=0x8253c3)
+            embed.set_image(url=result)
+            await ctx.send(embed=embed)
+            
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def slap(self, ctx, *, target=None):
+        """
+        *slaps you*
+        """
+        if target == None:
+            return await ctx.send(":x: You need someone to slap!")
+        if target == ctx.author:
+            return await ctx.send(":x: You can slap yourself if you want, i wont judge you.")
+        #--Get image from NekosLife API--#
+        session = self.acquire_session()
+        async with session.get('https://nekos.life/api/v2/img/slap') as slap:
+            data = await slap.json()
+            result = data.get('url')
+            embed = discord.Embed(
+                description=f"🤜 {ctx.author.display_name} slapped {target}!",  color=0x8253c3)
+            embed.set_image(url=result)
+            await ctx.send(embed=embed)
+            
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def tickle(self, ctx, *, target=None):
+        """
+        *tickles you*
+        """
+        if target == None:
+            return await ctx.send(":x: You need someone to tickle!")
+        if target == ctx.author:
+            return await ctx.send(":x: You can tickle yourself if you want, i wont judge you.")
+        #--Get image from NekosLife API--#
+        session = self.acquire_session()
+        async with session.get('https://nekos.life/api/v2/img/tickle') as tickle:
+            data = await tickle.json()
+            result = data.get('url')
+            embed = discord.Embed(
+                description=f"👐 {ctx.author.display_name} tickles {target}!",  color=0x8253c3)
+            embed.set_image(url=result)
+            await ctx.send(embed=embed)
+
     @commands.command(aliases=["smooch"])
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def kiss(self, ctx, *, target=None):
@@ -1735,6 +1781,36 @@ class Fun(HttpCogBase):
             embed = discord.Embed(
                 description=f"🤗 {ctx.author.display_name} hugs {target}!",  color=0x8253c3)
             embed.set_image(url=result)
+            await ctx.send(embed=embed)
+            
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def name(self, ctx):
+        """
+        A random name generator
+        """
+        #--Get name from NekosLife API--#
+        session = self.acquire_session()
+        async with session.get('https://nekos.life/api/v2/name') as name:
+            data = await name.json()
+            result = data.get('name')
+            embed = discord.Embed(
+                description=result, color=0x8253c3)
+            await ctx.send(embed=embed)
+            
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def why(self, ctx):
+        """
+        Askin the real question here
+        """
+        #--Get question from NekosLife API--#
+        session = self.acquire_session()
+        async with session.get('https://nekos.life/api/v2/why') as why:
+            data = await why.json()
+            result = data.get('why')
+            embed = discord.Embed(
+                description=result, color=0x8253c3)
             await ctx.send(embed=embed)
 
     @commands.command(aliases=["memes", "meem"])
