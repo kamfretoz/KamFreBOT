@@ -507,6 +507,7 @@ class Music(commands.Cog):
         return
 
     @commands.command(name="search", aliases=["srch", "play","p"])
+    @commands.guild_only()
     async def search_(self, ctx, *args):
         """Search song by keyword and do start song selection"""
         await ctx.trigger_typing()
@@ -572,6 +573,7 @@ class Music(commands.Cog):
         await embedded_list.delete()
 
     @commands.command()
+    @commands.guild_only()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
         """Joins a voice channel"""
 
@@ -586,6 +588,7 @@ class Music(commands.Cog):
         await channel.connect()
 
     @commands.command(name="localplay",aliases=["lp"])
+    @commands.guild_only()
     async def play_(self, ctx, *, query):
         """Plays a file from the local filesystem. The mp3 needs to be on the "audio" folder"""
 
@@ -601,8 +604,9 @@ class Music(commands.Cog):
         )
 
     @commands.command()
+    @commands.guild_only()
     async def ytplay(self, ctx, *, url):
-        """(almost anything youtube_dl supports)"""
+        """(almost anything youtube_dl supports (also downloads the video))"""
 
         if ctx.author.voice is None:
             await ctx.send("You are not connected to a voice channel.")
@@ -619,6 +623,7 @@ class Music(commands.Cog):
         await ctx.send(embed=discord.Embed(description="Now playing: {}".format(player.title)))
 
     @commands.command(aliases=["str"])
+    @commands.guild_only()
     async def stream(self, ctx, *, url):
         """Streams from a url (doesn't predownload)"""
 
@@ -646,6 +651,7 @@ class Music(commands.Cog):
         await ctx.send(embed=discord.Embed(description=f"Now playing: {player.title}"))
 
     @commands.command(aliases=["vol"])
+    @commands.guild_only()
     async def volume(self, ctx, volume: int = None):
         """Changes the player's volume"""
 
@@ -673,6 +679,7 @@ class Music(commands.Cog):
         await ctx.send(embed=discord.Embed(description=f"Changed volume to **{volume}%**"))
 
     @commands.command()
+    @commands.guild_only()
     async def stop(self, ctx):
         """Stops and disconnects the bot from voice"""
 
@@ -685,6 +692,7 @@ class Music(commands.Cog):
         del self.guild_states[ctx.guild.id]
 
     @commands.command(name="skip")
+    @commands.guild_only()
     async def skip_(self, ctx):
         """Vote to skip a song.
         Requester can automatically skip.
@@ -717,6 +725,7 @@ class Music(commands.Cog):
                 await ctx.send(f"⏭ | Current skip votes **{total_votes}/3**")
 
     @commands.command(name="pause")
+    @commands.guild_only()
     async def pause_(self, ctx):
         """Pause current playing song"""
 
@@ -732,6 +741,7 @@ class Music(commands.Cog):
         state.voice_client.pause()
 
     @commands.command(name="resume")
+    @commands.guild_only()
     async def resume_(self, ctx):
         """Resumes paused song"""
 
@@ -749,6 +759,7 @@ class Music(commands.Cog):
             state.voice_client.resume()
 
     @commands.command(name="queue", aliases=["q", "nowplaying", "np"])
+    @commands.guild_only()
     async def queue_(self, ctx):
         """Shows current queue state"""
 
@@ -760,6 +771,7 @@ class Music(commands.Cog):
         await ctx.send(embed=state.get_embedded_queue())
 
     @commands.command(name="repeat", aliases=["loop"])
+    @commands.guild_only()
     async def repeat_(self, ctx):
         """Repeats song after done playing or add to queue"""
 
@@ -775,6 +787,7 @@ class Music(commands.Cog):
         await ctx.message.add_reaction("🔁")
 
     @commands.command()
+    @commands.guild_only()
     async def summon(self, ctx):
         """Force the bot to join author's voice channel
         Ensured voice before invoke summon.
@@ -789,6 +802,7 @@ class Music(commands.Cog):
             return
 
     @commands.command(name="shuffle", aliases=["randq", "random_queue"])
+    @commands.guild_only()
     async def shuffle_(self, ctx):
         """Shuffles guild states song queue"""
 
