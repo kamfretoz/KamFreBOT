@@ -107,7 +107,7 @@ class Mod(commands.Cog):
 
     # This one is meant to be used as a joke
     @commands.guild_only()
-    @commands.command(aliases=["fban"], hidden=True)
+    @commands.command(aliases=["fban", "fmute", "fakemute"], hidden=True)
     async def fakeban(self, ctx, member: libneko.converters.InsensitiveMemberConverter,  *, reason: str = "No reason provided."):
         """
         Ban (or mute) someone from the server. Or is it...?
