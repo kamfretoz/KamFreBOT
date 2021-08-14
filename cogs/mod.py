@@ -251,9 +251,9 @@ class Mod(commands.Cog):
     @commands.has_permissions(ban_members=True)
     @commands.guild_only()
     @commands.command()
-    async def banfinder(self, ctx:commands.Context, *, string: str):
+    async def banfinder(self, ctx, *, string: str = None):
         """Count the amount of bans in the guild that contain the search in their reasons."""
-        if string == "" or string == " ":
+        if string is None:
             await ctx.send("Type something to search!", delete_after=5)
         
         n = 0
