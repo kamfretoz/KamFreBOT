@@ -117,7 +117,7 @@ class Mod(commands.Cog):
         success = True
         if ctx.invoked_with == "fmute" or "fakemute":
             emb = await self.format_mod_embed(ctx, member, success, "mute")
-        else:
+        if ctx.invoked_with == "fban" or "fakeban":
             emb = await self.format_mod_embed(ctx, member, success, "ban")
         emb.add_field(name="Reason", value=reason)
         await ctx.send(embed = emb)
