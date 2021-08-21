@@ -27,7 +27,8 @@ import discord
 import libneko
 from libneko import pag
 from discord.ext import commands
-from random import choice
+from io import BytesIO
+from collections import namedtuple
 
 class Mod(commands.Cog):
     def __init__(self, bot):
@@ -81,29 +82,137 @@ class Mod(commands.Cog):
     @commands.has_permissions(ban_members=True)
     @commands.guild_only()
     @commands.command()
-    async def ban(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, reason: str = "No reason provided."):
-        """
-        Ban someone from the server, This will delete their messages by default.
-        """
-        try:
-            if ctx.author.top_role > member.top_role or ctx.author == ctx.guild.owner:
-                    if member == ctx.author:
-                        return await ctx.send("***:no_entry: You can't ban yourself...***")
-                    if member.id == ctx.bot.user.id:
-                        return await ctx.send("For real?")
-                    try:
-                        await ctx.guild.ban(member, reason = reason, delete_message_days = 1)
-                    except Exception as e:
-                        success = False
-                        return await ctx.send(embed=await self.format_mod_embed(ctx, member, success, "ban", e))
-                    else:
-                        success = True
+    async def ban(self, ctx, members:str, *, reason="Not Specified."):
+        """Bans the member(s) from the guild."""
 
-                    emb = await self.format_mod_embed(ctx, member, success, "ban")
-                    emb.add_field(name="Reason", value=reason)
-                    await ctx.send(embed = emb)
-        except AttributeError as e:
-            return await ctx.send(f":x: An Error Occured, that member is not in this server! use `[p]hackban` instead.")
+        members_list = members.split()
+
+        l_bar = "█"
+        l_empty = "░"
+
+        async with ctx.typing():
+            m_amount = len(members_list)
+            m = 0
+
+            banned = []
+            alr_banned = []
+            not_found = []
+            forbidden = []
+            failed = []
+
+            embed = discord.Embed(
+                title="Banning Members...",
+                description=f"0% **(0/{m_amount})**",
+                color=discord.Color.blurple()
+            )
+            message : discord.Message = await ctx.reply(embed=embed)
+            dot = 0
+
+            for member_id in members_list:
+
+                await asyncio.sleep(0.5)
+                dm_msg = []
+                try:
+                    member = await commands.MemberConverter().convert(ctx, member_id)
+                    try:
+                        dm_msg.append(await member.send(
+                            "https://tenor.com/view/end-finality-finale-goodbye-the-end-gif-7463563"
+                        ))
+                        dm_msg.append(await member.send(
+                            f":no_entry_sign: You were __**BANNED**__ from '***{ctx.guild.name}***' for the reason: ``{reason}``"
+                        ))
+                    except:
+                        pass
+                    await member.ban(reason=f"{reason} by {ctx.author}")
+                    banned.append(f"{member.mention} {member}")
+                except commands.MemberNotFound or discord.UserNotFound:
+                    if dm_msg:
+                        for msg in dm_msg:
+                            await msg.delete()
+                    try:
+                        user_ = await commands.UserConverter().convert(ctx, member_id)
+                        await ctx.message.guild.fetch_ban(user_)
+                        alr_banned.append(f"{user_.mention} {user_}")
+                    except:
+                        not_found.append(f"<@{member_id}>")
+                except discord.Forbidden:
+                    if dm_msg:
+                        for msg in dm_msg:
+                            await msg.delete()
+                    memb = await commands.MemberConverter().convert(ctx, member_id)
+                    forbidden.append(f"{memb.mention} {memb}")
+                except:
+                    if dm_msg:
+                        for msg in dm_msg:
+                            await msg.delete()
+                    failed.append(f"<@{member_id}>")
+
+                m += 1
+                if m < m_amount:
+                    dot += 1
+                    if dot > 3:
+                        dot = 1
+                    embed.title = "Banning members" + dot*"."
+                    progress = m/m_amount
+                    bars = int(progress * 10)
+                    embed.description = l_bar*bars + l_empty*(10-bars) + f" {int(progress*100)}% **({m}/{m_amount})**"
+                    await message.edit(embed=embed)
+
+            Results = namedtuple("Results", ["banned", "already_banned", "not_found", "forbidden", "failed"])
+
+            def add_ban_fields(embed:discord.Embed, fields):
+                field_names = Results(
+                    banned=":white_check_mark: Banned: `{}`",
+                    already_banned=":ballot_box_with_check: Already Banned: `{}`",
+                    not_found=":warning: Not Found: `{}`",
+                    forbidden=":no_entry_sign: Missing Permissions: `{}`",
+                    failed=":x: Failed: `{}`",
+                )
+                field_names_txt = Results(
+                    banned="Banned: {}",
+                    already_banned="Already Banned: {}",
+                    not_found="Not Found: {}",
+                    forbidden="Missing Permissions: {}",
+                    failed="Failed: {}",
+                )
+                results = []
+                inline = False
+                use_txt = False
+
+                for m_list in fields:
+                    j = "\n".join(m_list)
+                    results.append(j)
+                    if len(j) > 1024:
+                        use_txt = True
+
+                f_list = ["BAN REPORT\n"]
+
+                for i in range(len(results)):
+                    if results[i]:
+                        if not use_txt:
+                            embed.add_field(name=field_names[i].format(len(fields[i])), value=results[i], inline=inline)
+                        else:
+                            f_list.append(f"{field_names_txt[i].format(len(fields[i]))}\n{results[i]}\n")
+
+                if use_txt:
+                    everything = "\n".join(f_list)
+                    return [True, BytesIO(everything.encode("utf-8"))]
+                else:
+                    return [False, None]
+
+            embed.title = ":hammer: Finished! :hammer:"
+            embed.description = f"**{len(banned)}** members banned for: ``{reason}``\n⠀"
+            embed.set_thumbnail(url="https://media.discordapp.net/attachments/758301208082513920/824494391942316072/tenor_2.gif")
+            embed.color = discord.Color.red()
+            use_text, data = add_ban_fields(embed, Results(banned, alr_banned, not_found, forbidden, failed))
+            embed.set_footer(text=f"Ran by {ctx.author}", icon_url=ctx.author.avatar_url)
+            embed.timestamp = datetime.utcnow()
+            await message.delete()
+            if use_text:
+                await ctx.send(embed=embed, file=discord.File(data, filename="ban_summary.txt"))
+            else:
+                await ctx.send(embed=embed)
+
 
     # This one is meant to be used as a joke
     @commands.guild_only()
@@ -117,15 +226,10 @@ class Mod(commands.Cog):
         success = True
         if ctx.invoked_with == "fmute" or "fakemute":
             emb = await self.format_mod_embed(ctx, member, success, "mute")
+            emb.add_field(name="Reason", value=reason)
         if ctx.invoked_with == "fban" or "fakeban":
             emb = await self.format_mod_embed(ctx, member, success, "ban")
-        emb.add_field(name="Reason", value=reason)
-        await ctx.send(embed = emb)
-
-    @ban.error
-    async def userinfo_error(self, ctx, error):
-        if isinstance(error, commands.BadArgument):
-            await ctx.send('Invalid usage!\nUsage: `[p]ban <member> [reason]`')
+            await ctx.send(embed = emb)
 
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
