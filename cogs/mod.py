@@ -300,7 +300,7 @@ class Mod(commands.Cog):
         try:
             if amount <= 500:
                 if member is None:
-                    await ctx.channel.purge(limit = amount + 2)
+                    await ctx.channel.purge(limit = amount + 1)
                 else:
                     async for message in ctx.channel.history(limit = amount + 2):
                         if message.author is member:
