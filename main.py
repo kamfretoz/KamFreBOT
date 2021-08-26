@@ -107,12 +107,12 @@ async def on_connect():
     print("Connected to Discord!")
 
 
-@bot.event
-async def on_resumed():
-    print("WARNING: connection error was occurred and Successfully Resumed/Reconnected the Session.")
-    print(f"Current time: {time.ctime()}")
-    print(
-        f"Still watching {len(bot.users)} users across {len(bot.guilds)} servers.")
+#@bot.event
+#async def on_resumed():
+#    print("WARNING: connection error was occurred and Successfully Resumed/Reconnected the Session.")
+#    print(f"Current time: {time.ctime()}")
+#    print(
+#        f"Still watching {len(bot.users)} users across {len(bot.guilds)} servers.")
 
 
 @bot.event
