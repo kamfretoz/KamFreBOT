@@ -1,6 +1,6 @@
 import random
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timezone
 
 import discord
 import libneko
@@ -252,6 +252,7 @@ class Information(commands.Cog):
             return f'{h} Hour, {m} Minutes'
 
         since_created = (ctx.message.created_at - guild.created_at).days
+        timestamp = guild.created_at.replace(tzinfo=timezone.utc).timestamp()
 
         server.add_field(
             name="》 Channel Count",
@@ -266,7 +267,7 @@ class Information(commands.Cog):
         )
         server.add_field(
             name="》 Created",
-            value=f"{guild.created_at.strftime('%B %d, %Y at %I:%M:%S %p')} ({since_created} days ago!)",
+            value=f"<t:{int(timestamp)}:F> ({since_created} days ago!)",
             inline=False,
         )
         server.add_field(
@@ -396,7 +397,7 @@ class Information(commands.Cog):
     async def serverinfo_roleinfo(self, ctx, *, role: libneko.converters.RoleConverter):
         """Shows information about a role"""
         since_created = (ctx.message.created_at - role.created_at).days
-        role_created = role.created_at.strftime("%d %b %Y %H:%M:%S")
+        role_created = f"<t:{int(datetime.utcnow().timestamp())}:F>"
         created_on = f"{role_created} ({since_created} days ago!)"
 
         if str(role.colour) == "#000000":
@@ -570,8 +571,9 @@ class Information(commands.Cog):
         Shows when this server was created.
         """
         since_created = (ctx.message.created_at - ctx.guild.created_at).days
+        timestamp = ctx.guild.created_at.replace(tzinfo=timezone.utc).timestamp()
         create = discord.Embed(
-            description=f"**{ctx.guild.name}** was created on `{ctx.guild.created_at.strftime('%B %d, %Y at %I:%M:%S %p')}` ({since_created} days ago!)")
+            description=f"**{ctx.guild.name}** was created on <t:{int(timestamp)}:F> ({since_created} days ago!)")
 
         if ctx.guild.icon:
             if ctx.guild.is_icon_animated() is True:
@@ -739,7 +741,8 @@ class Information(commands.Cog):
             if not user.premium_since:
                 boost_stats = "The user are not boosting this server."
             else:
-                boost_stats = f"Boosting the server since {user.premium_since.strftime('%B %d, %Y at %I:%M:%S %p')}"
+                premium = user.premium_since.replace(tzinfo=timezone.utc).timestamp()
+                boost_stats = f"Boosting the server since <t:{int(premium)}:F>"
         except AttributeError:
             boost_stats = "Information Unavailable"
 
@@ -786,14 +789,16 @@ class Information(commands.Cog):
             inline=False
         )
         try:
+            created = user.created_at.replace(tzinfo=timezone.utc).timestamp()
+            joined = user.joined_at.replace(tzinfo=timezone.utc).timestamp()
             member.add_field(
                 name="》 Created",
-                value=user.created_at.strftime("%B %d, %Y at %I:%M:%S %p"),
+                value=f"<t:{int(created)}:F>",
                 inline=False,
             )
             member.add_field(
                 name="》 Joined",
-                value=f'{user.joined_at.strftime("%B %d, %Y at %I:%M:%S %p")}',
+                value=f"<t:{int(joined)}:F>",
                 inline=False,
             )
         except AttributeError:
@@ -873,6 +878,33 @@ class Information(commands.Cog):
     async def userinfo_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
             await ctx.send('Cannot find that user.')
+            
+    @commands.guild_only()
+    @userinfo.command(name="banner", brief="Show the banner of a user, if any")
+    async def userinfo_banner(self, ctx, user: libneko.converters.InsensitiveUserConverter = None):
+        """Show the banner of a user, if any"""
+        if user is None:
+            user = ctx.author
+        
+        req = await self.bot.http.request(discord.http.Route("GET", "/users/{uid}", uid=user.id))
+        banner_id = req["banner"]
+        if banner_id.startswith("a_"):
+            banner_url = f"https://cdn.discordapp.com/banners/{user.id}/{banner_id}.gif?size=4096"
+        else:
+            banner_url = f"https://cdn.discordapp.com/banners/{user.id}/{banner_id}?size=4096"
+        # If statement because the user may not have a banner
+        if banner_id:
+            bnr = discord.Embed(
+                    description=f"**{user.mention}**'s Banner",
+                    title="Banner Viewer",
+                    color=user.colour,
+                    timestamp=datetime.utcnow(),
+                )
+            bnr.set_image(url=banner_url)
+            bnr.set_footer(text=f"User: {user} ({user.id})")
+            await ctx.send(embed=bnr)
+        else:
+            await ctx.send(embed=discord.Embed(description="This User has no banner set.", color=user.colour))
 
     @userinfo.command(name="created", aliases=["create", "made"], brief="Shows when an account was made")
     @commands.guild_only()
@@ -882,10 +914,10 @@ class Information(commands.Cog):
         """
         if user is None:
             user = ctx.message.author
-
+        timestamp = user.created_at.replace(tzinfo=timezone.utc).timestamp()
         since_created = (ctx.message.created_at - user.created_at).days
         create = discord.Embed(
-            description=f"The account of {user} was created on `{user.created_at.strftime('%B %d, %Y at %I:%M:%S %p')}` ({since_created} days ago!)")
+            description=f"The account of {user} was created on <t:{int(timestamp)}:F> ({since_created} days ago!)")
 
         if user.avatar:
             if user.is_avatar_animated() is True:
@@ -902,14 +934,14 @@ class Information(commands.Cog):
     @commands.guild_only()
     async def userinfo_joined(self, ctx, user: libneko.converters.InsensitiveMemberConverter = None):
         """
-        Shows when this user joined the serve.
+        Shows when this user joined the server.
         """
         if user is None:
             user = ctx.message.author
-
+        timestamp = user.joined_at.replace(tzinfo=timezone.utc).timestamp()
         since_joined = (ctx.message.created_at - user.joined_at).days
         joined = discord.Embed(
-            description=f"{user.mention} joined the serverr on `{user.joined_at.strftime('%B %d, %Y at %I:%M:%S %p')}` ({since_joined} days ago!)")
+            description=f"{user.mention} joined the server on <t:{int(timestamp)}:F> ({since_joined} days ago!)")
 
         if user.avatar:
             if user.is_avatar_animated() is True:
