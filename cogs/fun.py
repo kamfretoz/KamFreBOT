@@ -1577,7 +1577,7 @@ class Fun(HttpCogBase):
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def urban(self, ctx, *, query: str):
         """
-        Look up a definition of a word from Urbban Dictionary!
+        Look up a definition of a word from Urban Dictionary!
         """
         msg = await ctx.send("Looking for a definition...")
         try:
