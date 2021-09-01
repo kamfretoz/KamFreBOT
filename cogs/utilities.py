@@ -500,10 +500,6 @@ class Utilities(HttpCogBase):
     @commands.command(aliases=["math"])
     async def calc(self, ctx, *, calculation):
         """Simple calculator. Ex: [p]calc 2+2"""
-        if len(calculation) > 16:
-            await ctx.send(embed=discord.Embed(description="⚠ You can only input 16 characters at most!"))
-            return
-
         calculation.strip()
         
         operators = {
@@ -1891,6 +1887,9 @@ class Utilities(HttpCogBase):
 
         if rec == 0:
             rec = "Unknown"
+            
+        if act == 0:
+            act = "Unknown"
 
         ts = data.ts
 
