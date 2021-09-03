@@ -3,7 +3,6 @@
 import time
 import asyncio
 import discord
-import discord_slash
 import json
 import os
 import logging
@@ -57,8 +56,7 @@ def get_prefix(bot, message):
 
 
 # Bot client initialization
-bot = commands.AutoShardedBot(command_prefix=get_prefix, description=config.desc,case_insensitive=True, intents=discord.Intents.all())
-slash = discord_slash.SlashCommand(bot, sync_commands=True, sync_on_cog_reload=True)
+bot = commands.AutoShardedBot(command_prefix=get_prefix, description=config.desc, case_insensitive=True, intents=discord.Intents.all())
 
 # Setting up logging
 print("Setting Log files to system.log ...[Success]")
