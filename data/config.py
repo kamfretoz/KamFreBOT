@@ -2,7 +2,7 @@ version = "Alpha v0.3"
 botname = "KamFreBOT"
 
 home = 570978148586356750 #Your Error Log Channel ID Here.
-prefix = ["b!", "B!","🅱!",":b:!"]
+prefix = ["b!", "B!","bobert ", "Bobert "]
 desc = "A simple Discord bot made by me for some of my private Discord servers"
 
 bootsplash = True
