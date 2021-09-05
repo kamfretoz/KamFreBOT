@@ -888,12 +888,12 @@ class Information(commands.Cog):
         
         req = await self.bot.http.request(discord.http.Route("GET", "/users/{uid}", uid=user.id))
         banner_id = req["banner"]
-        if banner_id.startswith("a_"):
-            banner_url = f"https://cdn.discordapp.com/banners/{user.id}/{banner_id}.gif?size=4096"
-        else:
-            banner_url = f"https://cdn.discordapp.com/banners/{user.id}/{banner_id}?size=4096"
         # If statement because the user may not have a banner
         if banner_id:
+            if banner_id.startswith("a_"):
+                banner_url = f"https://cdn.discordapp.com/banners/{user.id}/{banner_id}.gif?size=4096"
+            else:
+                banner_url = f"https://cdn.discordapp.com/banners/{user.id}/{banner_id}?size=4096"
             bnr = discord.Embed(
                     description=f"**{user.mention}**'s Banner",
                     title="Banner Viewer",
