@@ -1007,8 +1007,7 @@ class Information(commands.Cog):
     @userinfo_avatar.error
     async def avatar_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
-            await ctx.send('Cannot find that user.')
-            return
+            return await ctx.send('Cannot find that user.')
 
     @userinfo.command(name="id", brief="Mention the user to get their ID")
     async def userinfo_id(self, ctx, user: libneko.converters.InsensitiveUserConverter = None):
@@ -1025,8 +1024,7 @@ class Information(commands.Cog):
     @userinfo_id.error
     async def id_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
-            await ctx.send('Cannot find that user.')
-            return
+            return await ctx.send('Cannot find that user.')
 
     @userinfo.command(name="roles", brief="Show all roles that the member has.")
     async def userinfo_roles(self, ctx, member: libneko.converters.InsensitiveMemberConverter = None):
@@ -1044,8 +1042,7 @@ class Information(commands.Cog):
     @userinfo_roles.error
     async def roles_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
-            await ctx.send('Cannot find that user.')
-            return
+            return await ctx.send('Cannot find that user.')
 
     @userinfo.command(name="mention", brief="Mention a user.", aliases=["tag"])
     async def userinfo_mention(self, ctx, target: libneko.converters.InsensitiveUserConverter = None):
@@ -1053,11 +1050,9 @@ class Information(commands.Cog):
         Mention a user.
         """
         if target is None:
-            await ctx.send(f"Mention who?")
-            return
+            return await ctx.send(f"Mention who?")
         elif target == ctx.message.author:
-            await ctx.send(f"{ctx.message.author.mention} Mentioned themselves.")
-            return
+            return await ctx.send(f"{ctx.message.author.mention} Mentioned themselves.")
         await ctx.send(f"{target.mention} has been mentioned by {ctx.message.author.mention}!")
 
     @userinfo.command(name="shared", aliases=["share"], brief="See all the servers that you shared with the someone")
