@@ -56,7 +56,7 @@ def get_prefix(bot, message):
 
 
 # Bot client initialization
-bot = commands.AutoShardedBot(command_prefix=get_prefix, description=config.desc, case_insensitive=True, intents=discord.Intents.all())
+bot = commands.Bot(command_prefix=get_prefix, description=config.desc, case_insensitive=True, intents=discord.Intents.all())
 
 # Setting up logging
 print("Setting Log files to system.log ...[Success]")
