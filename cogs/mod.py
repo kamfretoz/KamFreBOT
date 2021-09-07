@@ -224,12 +224,12 @@ class Mod(commands.Cog):
         if member.id == ctx.bot.user.id:
             return await ctx.send("For real?")
         success = True
-        if ctx.invoked_with == "fmute" or "fakemute":
+        if "mute" in ctx.invoked_with:
             emb = await self.format_mod_embed(ctx, member, success, "mute")
-            emb.add_field(name="Reason", value=reason)
-        if ctx.invoked_with == "fban" or "fakeban":
+        else:
             emb = await self.format_mod_embed(ctx, member, success, "ban")
-            await ctx.send(embed = emb)
+        emb.add_field(name="Reason", value=reason)
+        await ctx.send(embed=emb)
 
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
