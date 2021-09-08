@@ -1256,8 +1256,7 @@ class Utilities(HttpCogBase):
             if char in inverseMorseAlphabet:
                 decodeMessage += inverseMorseAlphabet[char]
             else:
-                # CNF = Character not found
-                decodeMessage += '<CHARACTER NOT FOUND>'
+                decodeMessage += '<ERROR>'
         await ctx.send(embed=discord.Embed(title="Morse to ASCII Conversion:", description=decodeMessage, timestamp=datetime.utcnow()))
 
     @commands.command(aliases=["a2m"])
