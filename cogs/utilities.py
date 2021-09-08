@@ -1912,8 +1912,8 @@ class Utilities(HttpCogBase):
         """
         A Simple countdown timer
         """
-        if time > 300:
-            return await ctx.send("Do you even need longer than 5 mins?")
+        if time > 3600:
+            return await ctx.send("Maximum duration is 1 hour (3600 seconds)")
         msg = await ctx.send(content="Preparing...")
         await asyncio.sleep(3)
         iteration = time
