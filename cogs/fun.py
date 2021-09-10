@@ -1487,49 +1487,27 @@ class Fun(HttpCogBase):
 
         try:
             alt_name = data.results[0].alternative_names[0]
-            emb.add_field(name="👥 Alternative Name",
-                          value=f"{alt_name}", inline=False)
+            emb.add_field(name="👥 Alternative Name", value=f"{alt_name}", inline=False)
         except IndexError:
             pass
 
         try:
             char_anime_name = data.results[0].anime[0].name
             char_anime_url = data.results[0].anime[0].url
-            emb.add_field(name="📺 Animeography",
-                          value=f"[{char_anime_name}]({char_anime_url})", inline=False)
+            emb.add_field(name="📺 Animeography", value=f"[{char_anime_name}]({char_anime_url})", inline=False)
         except IndexError:
             pass
 
         try:
             char_manga_name = data.results[0].manga[0].name
             char_manga_url = data.results[0].manga[0].url
-            emb.add_field(name="📚 Mangaography",
-                          value=f"[{char_manga_name}]({char_manga_url})", inline=False)
+            emb.add_field(name="📚 Mangaography", value=f"[{char_manga_name}]({char_manga_url})", inline=False)
         except IndexError:
             pass
 
         emb.add_field(name="💳 ID", value=char_id, inline=True)
 
         await ctx.send(embed=emb)
-        
-    # @commands.command(aliases=["uboxgen","ubox"], name="undertalebox")
-    # @commands.cooldown(1, 5, commands.BucketType.user)
-    # async def unboxgen(self, ctx, *, text):
-    #     """Creates an Undertale textbox (Sans)"""
-    #     parameters = {
-    #         "message": text,
-    #         "character": "sans"
-    #     }
-
-    #     await ctx.trigger_typing()
-    #     session = self.acquire_session()
-
-    #     async with session.get(f"https://demirramon.com/utgen.png", params = parameters) as resp:
-    #         image_data = await resp.read()
-
-    #     img = BytesIO(image_data)
-    #     img.seek(0)
-    #     await ctx.send(file=discord.File(fp=img, filename="image.png"))
         
     @cog_ext.cog_slash(name="undertalebox", description="Creates an Undertale textbox",
             options=[
