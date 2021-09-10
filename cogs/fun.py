@@ -27,6 +27,7 @@ with open("cogs/data/ksoft-api_key.json") as json_fp:
     classified = json.load(json_fp)
     ksoft_key = classified["key"]
 
+
 class Fun(HttpCogBase):
     def __init__(self, bot):
         self.bot = bot
@@ -167,42 +168,6 @@ class Fun(HttpCogBase):
         reason = f"for **{text}** " if text else ""
         await ctx.send(f"**{ctx.author.name}** has paid their respect {reason}{choice(hearts)}")
 
-    @commands.command(aliases=['tf'])
-    async def textface(self, ctx, Type: str = None):
-        """Get those dank/cool faces here. Type *textface list for a list."""
-        if Type is None:
-            await ctx.send('That is NOT one of the dank textfaces in here yet. Use: [p]textface [lenny/tableflip/shrug]')
-        else:
-            if Type.lower() == 'lenny':
-                await ctx.send('( ͡° ͜ʖ ͡°)')
-            elif Type.lower() == 'tableflip':
-                await ctx.send('(ノಠ益ಠ)ノ彡┻━┻')
-            elif Type.lower() == 'shrug':
-                await ctx.send('¯\_(ツ)_/¯')
-            elif Type.lower() == 'bignose':
-                await ctx.send('(͡ ͡° ͜ つ ͡͡°)')
-            elif Type.lower() == 'iwant':
-                await ctx.send('ლ(´ڡ`ლ)')
-            elif Type.lower() == 'musicdude':
-                await ctx.send('ヾ⌐*_*ノ♪')
-            elif Type.lower() == 'wot':
-                await ctx.send('ლ,ᔑ•ﺪ͟͠•ᔐ.ლ')
-            elif Type.lower() == 'bomb':
-                await ctx.send('(´・ω・)っ由')
-            elif Type.lower() == 'orlly':
-                await ctx.send("﴾͡๏̯͡๏﴿ O'RLY?")
-            elif Type.lower() == 'money':
-                await ctx.send('[̲̅$̲̅(̲̅ ͡° ͜ʖ ͡°̲̅)̲̅$̲̅]')
-            elif Type.lower() == 'list':
-                color = discord.Color(value=0x00ff00)
-                em = discord.Embed(color=color, title='List of Textfaces')
-                em.description = 'Choose from the following: lenny, tableflip, shrug, bignose, iwant, musicdude, wot, bomb, orlly, money. Type *textface [face].'
-                em.set_footer(
-                    text="Don't you dare question my names for the textfaces.")
-                await ctx.send(embed=em)
-            else:
-                await ctx.send('That is NOT one of the dank textfaces in here yet. Use [p]textface list to see a list of the textfaces.')
-
     @commands.command()
     async def hack(self, ctx, user: libneko.converters.InsensitiveMemberConverter = None):
         """Hack someone's account! Try it!"""
@@ -236,194 +201,6 @@ class Fun(HttpCogBase):
         await msg.edit(content="Retrieving Login Info... [▓▓▓▓▓▓ ]")
         await asyncio.sleep(4)
         await msg.edit(content=f"An error has occurred hacking {user}'s account. Please try again later. ❌")
-
-    @commands.command(aliases=['animation', 'a'])
-    async def anim(self, ctx, Type: str = None):
-        """Animations! Usage: anim [type]. For a list, use [p]anim list."""
-        if Type is None:
-            await ctx.send('Probably a really cool animation, but we have not added them yet! But hang in there! You never know... For a current list, type [p]anim list')
-        else:
-            if Type.lower() == 'wtf':
-                msg = await ctx.send("```W```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```WO```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```WOT```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```WOT D```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```WOT DA```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```WOT DA F```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```WOT DA FU```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```WOT DA FUK```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```WOT DA FUK!```")
-                await asyncio.sleep(1)
-                await msg.edit(content="WOT DA FUK!")
-            elif Type.lower() == 'mom':
-                msg = await ctx.send("```Y```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```YO```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```YO M```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```YO MO```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```YO MOM```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```YO MOM!```")
-                await asyncio.sleep(1)
-                await msg.edit(content="YO MOM!")
-            elif Type.lower() == 'gethelp':
-                msg = await ctx.send("```STOP!```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```STOP! G```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```STOP! Ge```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```STOP! Get```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```STOP! Get s```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```STOP! Get so```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```STOP! Get som```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```STOP! Get some```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```STOP! Get some HELP```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```STOP! Get some HELP!!!```")
-                await asyncio.sleep(1)
-                await msg.edit(content="STOP! Get some HELP!!!")
-            elif Type.lower() == 'sike':
-                msg = await ctx.send("```W```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Wa```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Wai```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Wait```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Wait.```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Wait..```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Wait...```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```SIKE!```")
-                await asyncio.sleep(1)
-                await msg.edit(content="SIKE!")
-            elif Type.lower() == 'gitgud':
-                msg = await ctx.send("```G```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Gi```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Git```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Git GUD!```")
-                await asyncio.sleep(1)
-                await msg.edit(content="Git GUD!")
-            elif Type.lower() == 'clock':
-                msg = await ctx.send(":clock12:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock1230:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock1:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock130:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock2:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock230:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock3:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock330:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock4:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock430:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock5:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock530:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock6:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock630:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock7:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock730:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock8:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock830:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock9:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock930:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock10:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock1030:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock11:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock1130:")
-                await asyncio.sleep(1)
-                await msg.edit(content=":clock12:")
-            elif Type.lower() == 'mate':
-                msg = await ctx.send("```Y```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Ye```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Ye W```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Ye WO```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Ye WOT```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Ye WOT M8```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Ye WOT M8?!?!?!```")
-                await asyncio.sleep(1)
-                await msg.edit(content="Ye WOT M8?!?!?!")
-            elif Type.lower() == 'oj':
-                msg = await ctx.send("```M```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Mm```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Mmm```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Mmm i```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Mmm it```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Mmm it'```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Mmm it's```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Mmm it's a```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Mmm it's a ORANGE```")
-                await asyncio.sleep(1)
-                await msg.edit(content="```Mmm it's a ORANGE JUICE```")
-                await asyncio.sleep(1)
-                await msg.edit(content="Mmm it's a ORANGE JUICE")
-            elif Type.lower() == 'list':
-                color = discord.Color(value=0x00ff00)
-                em = discord.Embed(
-                    color=color, title="Current List of Awesome Animations:")
-                em.description = "wtf (anim wtf), mom (anim mom), gethelp (anim gethelp), sike (anim sike), gitgud (anim gitgud), clock (anim clock), mate (anim mate), oj (anim oj)."
-                em.set_footer(text="We will always be adding new animations!")
-                await ctx.send(embed=em)
-            else:
-                await ctx.send('Probably a really cool animation, but we have not added them yet! But hang in there! You never know... For a current list, type [p]anim list')
 
     # 8Ball Command
     @commands.command(name="8ball", aliases=["ball", "8b"])
@@ -1232,7 +1009,6 @@ class Fun(HttpCogBase):
 
         await ctx.trigger_typing()
 
-
         parameters = {
             "q": name,
             "limit": 1
@@ -1240,7 +1016,6 @@ class Fun(HttpCogBase):
         session = self.acquire_session()
         async with session.get('https://api.jikan.moe/v3/search/anime', params=parameters, timeout=5) as resp:
             data = json.loads(await resp.read(), object_hook=DictObject)
-
 
         try:
             anime_id = data.results[0].mal_id
@@ -1487,49 +1262,52 @@ class Fun(HttpCogBase):
 
         try:
             alt_name = data.results[0].alternative_names[0]
-            emb.add_field(name="👥 Alternative Name", value=f"{alt_name}", inline=False)
+            emb.add_field(name="👥 Alternative Name",
+                          value=f"{alt_name}", inline=False)
         except IndexError:
             pass
 
         try:
             char_anime_name = data.results[0].anime[0].name
             char_anime_url = data.results[0].anime[0].url
-            emb.add_field(name="📺 Animeography", value=f"[{char_anime_name}]({char_anime_url})", inline=False)
+            emb.add_field(name="📺 Animeography",
+                          value=f"[{char_anime_name}]({char_anime_url})", inline=False)
         except IndexError:
             pass
 
         try:
             char_manga_name = data.results[0].manga[0].name
             char_manga_url = data.results[0].manga[0].url
-            emb.add_field(name="📚 Mangaography", value=f"[{char_manga_name}]({char_manga_url})", inline=False)
+            emb.add_field(name="📚 Mangaography",
+                          value=f"[{char_manga_name}]({char_manga_url})", inline=False)
         except IndexError:
             pass
 
         emb.add_field(name="💳 ID", value=char_id, inline=True)
 
         await ctx.send(embed=emb)
-        
+
     @cog_ext.cog_slash(name="undertalebox", description="Creates an Undertale textbox",
-            options=[
-            create_option(
-                name="character",
-                description="Character name you want to use.",
-                option_type=SlashCommandOptionType.STRING,
-                required=True
-            ),
-            create_option(
-                name="text",
-                description="Text you want to write.",
-                option_type=SlashCommandOptionType.STRING,
-                required=True
-            )])
-    async def _uboxgen(self, ctx:SlashContext, character: str, text: str):
+                       options=[
+                           create_option(
+                               name="character",
+                               description="Character name you want to use.",
+                               option_type=SlashCommandOptionType.STRING,
+                               required=True
+                           ),
+                           create_option(
+                               name="text",
+                               description="Text you want to write.",
+                               option_type=SlashCommandOptionType.STRING,
+                               required=True
+                           )])
+    async def _uboxgen(self, ctx: SlashContext, character: str, text: str):
         parameters = {
             "message": text,
             "character": character
         }
         session = self.acquire_session()
-        async with session.get(f"https://demirramon.com/utgen.png", params = parameters) as resp:
+        async with session.get(f"https://demirramon.com/utgen.png", params=parameters) as resp:
             image_data = await resp.read()
 
         img = BytesIO(image_data)
@@ -1690,7 +1468,7 @@ class Fun(HttpCogBase):
                 description=f"👉 {ctx.author.display_name} poked {target}!",  color=0x8253c3)
             embed.set_image(url=result)
             await ctx.send(embed=embed)
-            
+
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def slap(self, ctx, *, target=None):
@@ -1710,7 +1488,7 @@ class Fun(HttpCogBase):
                 description=f"🤜 {ctx.author.display_name} slapped {target}!",  color=0x8253c3)
             embed.set_image(url=result)
             await ctx.send(embed=embed)
-            
+
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def tickle(self, ctx, *, target=None):
@@ -1790,7 +1568,7 @@ class Fun(HttpCogBase):
                 description=f"🤗 {ctx.author.display_name} hugs {target}!",  color=0x8253c3)
             embed.set_image(url=result)
             await ctx.send(embed=embed)
-            
+
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def name(self, ctx):
@@ -1805,7 +1583,7 @@ class Fun(HttpCogBase):
             embed = discord.Embed(
                 description=result, color=0x8253c3)
             await ctx.send(embed=embed)
-            
+
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def why(self, ctx):
@@ -2197,6 +1975,7 @@ class Fun(HttpCogBase):
         out = dt.data.output
         emb = discord.Embed(title=tipe, description=out)
         await ctx.send(embed=emb)
+
 
 def setup(bot):
     bot.add_cog(Fun(bot))
