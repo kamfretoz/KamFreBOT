@@ -47,8 +47,7 @@ I've tried to put the credit as much as i can on the code. If i'm missing anyone
 
 * [Discord.py](https://github.com/Rapptz/discord.py)
 * [Libneko](https://gitlab.com/Tmpod/libneko)
-<br>
-Many thanks to Discord Coding Academy (https://discord.gg/dca) server for helping with errors and troubleshooting!
+Many thanks to Discord Coding Academy (<https://discord.gg/dca>) server for helping with errors and troubleshooting!
   
 ## APIs used
 
@@ -75,6 +74,7 @@ Many thanks to Discord Coding Academy (https://discord.gg/dca) server for helpin
 * [Neko's Life API](https://nekos.life/)
 
 ## Modules used
+
 * [Vaporwavely](https://github.com/Owanesh/vaporwavely)
 * [Owoify](https://github.com/crinny/owoify)
 
