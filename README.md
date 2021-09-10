@@ -48,7 +48,7 @@ I've tried to put the credit as much as i can on the code. If i'm missing anyone
 * [Discord.py](https://github.com/Rapptz/discord.py)
 * [Libneko](https://gitlab.com/Tmpod/libneko)
 <br>
-Many thanks to [Discord Coding Academy](https://discord.gg/dca) server for helping with errors and troubleshooting!
+Many thanks to Discord Coding Academy (https://discord.gg/dca) server for helping with errors and troubleshooting!
   
 ## APIs used
 
@@ -64,7 +64,7 @@ Many thanks to [Discord Coding Academy](https://discord.gg/dca) server for helpi
 * [icanhazdadjoke](https://icanhazdadjoke.com/)
 * [Chuck Norris API](https://api.chucknorris.io/)
 * [Kanye REST](https://kanye.rest/)
-* [[Taylor REST](https://taylor.rest/)
+* [Taylor REST](https://taylor.rest/)
 * [XKCD](https://xkcd.com/)
 * [Jikan (MyAnimeList)](https://jikan.docs.apiary.io/#introduction/information)
 * [Ergast F1 API](https://ergast.com/mrd/)
