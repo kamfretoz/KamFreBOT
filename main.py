@@ -14,6 +14,7 @@ import traceback
 import random
 from textwrap import dedent
 from discord.ext import commands
+import discord_slash
 
 if os.name != "nt":
     import uvloop
@@ -57,6 +58,7 @@ def get_prefix(bot, message):
 
 # Bot client initialization
 bot = commands.Bot(command_prefix=get_prefix, description=config.desc, case_insensitive=True, intents=discord.Intents.all())
+slash = discord_slash.SlashCommand(bot, sync_commands=True, sync_on_cog_reload=True)
 
 # Setting up logging
 print("Setting Log files to system.log ...[Success]")
@@ -389,6 +391,30 @@ async def unloadallcogs(ctx):
             await ctx.send(f"```py\n{traceback.format_exc()}\n```")
         else:
             await ctx.send(":gear: Successfully Unloaded all cogs!")
+
+
+#
+# SLASH COMMAND TEMPORARY
+#
+
+# @bot.slash_command(guild_ids=[875986914367385600],name = "Undertalebox")
+# async def ubox(self,
+#                ctx,
+#                character: Option(str, "Choose the Character!", chioces=["frisk","flowey","toriel","napstablook","sans","papyrus","undyne","temmie","mettaton","muffet","mettaton-ex","asgore","asriel","chara","gaster"], required=True), 
+#                text: Option(str, "Enter your text!", required=True)
+#                ):
+#     """Creates an Undertale textbox"""
+#     parameters = {
+#         "message": text,
+#         "character": character
+#     }
+#     await ctx.trigger_typing()
+#     async with aiohttp.ClientSession() as session:
+#         async with session.get(f"https://demirramon.com/utgen.png", params = parameters) as resp:
+#             image_data = await resp.read()
+#     img = BytesIO(image_data)
+#     img.seek(0)
+#     await ctx.respond(file=discord.File(fp=img, filename="image.png"))
 
 ## RUN THE WHOLE THING ##
 bot.run(TOKEN)

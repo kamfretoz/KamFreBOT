@@ -1,4 +1,5 @@
 py-cord[voice]
+discord-py-interactions
 git+https://gitlab.com/Tmpod/libneko
 aiodns
 brotli

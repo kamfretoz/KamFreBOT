@@ -2,6 +2,9 @@ import asyncio
 import time
 
 from discord.ext import commands
+from discord_slash import cog_ext, SlashContext
+from discord_slash.utils.manage_commands import create_option
+from discord_slash.model import SlashCommandOptionType
 
 import data.quotes as quotes
 import discord
@@ -1508,19 +1511,46 @@ class Fun(HttpCogBase):
         emb.add_field(name="💳 ID", value=char_id, inline=True)
 
         await ctx.send(embed=emb)
+        
+    # @commands.command(aliases=["uboxgen","ubox"], name="undertalebox")
+    # @commands.cooldown(1, 5, commands.BucketType.user)
+    # async def unboxgen(self, ctx, *, text):
+    #     """Creates an Undertale textbox (Sans)"""
+    #     parameters = {
+    #         "message": text,
+    #         "character": "sans"
+    #     }
 
-    @commands.command(aliases=["uboxgen","ubox"], name="undertalebox")
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    async def unboxgen(self, ctx, *, text):
-        """Creates an Undertale textbox (Sans)"""
+    #     await ctx.trigger_typing()
+    #     session = self.acquire_session()
+
+    #     async with session.get(f"https://demirramon.com/utgen.png", params = parameters) as resp:
+    #         image_data = await resp.read()
+
+    #     img = BytesIO(image_data)
+    #     img.seek(0)
+    #     await ctx.send(file=discord.File(fp=img, filename="image.png"))
+        
+    @cog_ext.cog_slash(name="undertalebox", description="Creates an Undertale textbox",
+            options=[
+            create_option(
+                name="character",
+                description="Character name you want to use.",
+                option_type=SlashCommandOptionType.STRING,
+                required=True
+            ),
+            create_option(
+                name="text",
+                description="Text you want to write.",
+                option_type=SlashCommandOptionType.STRING,
+                required=True
+            )])
+    async def _uboxgen(self, ctx:SlashContext, character: str, text: str):
         parameters = {
             "message": text,
-            "character": "sans"
+            "character": character
         }
-
-        await ctx.trigger_typing()
         session = self.acquire_session()
-
         async with session.get(f"https://demirramon.com/utgen.png", params = parameters) as resp:
             image_data = await resp.read()
 
