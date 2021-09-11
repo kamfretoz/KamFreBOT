@@ -215,7 +215,10 @@ class Utilities(HttpCogBase):
                     if str(name).endswith(".png") or str(name).endswith(".gif"):
                         emb.set_image(url=attachment)
                 await ctx.send(embed=emb, delete_after=5)
-            self.delsniped.popitem()
+            try:
+                self.delsniped.popitem()
+            except:
+                pass
         except KeyError:
             await ctx.message.delete()
             await ctx.send(embed=discord.Embed(description="⚠ No Message found! Perhaps you're too slow?"), delete_after=3)
