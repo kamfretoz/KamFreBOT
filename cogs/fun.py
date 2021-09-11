@@ -1411,7 +1411,7 @@ class Fun(HttpCogBase):
     # https://github.com/sks316/mewtwo-bot/blob/master/cogs/fun.py#L136
     @commands.command(aliases=["pokemon", "pkmn"])
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def pokedex(self, ctx, *, arg):
+    async def pokedex(self, ctx, *, query):
         #--Some Pokemon with several forms are named differently on the API, so if one of those Pokemon are specified, we replace the query with the correct name--#
         pkmn = {
             'meloetta': 'Meloetta - Aria Forme',
@@ -1434,7 +1434,7 @@ class Fun(HttpCogBase):
             'wishiwashi': 'Wishiwashi - Solo Form',
             'minior': 'Minior - Meteor Form',
             'mimikyu': 'Mimikyu - Disguised Form',
-        }.get(arg.lower(), arg)
+        }.get(query.lower(), query)
 
         await ctx.trigger_typing()
 
