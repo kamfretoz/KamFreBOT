@@ -330,7 +330,7 @@ class Utilities(HttpCogBase):
     # pingstorm command
     @commands.cooldown(rate=2, per=1800.0, type=commands.BucketType.guild)
     @commands.max_concurrency(number=1, per=commands.BucketType.guild, wait=False)
-    @commands.command(hidden=True, aliases=["pingmachine", "pingspam","spamping"], enabled=False)
+    @commands.command(hidden=True, aliases=["pingmachine", "pingspam","spamping"])
     @commands.guild_only()
     async def pingstorm(self, ctx, user: libneko.converters.InsensitiveMemberConverter, amount: int = 5):
         """Ping specified user number of times, 5 if no amount specified, Maximum amount is 200. (Cooldown: 1 use per 60 mins, Use wisely.)"""
@@ -341,11 +341,9 @@ class Utilities(HttpCogBase):
 
         if not self.lock.locked():
             async with self.lock:
-                loading = await ctx.send("Ping Machine Initializing in 3 seconds!")
-                str(loading)
+                await ctx.send("Ping Machine Initializing in 3 seconds!")                
                 await asyncio.sleep(3)
-                start = await ctx.send("Begin!")
-                str(start)
+                await ctx.send("Begin!")
 
                 async def ping_task(self):
                     ping = 0
@@ -366,6 +364,22 @@ class Utilities(HttpCogBase):
 
             ping = ctx.bot.loop.create_task(ping_task(self))
             self.pingeries.update({f"{user.id}@{ctx.guild.id}": ping})
+            
+    @commands.command(hidden=True, aliases=["stopping"])
+    @commands.guild_only()
+    async def pingstop(self, ctx, user: libneko.converters.InsensitiveMemberConverter):
+        pinged = self.pingeries.get(f"{user.id}@{ctx.guild.id}")
+        if pinged is None:
+            return await ctx.send(
+                embed=discord.Embed(
+                    description=f"{user.mention} is not being pinged!",
+                    color=discord.Colour.red(),
+                )
+            )
+        await ctx.send(f"Stopping the pings for {user.mention} on {ctx.guild.name}")
+        del self.pingeries[f"{user.id}@{ctx.guild.id}"]
+        
+        
 
     # Betterping command
     @commands.command(aliases=["pong"])
@@ -1769,7 +1783,7 @@ class Utilities(HttpCogBase):
                                option_type=SlashCommandOptionType.STRING,
                                required=True
     )])
-    async def currency(self, ctx, amount: int, origin: str, destination: str):
+    async def currency(self, ctx: SlashContext, amount: int, origin: str, destination: str):
         """
         Convert currencies from one to another
         For the list of acceptable format go to: https://en.wikipedia.org/wiki/ISO_4217#Active_codes
