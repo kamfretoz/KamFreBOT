@@ -1301,7 +1301,7 @@ class Fun(HttpCogBase):
                                option_type=SlashCommandOptionType.STRING,
                                required=True
                            )])
-    async def _uboxgen(self, ctx: SlashContext, character: str, text: str):
+    async def uboxgen(self, ctx: SlashContext, character: str, text: str):
         parameters = {
             "message": text,
             "character": character
@@ -1408,7 +1408,6 @@ class Fun(HttpCogBase):
         except:
             await msg.edit(content=":x: Sorry, I couldn't find that word. Check your spelling and try again.")
 
-    # https://github.com/sks316/mewtwo-bot/blob/master/cogs/fun.py#L136
     @commands.command(aliases=["pokemon", "pkmn"])
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def pokedex(self, ctx, *, query):
@@ -1497,7 +1496,6 @@ class Fun(HttpCogBase):
                 except (KeyError, TypeError):
                     return await ctx.send(":x: I couldn't find any Pokémon with that name. Double-check your spelling and try again.")
 
-    # https://github.com/sks316/mewtwo-bot/blob/master/cogs/fun.py#L307
     @commands.command(aliases=["pats", "pet"])
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def pat(self, ctx, *, target=None):
