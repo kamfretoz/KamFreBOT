@@ -133,32 +133,23 @@ class Fun(HttpCogBase):
                     delete_after=5.0,
                 )
 
-    # Flipcoin command
-    @commands.cooldown(rate=3, per=3.0)
-    @commands.command(aliases=["flipcoin", "coin"], hidden=True)
-    async def coinflip(self, ctx):
-        """Heads or Tails!"""
-        choices = ["https://i.imgur.com/vzcNPdF.png",
-                   "https://i.imgur.com/9YBSnmr.png"]  # Put your custom coin image here.
-        flip = discord.Embed(title="Flip The Coin!", color=0xFFFFFF)
-        flip.set_image(url=choice(choices))
-        await ctx.send(embed=flip)
+    # # Flipcoin command
+    # @commands.cooldown(rate=3, per=3.0)
+    # @commands.command(aliases=["flipcoin", "coin"], hidden=True)
+    # async def coinflip(self, ctx):
+    #     """Heads or Tails!"""
+    #     choices = ["https://i.imgur.com/vzcNPdF.png",
+    #                "https://i.imgur.com/9YBSnmr.png"]  # Put your custom coin image here.
+    #     flip = discord.Embed(title="Flip The Coin!", color=0xFFFFFF)
+    #     flip.set_image(url=choice(choices))
+    #     await ctx.send(embed=flip)
 
-    @commands.command(aliases=["bqt"], hidden=True)
-    async def bobertquote(self, ctx):
-        """Send a random Bobert Quote!"""
-        choices = str(choice(quotes.bobert))
-        embed_quote = discord.Embed(
-            title="Bobert said...", description=f"{choices}")
-        embed_quote.set_thumbnail(url="https://i.imgur.com/zcVN4q1.png")
-        await ctx.send(embed=embed_quote)
-
-    @commands.command(hidden=True)
-    async def dance(self, ctx):
-        """Bobert Dance!"""
-        bdance = discord.Embed()
-        bdance.set_image(url="https://i.imgur.com/1DEtTrQ.gif")
-        await ctx.send(embed=bdance)
+    # @commands.command(hidden=True)
+    # async def dance(self, ctx):
+    #     """Dance!"""
+    #     dance = discord.Embed()
+    #     dance.set_image(url="https://i.imgur.com/1DEtTrQ.gif")
+    #     await ctx.send(embed=dance)
 
     @commands.command()
     async def f(self, ctx, *, text: commands.clean_content = None):
