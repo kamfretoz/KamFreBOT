@@ -546,7 +546,7 @@ class Mod(commands.Cog):
     @commands.guild_only()
     @commands.command()
     async def unmute(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, reason: str = None):
-        """Removes channel overrides for specified member"""
+        """Unmute someone so they can talk again"""
         if ctx.author.top_role > member.top_role or ctx.author == ctx.guild.owner:
             try:
                 muted = self.muted.get(f"{member.id}@{ctx.guild.id}")
