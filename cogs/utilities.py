@@ -21,6 +21,10 @@ import json
 import base64
 import ciso8601
 
+from discord_slash import cog_ext, SlashContext
+from discord_slash.utils.manage_commands import create_option
+from discord_slash.model import SlashCommandOptionType
+
 import libneko
 from libneko import pag, converters
 import discord
@@ -1745,25 +1749,37 @@ class Utilities(HttpCogBase):
             #--Send error message if command fails, as it's assumed a definition isn't found--#
             await msg.edit(content=":x: Sorry, I couldn't find that word. Check your spelling and try again.")
 
-    @commands.command(aliases=["curr"])
-    @commands.cooldown(2, 5, commands.BucketType.user)
-    async def currency(self, ctx, origin: str = None, to: str = None, amount: int = None):
+    @cog_ext.cog_slash(name="currency", description="Convert currencies from one to another",
+                       options=[
+                           create_option(
+                               name="amount",
+                               description="Amount you want to convert.",
+                               option_type=SlashCommandOptionType.INTEGER,
+                               required=True
+                           ),
+                           create_option(
+                               name="origin",
+                               description="Currency you want to convert from.",
+                               option_type=SlashCommandOptionType.STRING,
+                               required=True
+                           ),
+                           create_option(
+                               name="destination",
+                               description="Currency you want to convert to.",
+                               option_type=SlashCommandOptionType.STRING,
+                               required=True
+    )])
+    async def currency(self, ctx, amount: int, origin: str, destination: str):
         """
         Convert currencies from one to another
         For the list of acceptable format go to: https://en.wikipedia.org/wiki/ISO_4217#Active_codes
         """
-        if origin is None or to is None or amount is None:
-            await ctx.send(embed=discord.Embed(description=f"Usage: `[p]curr <from> <to> <amount>`\nHere is the list of Currency IDs: https://en.wikipedia.org/wiki/ISO_4217#Active_codes"))
-            return
-
-        await ctx.trigger_typing()
-
         head = {
             "Authorization": ksoft_key
         }
         params = {
             "from": origin,
-            "to": to,
+            "to": destination,
             "value": amount
         }
         session = self.acquire_session()
@@ -1779,7 +1795,7 @@ class Utilities(HttpCogBase):
 
         emb = discord.Embed(timestamp=datetime.utcnow())
         emb.add_field(
-            name=f"Conversion from {origin.upper()} to {to.upper()}", value=prt)
+            name=f"Conversion from {origin.upper()} to {destination.upper()}", value=prt)
         emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png",text="Data provided by: KSoft.Si")
         await ctx.send(embed=emb)
 
