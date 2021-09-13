@@ -33,6 +33,7 @@ from collections import namedtuple
 class Mod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.muted = {}
 
     async def format_mod_embed(self, ctx, user, success, method, logs = None):
         """Helper func to format an embed to prevent extra code"""
@@ -480,11 +481,9 @@ class Mod(commands.Cog):
     @commands.bot_has_permissions(manage_channels=True)
     @commands.guild_only()
     @commands.command()
-    async def mute(self, ctx, member: libneko.converters.InsensitiveMemberConverter, duration, *, reason: str = None):
+    async def mute(self, ctx, member: libneko.converters.InsensitiveMemberConverter, duration: str, *, reason: str = None):
         """
-        Denies someone from chatting in all text channels and talking in voice channels for a specified duration
-
-        Warning! This command will spam your Audit Logs!
+        Denies someone from chatting in all text channels and talking in voice channels for a specified duration    
         """
         if ctx.author.top_role > member.top_role or ctx.author == ctx.guild.owner:
             unit = duration[-1]
@@ -498,41 +497,49 @@ class Mod(commands.Cog):
                 time = int(duration[:-1]) * 60 * 60
                 longunit = "hours"
             else:
-                await ctx.send("Invalid Unit! Use `s`, `m`, or `h`.")
-                return
-
-            progress = await ctx.send(embed=discord.Embed(description=f"Muting {member}!"))
-            try:
-                for channel in ctx.guild.text_channels:
-                    await channel.set_permissions(
-                        member,
-                        overwrite = discord.PermissionOverwrite(send_messages = False),
-                        reason = reason,
+                return await ctx.send("Invalid Unit! Use `s`, `m`, or `h`.")
+            
+            muted = self.muted.get(f"{member.id}@{ctx.guild.id}")
+            if muted is not None:
+                await ctx.channel.send(
+                    embed=discord.Embed(
+                        description=f"{member.mention} is already muted!",
+                        color=discord.Colour.red(),
                     )
-
-                for channel in ctx.guild.voice_channels:
-                    await channel.set_permissions(
-                        member,
-                        overwrite = discord.PermissionOverwrite(speak = False),
-                        reason = reason,
-                    )
-            except:
-                success = False
+                )
             else:
-                success = True
-
-            emb = await self.format_mod_embed(
-                ctx, member, success, "mute", f"{str(duration[:-1])} {longunit}"
-            )
-            emb.add_field(name="Reason", value=reason)
-            await progress.delete()
-            await ctx.send(embed = emb, content="💀 You're gonna have a bad time")
-            await asyncio.sleep(time)
-            try:
-                for channel in ctx.guild.channels:
-                    await channel.set_permissions(member, overwrite = None, reason = reason)
-            except:
-                pass
+                async def mute_task(self):
+                    role = discord.utils.get(ctx.guild.roles, name="Muted") # retrieves muted role returns none if there isn't 
+                    if not role: # checks if there is muted role
+                        try: # creates muted role 
+                            muted = await ctx.guild.create_role(name="Muted", reason="To be use for muting")
+                            for channel in ctx.guild.channels: # removes permission to view and send in the channels 
+                                await channel.set_permissions(muted, send_messages=False,
+                                                              read_message_history=False,
+                                                              read_messages=False)
+                                await member.add_roles(muted) # add newly created role
+                        except discord.Forbidden:
+                            return await ctx.send("I have no permissions to make a muted role") # self-explainatory
+                    else:
+                        await member.add_roles(role) # gives the member the muted role
+                    
+                    success = True
+                    emb = await self.format_mod_embed(ctx, member, success, "mute", f"{str(duration[:-1])} {longunit}")
+                    emb.add_field(name="Reason", value=reason)
+                    await ctx.send(embed = emb, content="💀 You're gonna have a bad time")
+                    
+                    await asyncio.sleep(time)
+                    
+                    try:
+                        await member.remove_roles(discord.utils.get(ctx.guild.roles, name="Muted")) # removes muted role
+                    except:
+                        pass
+                    
+                    del self.muted[f"{member.id}@{ctx.guild.id}"]
+                
+                mute = self.bot.loop.create_task(mute_task(self))
+                self.muted.update({f"{member.id}@{ctx.guild.id}": mute})
+                    
 
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(manage_channels=True)
@@ -541,17 +548,23 @@ class Mod(commands.Cog):
     async def unmute(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, reason: str = None):
         """Removes channel overrides for specified member"""
         if ctx.author.top_role > member.top_role or ctx.author == ctx.guild.owner:
-            progress = await ctx.send(embed=discord.Embed(description=f"Unmuting {member}!"))
             try:
-                for channel in ctx.message.guild.channels:
-                    await channel.set_permissions(member, overwrite = None, reason = reason)
+                muted = self.muted.get(f"{member.id}@{ctx.guild.id}")
+                if muted is None:
+                    return await ctx.send(
+                        embed=discord.Embed(
+                            description=f"{member.mention} is not muted!",
+                            color=discord.Colour.red(),
+                        )
+                    )
+                del self.muted[f"{member.id}@{ctx.guild.id}"]
+                await member.remove_roles(discord.utils.get(ctx.guild.roles, name="Muted")) # removes muted role
             except:
                 success = False
             else:
                 success = True
 
             emb = await self.format_mod_embed(ctx, member, success, "unmute")
-            await progress.delete()
             await ctx.send(embed = emb)
 
     @commands.has_permissions(manage_nicknames=True)
