@@ -31,7 +31,6 @@ with open("cogs/data/ksoft-api_key.json") as json_fp:
 class Fun(HttpCogBase):
     def __init__(self, bot):
         self.bot = bot
-        self.lock = asyncio.Lock()
         self.jynxed = {}
         self.loop = asyncio.get_event_loop()
 
