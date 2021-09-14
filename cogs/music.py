@@ -567,7 +567,10 @@ class Music(commands.Cog):
             # TIMEOUT ERROR EXCEPTION
             await embedded_list.delete()
             return
-        await ctx.message.add_reaction("✅")
+        try:
+            await ctx.message.add_reaction("✅")
+        except:
+            pass
         await self.play(ctx=ctx, video=search_result[int(msg.content) - 1])
         await msg.delete()
         await embedded_list.delete()
@@ -711,7 +714,10 @@ class Music(commands.Cog):
         if state.current.requester == ctx.message.author:
             # do skip song
             state.voice_client.stop()
-            await ctx.message.add_reaction("⏭")
+            try:
+                await ctx.message.add_reaction("⏭")
+            except:
+                pass
             return
         elif ctx.author.id not in state.skip_votes:
             # increment voters
@@ -719,7 +725,10 @@ class Music(commands.Cog):
             total_votes = len(state.skip_votes)
             # check voters
             if total_votes >= 3:
-                await ctx.message.add_reaction("⏭")
+                try:
+                    await ctx.message.add_reaction("⏭")
+                except:
+                    pass
                 state.voice_client.stop()
             else:
                 await ctx.send(f"⏭ | Current skip votes **{total_votes}/3**")
@@ -737,7 +746,10 @@ class Music(commands.Cog):
         if state.voice_client is None or not state.voice_client.is_playing():
             await ctx.send(embed=discord.Embed(description=":x: | Not playing any song."))
             return
-        await ctx.message.add_reaction("\U000023F8")
+        try:
+            await ctx.message.add_reaction("\U000023F8")
+        except:
+            pass
         state.voice_client.pause()
 
     @commands.command(name="resume")
@@ -755,7 +767,10 @@ class Music(commands.Cog):
             await ctx.send(":x: | Nothing to resume.")
         # check if theres any song to resume.
         if not state.current is None:
-            await ctx.message.add_reaction("\U000025B6")
+            try:
+                await ctx.message.add_reaction("\U000025B6")
+            except:
+                pass
             state.voice_client.resume()
 
     @commands.command(name="queue", aliases=["q", "nowplaying", "np"])
@@ -784,7 +799,10 @@ class Music(commands.Cog):
             state.repeat = False
         else:
             state.repeat = True
-        await ctx.message.add_reaction("🔁")
+        try:
+            await ctx.message.add_reaction("🔁")
+        except:
+            pass
 
     @commands.command()
     @commands.guild_only()
