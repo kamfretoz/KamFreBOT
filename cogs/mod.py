@@ -112,24 +112,11 @@ class Mod(commands.Cog):
             for member_id in members_list:
 
                 await asyncio.sleep(0.5)
-                dm_msg = []
                 try:
                     member = await commands.MemberConverter().convert(ctx, member_id)
-                    try:
-                        dm_msg.append(await member.send(
-                            "https://tenor.com/view/end-finality-finale-goodbye-the-end-gif-7463563"
-                        ))
-                        dm_msg.append(await member.send(
-                            f":no_entry_sign: You were __**BANNED**__ from '***{ctx.guild.name}***' for the reason: ``{reason}``"
-                        ))
-                    except:
-                        pass
-                    await member.ban(reason=f"{reason} by {ctx.author}")
+                    await member.ban(reason=f'"{reason}" by {ctx.author}')
                     banned.append(f"{member.mention} {member}")
                 except commands.MemberNotFound or discord.UserNotFound:
-                    if dm_msg:
-                        for msg in dm_msg:
-                            await msg.delete()
                     try:
                         user_ = await commands.UserConverter().convert(ctx, member_id)
                         await ctx.message.guild.fetch_ban(user_)
@@ -137,15 +124,9 @@ class Mod(commands.Cog):
                     except:
                         not_found.append(f"<@{member_id}>")
                 except discord.Forbidden:
-                    if dm_msg:
-                        for msg in dm_msg:
-                            await msg.delete()
                     memb = await commands.MemberConverter().convert(ctx, member_id)
                     forbidden.append(f"{memb.mention} {memb}")
                 except:
-                    if dm_msg:
-                        for msg in dm_msg:
-                            await msg.delete()
                     failed.append(f"<@{member_id}>")
 
                 m += 1
@@ -512,12 +493,12 @@ class Mod(commands.Cog):
                     role = discord.utils.get(ctx.guild.roles, name="Muted") # retrieves muted role returns none if there isn't 
                     if not role: # checks if there is muted role
                         try: # creates muted role 
-                            muted = await ctx.guild.create_role(name="Muted", reason="To be use for muting")
+                            muted = await ctx.guild.create_role(name="Muted", reason="To be used for muting")
                             for channel in ctx.guild.channels: # removes permission to view and send in the channels 
                                 await channel.set_permissions(muted, send_messages=False,
                                                               read_message_history=False,
                                                               read_messages=False)
-                                await member.add_roles(muted) # add newly created role
+                                await member.add_roles(muted, reason=reason) # add newly created role
                         except discord.Forbidden:
                             return await ctx.send("I have no permissions to make a muted role") # self-explainatory
                     else:
