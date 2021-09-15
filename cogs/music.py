@@ -571,7 +571,10 @@ class Music(commands.Cog):
             await ctx.message.add_reaction("✅")
         except:
             pass
-        await self.play(ctx=ctx, video=search_result[int(msg.content) - 1])
+        try:
+            await self.play(ctx=ctx, video=search_result[int(msg.content) - 1])
+        except ValueError:
+            await ctx.semd(embed=discord.Embed(description="Invalid Value! Please type the entry number to continue!"))
         await msg.delete()
         await embedded_list.delete()
 
