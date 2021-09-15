@@ -12,6 +12,7 @@ youtube-dl
 google-api-python-client
 pytemperature
 qrcode[pil]
+pillow
 ciso8601
 python-dateutil
 uvloop # Remove this if you're running on Windows.
