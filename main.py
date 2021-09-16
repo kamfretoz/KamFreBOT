@@ -183,6 +183,7 @@ class CogManager(commands.Cog):
             "not_found": "not found.",
         }
 
+
     async def set_extension(self, ctx:commands.Context, name:str, action:str):
         """Base function for loading/unloading/reloading extensions."""
         name = name.replace(" ", "_").lower()
@@ -190,15 +191,15 @@ class CogManager(commands.Cog):
         try:
             if action == "reload":
                 try:
-                    bot.unload_extension(f"extensions.{name}")
-                    bot.load_extension(f"extensions.{name}")
+                    bot.unload_extension(f"cogs.{name}")
+                    bot.load_extension(f"cogs.{name}")
                 except commands.errors.ExtensionNotLoaded:
-                    bot.load_extension(f"extensions.{name}")
+                    bot.load_extension(f"cogs.{name}")
                     action = "load"
             elif action == "load":
-                bot.load_extension(f"extensions.{name}")
+                bot.load_extension(f"cogs.{name}")
             else:
-                bot.unload_extension(f"extensions.{name}")
+                bot.unload_extension(f"cogs.{name}")
         except commands.errors.ExtensionAlreadyLoaded:
             result = "already_loaded"
         except commands.errors.ExtensionNotLoaded:
