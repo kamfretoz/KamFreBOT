@@ -565,8 +565,7 @@ class Music(commands.Cog):
             msg = await self.client.wait_for("message", check=check, timeout=15.0)
         except:
             # TIMEOUT ERROR EXCEPTION
-            await embedded_list.delete()
-            return
+            return await embedded_list.delete()
         try:
             await ctx.message.add_reaction("✅")
         except:
@@ -574,7 +573,9 @@ class Music(commands.Cog):
         try:
             await self.play(ctx=ctx, video=search_result[int(msg.content) - 1])
         except ValueError:
-            await ctx.semd(embed=discord.Embed(description="Invalid Value! Please type the entry number to continue!"))
+            await ctx.send(embed=discord.Embed(description="Invalid Value! Please type the entry number to continue!", delete_after=5))
+        except AttributeError:
+            await ctx.send(embed=discord.Embed(description="I'm not connected to Voice channel! Please try again."), delete_after=5)
         await msg.delete()
         await embedded_list.delete()
 
