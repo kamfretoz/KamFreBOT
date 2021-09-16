@@ -87,7 +87,7 @@ for file in glob.iglob("cogs/*.py"):
         bot.load_extension("cogs.{}".format(re.split(r"/|\\", file)[-1][:-3]))
     except Exception as e:
         print(f"Failed to load {file} \n{type(e).__name__}: {e}")
-
+        
 bot.load_extension("libneko.extras.help")
 bot.load_extension("libneko.extras.superuser")
 
@@ -170,7 +170,7 @@ async def about(ctx):
 ###################################
 # DEBUGGING and SYSTEM UTILITIES #
 #################################
-class ExtensionManager(commands.Cog):
+class CogManager(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
         self.message = "**⚙️ Extension `{name}` {result}**"
@@ -258,45 +258,17 @@ class ExtensionManager(commands.Cog):
         async with ctx.typing():
             await self.set_extensions(ctx, action="reload")
             
-    @commands.command(aliases=["clist"])
-    @commands.is_owner()
-    async def loaded(ctx):
-        """Shows loaded/unloaded cogs"""
-        core_cogs = []
-        cogs = [
-            "cogs." + os.path.splitext(f)[0]
-            for f in [os.path.basename(f) for f in glob.glob("cogs/*.py")]
-        ]
-        loaded = [x.__module__.split(".")[1] for x in bot.cogs.values()]
-        unloaded = [c.split(".")[1] for c in cogs if c.split(".")[1] not in loaded]
-        embed = discord.Embed(title="List of loaded cogs")
-        cogs = [w.replace("cogs.", "") for w in cogs]
-        for cog in loaded:
-            if cog in cogs:
-                core_cogs.append(cog)
-        if core_cogs:
-            embed.add_field(
-                name="Loaded", value="\n".join(sorted(core_cogs)), inline=True
-            )
-        if unloaded:
-            embed.add_field(
-                name="Not Loaded", value="\n".join(sorted(unloaded)), inline=True
-            )
-        else:
-            embed.add_field(name="Not Loaded", value="None!", inline=True)
-        await ctx.send(embed=embed)
-            
     # This one is for testing error messages only
     @commands.command(aliases=["dummy", "error"])
     @commands.is_owner()
-    async def crash(ctx):
+    async def crash(self, ctx):
         """Use to generate an error message for debugging purpose"""
         await ctx.send("Generating an Error Message..")
         raise ValueError('This is an Exception that are manually generated.')
     
     @commands.command(aliases=["clearconsole", "cc", "cls"])
     @commands.is_owner()
-    async def clear(ctx):
+    async def clear(self, ctx):
         """Clear the console."""
         if os.name == "nt":
             os.system("cls")
@@ -320,7 +292,7 @@ class ExtensionManager(commands.Cog):
 
     @commands.command(aliases=["reboot"])
     @commands.is_owner()
-    async def restart(ctx):
+    async def restart(self, ctx):
         """Restarts the bot for updates"""
         openerr = None
         core = "main.py"
@@ -339,13 +311,14 @@ class ExtensionManager(commands.Cog):
 
     @commands.command(aliases=["poweroff", "shutdown", "kms", "altf4", "fuckmylife", "fml", "fuckoff"])
     @commands.is_owner()
-    async def poweroof(ctx):
+    async def poweroof(self, ctx):
         """Turn the bot Off"""
         await ctx.send("Shutting Down...")
         await ctx.bot.logout()
         exit()
 
-bot.add_cog(ExtensionManager(bot))
+bot.add_cog(CogManager(bot))
+print("Cogs Manager has been loaded.")
 
 ## RUN THE WHOLE THING ##
 bot.run(TOKEN)
