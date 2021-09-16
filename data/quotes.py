@@ -172,34 +172,8 @@ errors = (
     "Hell is empty",
     "Catastrophic Failure",
     "This is NOT what i expected!",
-    "Stop breaking me! :("
-)
-
-#############################################################################
-## Collections of Bobert's Quote from "The Amazing World of Gumball" show. ##
-#############################################################################
-
-bobert = (
-    "*Scans Gumball's homework and fills it in automatically in 2,4 seconds* Homework complete!",
-    "Computing request. *Playing Gumball's request* \"I just want to skip the whole hassle of life.\" Command integrated. Terminating Gumball's life.",
-    "Computing... Negative. My processor cannot take things anymore literally.",
-    "Command integrated. *Bobert starts bouncing*"
-    "Directive followed. No hand was raised during the hurting process.",
-    "Directive followed. No part of my body was raised during the hurting process.",
-    "Directive followed. I am emitting concentrated radioactive waves.",
-    "According to the law in New Mexico, females are forbidden to appear unshaven in public.",
-    "According to the law in New Jersey, it is illegal to slurp your soup.",
-    "In North Carolina, it is illegal to sing off-key.",
-    "Do you have a license for that goatee?",
-    "*Ripping the guard's goatee* In Massachusetts, goatees are illegal without a license.",
-    "Obstruction of justice.",
-    "Bobert destroyed public property. Engaging penalty. *Tasers himself* Bobert committed aggravated assault on Bobert. Engaging penalty.",
-    "*Steals Betty's purse and runs away* You'll never catch me!",
-    "Analyzing problem. The most logical solution would be to terminate myself. Deleting System thirty-two...",
-    "*Slaps Gumball* You stop it. You are being illogical!",
-    "Command followed. All life on Earth should be preserved: human, animal, insect, even virus.",
-    "Order invalid. You are part of the threat yourself. Terminating conversation in three...two...one..",
-    "Commencing final extinction in T minus ten. Nine. Eight–",
-    "Attachment detected: Gumball and Darwin. Illogical. Life forms cannot attach themselves to email.",
-    "Extinction protocol conflict with life protection protocol. Illogical argument detected. Terminating extinction protocol."
+    "Stop breaking me! :(",
+    "Oyasumi...",
+    "I did not succumb.",
+    "You think this is funny?!"
 )
