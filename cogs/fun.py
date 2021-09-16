@@ -13,7 +13,7 @@ import ciso8601
 import data.topics as topics
 from textwrap import shorten, fill
 from datetime import datetime
-from random import choices, randint, choice
+from random import randint, choice
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from libneko import embeds
@@ -942,7 +942,7 @@ class Fun(HttpCogBase):
             await ctx.send('Write something, reee!', delete_after=3.0)
 
     @commands.command(aliases=["topics"])
-    @commands.cooldown(rate=2, per=60, type=commands.BucketType.guild)
+    @commands.cooldown(rate=2, per=300, type=commands.BucketType.guild)
     async def topic(self, ctx):
         """Kept running out of topic to talk about? This command might help you!"""
         await ctx.trigger_typing()
@@ -954,6 +954,7 @@ class Fun(HttpCogBase):
         await ctx.send(embed=embed)
 
     @commands.command(aliases=["truths", "thetruth"])
+    @commands.cooldown(rate=1, per=60, type=commands.BucketType.guild)
     async def truth(self, ctx):
         """Spill out TheTruth!"""
         await ctx.trigger_typing()
@@ -968,6 +969,7 @@ class Fun(HttpCogBase):
             topics.usedTruth.popleft()
 
     @commands.command(aliases=["dares"])
+    @commands.cooldown(rate=1, per=60, type=commands.BucketType.guild)
     async def dare(self, ctx):
         """Are you up for the Dare?"""
         await ctx.trigger_typing()
@@ -982,7 +984,7 @@ class Fun(HttpCogBase):
             topics.usedDare.popleft()
 
     @commands.group(aliases=["mal", "anime"], invoke_without_command=True)
-    @commands.cooldown(rate=2, per=3.0, type=commands.BucketType.guild)
+    @commands.cooldown(rate=2, per=5, type=commands.BucketType.guild)
     async def myanimelist(self, ctx, *, name: str = None):
         """
         Find anime information from MyAnimeList!
