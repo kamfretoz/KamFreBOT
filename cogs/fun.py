@@ -3,7 +3,7 @@ import time
 
 from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
-from discord_slash.utils.manage_commands import create_option
+from discord_slash.utils.manage_commands import create_option, create_choice
 from discord_slash.model import SlashCommandOptionType
 
 import discord
@@ -13,7 +13,7 @@ import ciso8601
 import data.topics as topics
 from textwrap import shorten, fill
 from datetime import datetime
-from random import randint, choice
+from random import choices, randint, choice
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from libneko import embeds
@@ -1269,7 +1269,7 @@ class Fun(HttpCogBase):
             char_manga_name = data.results[0].manga[0].name
             char_manga_url = data.results[0].manga[0].url
             emb.add_field(name="📚 Mangaography",
-                          value=f"[{char_manga_name}]({char_manga_url})", inline=False)
+                        value=f"[{char_manga_name}]({char_manga_url})", inline=False)
         except IndexError:
             pass
 
@@ -1278,19 +1278,19 @@ class Fun(HttpCogBase):
         await ctx.send(embed=emb)
 
     @cog_ext.cog_slash(name="undertalebox", description="Creates an Undertale textbox",
-                       options=[
-                           create_option(
-                               name="character",
-                               description="Character name you want to use.",
-                               option_type=SlashCommandOptionType.STRING,
-                               required=True
-                           ),
-                           create_option(
-                               name="text",
-                               description="Text you want to write.",
-                               option_type=SlashCommandOptionType.STRING,
-                               required=True
-                           )])
+                        options=[
+                            create_option(
+                                name="character",
+                                description="Character name you want to use.",
+                                option_type=SlashCommandOptionType.STRING,
+                                required=True
+                            ),
+                            create_option(
+                                name="text",
+                                description="Text you want to write.",
+                                option_type=SlashCommandOptionType.STRING,
+                                required=True
+                            )])
     async def uboxgen(self, ctx: SlashContext, character: str, text: str):
         parameters = {
             "message": text,
@@ -1304,24 +1304,88 @@ class Fun(HttpCogBase):
         img.seek(0)
         await ctx.send(file=discord.File(fp=img, filename="image.png"))
         
-    @commands.command(name="oneshotgen")
-    async def oshotgen(self, ctx):
+    @cog_ext.cog_slash(name="oneshotbox", description="Creates an OneShot Textbox",
+                        options=[
+                            create_option(
+                                name="text",
+                                description="The text you want to be written",
+                                option_type=SlashCommandOptionType.STRING,
+                                required=True
+                            ),
+                            create_option(
+                                name="character",
+                                description="Character you want to use (Only Niko is available atm)",
+                                option_type=SlashCommandOptionType.STRING,
+                                required=False,
+                                choices=[
+                                    create_choice(
+                                        name="Niko",
+                                        value="niko"
+                                    )
+                                ]
+                            ),
+                            create_option(
+                                name="emotion",
+                                description="Emotion of the character",
+                                option_type=SlashCommandOptionType.STRING,
+                                required=False,
+                                choices=[
+                                    create_choice(
+                                        name="Happy",
+                                        value="happy"
+                                    ),
+                                    create_choice(
+                                        name="Neutral",
+                                        value="neutral"
+                                    ),
+                                    create_choice(
+                                        name="Sad",
+                                        value="sad"
+                                    )
+                                ]
+                            ),
+                            create_option(
+                                name="expression",
+                                description="Expression of the character (Please choose the appropriate option regarding the emotion)",
+                                option_type=SlashCommandOptionType.STRING,
+                                required=False,
+                                choices=[
+                                    create_choice(
+                                        name="Smile",
+                                        value="smile"
+                                    ),
+                                    create_choice(
+                                        name="Confused",
+                                        value="what"
+                                    ),
+                                    create_choice(
+                                        name="Cry",
+                                        value="cry"
+                                    )
+                                ]
+                            )
+                        ]
+    )
+    async def oneshotgen(self, ctx, text: str, character: str = "niko", emotion: str = "happy", expression: str = "smile"):
         with Image.open("res/oneshot/template.png") as template:
             template = template.convert("RGBA")
-            with Image.open("res/oneshot/faces/niko_smile.png") as sprite:
-                sprite = sprite.convert("RGBA")
-                template.alpha_composite(sprite, (496, 16))
-                
-                font = ImageFont.truetype("res/oneshot/font-b.ttf", 24)
-                draw = ImageDraw.Draw(template)
-                text = fill("Nobody asked? NOBODY ASKED? So I can’t give my opinion to someone unless they ask? Nobody asked for your dad to leave but he did anyway. All these amazing replies in the English language, and you choose this shit? Well fuck you, nobody asked me to fucking punch you in the face but I fucking will unless you shut up.",width=40)
-                draw.multiline_text((20, 22), text, fill=(255,255,255,255), font=font, align = "left")
-                
-                with BytesIO() as image_binary:
-                    template.save(image_binary, format="PNG")
-                    image_binary.seek(0)
-                    
-                    await ctx.send(file=discord.File(fp=image_binary, filename="textbox.png"))
+            with Image.open("res/oneshot/textboxArrow.png") as arrow:
+                arrow = arrow.convert("RGBA")
+                template.alpha_composite(arrow, (300, 118))
+                with Image.open(f"res/oneshot/faces/{character}/{emotion}/{expression}.png") as sprite:
+                    sprite = sprite.convert("RGBA")
+                    template.alpha_composite(sprite, (496, 16))
+
+                    font = ImageFont.truetype("res/oneshot/font-b.ttf", 24)
+                    draw = ImageDraw.Draw(template)
+                    stuff = fill(text ,width=40)
+                    draw.multiline_text((20, 8), stuff, fill=(255,255,255,255), font=font, align = "left")
+
+                    with BytesIO() as image_binary:
+                        template.save(image_binary, format="PNG")
+                        image_binary.seek(0)
+
+                        await ctx.send(file=discord.File(fp=image_binary, filename="textbox.png"))
 
     # https://github.com/sks316/mewtwo-bot/blob/master/cogs/fun.py#L220
     @commands.command(aliases=["amb"])
@@ -2072,6 +2136,15 @@ class Fun(HttpCogBase):
         emb = discord.Embed(title=tipe, description=out)
         await ctx.send(embed=emb)
 
+    @commands.command()
+    async def sua(self, ctx):
+        """sua irma"""
+        await ctx.send("irma")
+    
+    @cog_ext.cog_slash(name="sua")
+    async def _sua(self, ctx:SlashContext):
+        """sua irma"""
+        await ctx.send("irma")
 
 def setup(bot):
     bot.add_cog(Fun(bot))
