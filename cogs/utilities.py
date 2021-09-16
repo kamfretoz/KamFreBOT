@@ -1813,7 +1813,7 @@ class Utilities(HttpCogBase):
         emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png",text="Data provided by: KSoft.Si")
         await ctx.send(embed=emb)
 
-    @commands.command(aliases=["lyric", "ly", "lrc"], disabled = True)
+    @commands.command(aliases=["lyric", "ly", "lrc"], enabled = False)
     @commands.cooldown(2, 5, commands.BucketType.user)
     async def lyrics(self, ctx, *, query: str = None):
         """
