@@ -541,7 +541,10 @@ class Utilities(HttpCogBase):
         em.add_field(name="Input:", value=f"√{x}", inline=False,)
         em.add_field(name="Output:", value=out, inline=False)
         await ctx.send(content=None, embed=em)
-        await ctx.message.delete()
+        try:
+            await ctx.message.delete()
+        except:
+            pass
 
     @commands.command(aliases=["msgdump"])
     @commands.has_permissions(administrator=True)
@@ -885,9 +888,6 @@ class Utilities(HttpCogBase):
     @commands.command(aliases=["qr"])
     async def qrmaker(self, ctx, *, data: str):
         """Allows you to make a custom QR Code"""
-        if not os.path.isdir("data/qrcodes"):
-            os.mkdir("data/qrcodes")
-
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -896,9 +896,10 @@ class Utilities(HttpCogBase):
         )
         qr.add_data(data)
         img = qr.make_image(fill_color="black", back_color="white")
-        img.save(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png")
-        await ctx.send(f"{ctx.author.mention}", file=discord.File(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png"))
-        # os.remove(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png") #Feel free to disable the removal
+        with BytesIO() as file:
+                img.save(file, "PNG")
+                file.seek(0)
+                await ctx.send(f"{ctx.author.mention}", file=discord.File(file, f"QR_{ctx.author.name}_{ctx.message.id}.png"))
 
     @commands.command(aliases=["qrinv"])
     @commands.guild_only()
@@ -909,22 +910,19 @@ class Utilities(HttpCogBase):
         Make sure to adjust the available options to suite your need!
         Set the `age` (defaults to 1 day) and `uses` argument to 0 to make a permanent link (default behavior)
         """
-        if not os.path.isdir("data/qrcodes"):
-            os.mkdir("data/qrcodes")
-
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
             box_size=10,
             border=2,
         )
-
         link = await ctx.channel.create_invite(max_age = age, max_uses = uses, temporary = temp)
         qr.add_data(link)
         img = qr.make_image(fill_color="black", back_color="white")
-        img.save(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png")
-        await ctx.send(f"{ctx.author.mention}, here is the QR Code Invite of {ctx.guild.name}", file=discord.File(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png"))
-        os.remove(f"data/qrcodes/QR_{ctx.author.name}_{ctx.message.id}.png") #Feel free to disable the removal
+        with BytesIO() as file:
+                img.save(file, "PNG")
+                file.seek(0)
+                await ctx.send(f"{ctx.author.mention}, here is the QR Code Invite of {ctx.guild.name}", file=discord.File(file, f"QR_{ctx.author.name}_{ctx.guild.name}.png"))
 
     @commands.command(aliases=["whoisplaying"])
     @commands.guild_only()
