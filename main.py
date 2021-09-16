@@ -8,6 +8,7 @@ import os
 import logging
 import data.config as config
 import glob
+import re
 import sys
 import subprocess
 import traceback
@@ -23,7 +24,6 @@ if os.name != "nt":
 print("Importing Modules....[Success]")
 
 # bootup logo, use the bootup_logo.txt to modify it
-
 
 def bootsplash():
     if config.bootsplash is True:
@@ -57,7 +57,7 @@ def get_prefix(bot, message):
 
 
 # Bot client initialization
-bot = commands.Bot(command_prefix=get_prefix, description=config.desc, case_insensitive=True, intents=discord.Intents.all())
+bot = commands.Bot(command_prefix=get_prefix, description=config.desc, case_insensitive=True, intents=discord.Intents.all(), strip_after_prefix=True)
 slash = discord_slash.SlashCommand(bot, sync_commands=True, sync_on_cog_reload=True)
 
 # Setting up logging
@@ -80,40 +80,21 @@ with open("data/coin.json") as json_fp:
     classified = json.load(json_fp)  # Loading data from the json file
     TOKEN = classified["token"]  # Getting the token
 
-# Load up cogs (Ugly implementation i know, at least it works for now...)
+# Load up cogs
 print("Loading all Cogs and Extensions...")
-for extension in os.listdir("cogs"):
-    if extension.endswith(".py"):
-        try:
-            bot.load_extension("cogs." + extension[:-3])
-        except Exception as e:
-            print("Failed to load extension {}\n{}: {}".format(
-                extension, type(e).__name__, e))
+for file in glob.iglob("cogs/*.py"):
+    try:
+        bot.load_extension("cogs.{}".format(re.split(r"/|\\", file)[-1][:-3]))
+    except Exception as e:
+        print(f"Failed to load {file} \n{type(e).__name__}: {e}")
 
 bot.load_extension("libneko.extras.help")
 bot.load_extension("libneko.extras.superuser")
-
-# Listener setup                    [RESPONSE ON MENTION WAS A MISTAKE]
-# @bot.listen("on_message")
-# async def on_mention_reply_prefix(message: discord.Message) -> None:
-#    """Replies the bot's prefix when mentioned"""
-#    if bot.user.mentioned_in(message):
-#        await message.channel.send(f"**Hello! My prefix is `{config.prefix[0]}`.**")
-
 
 # Loading message
 @bot.event
 async def on_connect():
     print("Connected to Discord!")
-
-
-#@bot.event
-#async def on_resumed():
-#    print("WARNING: connection error was occurred and Successfully Resumed/Reconnected the Session.")
-#    print(f"Current time: {time.ctime()}")
-#    print(
-#        f"Still watching {len(bot.users)} users across {len(bot.guilds)} servers.")
-
 
 @bot.event
 async def on_ready():
@@ -189,208 +170,182 @@ async def about(ctx):
 ###################################
 # DEBUGGING and SYSTEM UTILITIES #
 #################################
+class ExtensionManager(commands.Cog):
+    def __init__(self, bot) -> None:
+        self.bot = bot
+        self.message = "**⚙️ Extension `{name}` {result}**"
+        self.results = {
+            "loaded": "loaded!",
+            "unloaded": "unloaded!",
+            "reloaded": "reloaded!",
+            "already_loaded": "is already loaded!",
+            "not_loaded": "is not loaded.",
+            "not_found": "not found.",
+        }
 
-
-@bot.command(aliases=["reboot"])
-@commands.is_owner()
-async def restart(ctx):
-    """Restarts the bot for updates"""
-    openerr = None
-    core = "main.py"
-    await ctx.send("Restarting!")
-    try:
-        if sys.platform == "win32":
-            os.startfile(core)
-        else:
-            openerr = "open" if sys.platform == "darwin" else "xdg-open"
-            subprocess.call([openerr, core])
-    except FileNotFoundError:
-        await ctx.send("❌ Unable to open the file!\n Shutting Down.")
-    await ctx.bot.close()
-    sys.exit()
-
-
-@bot.command(aliases=["poweroff", "shutdown", "kms", "altf4", "fuckmylife", "fml", "fuckoff"])
-@commands.is_owner()
-async def poweroof(ctx):
-    """Turn the bot Off"""
-    await ctx.send("Goodbye Cruel World...")
-    await ctx.bot.close()
-    exit()
-
-
-@bot.command(aliases=["clist"])
-@commands.is_owner()
-async def loaded(ctx):
-    """Shows loaded/unloaded cogs"""
-    core_cogs = []
-    cogs = [
-        "cogs." + os.path.splitext(f)[0]
-        for f in [os.path.basename(f) for f in glob.glob("cogs/*.py")]
-    ]
-    loaded = [x.__module__.split(".")[1] for x in bot.cogs.values()]
-    unloaded = [c.split(".")[1] for c in cogs if c.split(".")[1] not in loaded]
-    embed = discord.Embed(title="List of loaded cogs")
-    cogs = [w.replace("cogs.", "") for w in cogs]
-    for cog in loaded:
-        if cog in cogs:
-            core_cogs.append(cog)
-    if core_cogs:
-        embed.add_field(
-            name="Loaded", value="\n".join(sorted(core_cogs)), inline=True
-        )
-    if unloaded:
-        embed.add_field(
-            name="Not Loaded", value="\n".join(sorted(unloaded)), inline=True
-        )
-    else:
-        embed.add_field(name="Not Loaded", value="None!", inline=True)
-    await ctx.send(embed=embed)
-
-
-@bot.command(aliases=["clearconsole", "cc", "cls"])
-@commands.is_owner()
-async def clear(ctx):
-    """Clear the console."""
-    if os.name == "nt":
-        os.system("cls")
-    else:
+    async def set_extension(self, ctx:commands.Context, name:str, action:str):
+        """Base function for loading/unloading/reloading extensions."""
+        name = name.replace(" ", "_").lower()
+        action = action.lower()
         try:
-            os.system("clear")
-        except Exception:
-            for _ in range(100):
-                print()
-    message = "Logged in as %s." % bot.user
-    uid_message = "User id: %s." % bot.user.id
-    separator = "-" * max(len(message), len(uid_message))
-    print(separator)
-    try:
-        print(message)
-    except:  # some bot usernames with special chars fail on shitty platforms
-        print(message.encode(errors="replace").decode())
-    print(uid_message)
-    print(separator)
-    await ctx.send("Console cleared successfully.")
-
-
-# This one is for testing error messages only
-@bot.command(aliases=["dummy", "error"])
-@commands.is_owner()
-async def crash(ctx):
-    """Use to generate an error message for debugging purpose"""
-    await ctx.send("Generating an Error Message..")
-    raise ValueError('This is an Exception that are manually generated.')
-
-# Bot and System control command
-
-
-@bot.command(aliases=["load"])
-@commands.is_owner()
-async def loadcog(ctx, name):
-    """
-    Load the specified cog
-    """
-    async with ctx.typing():
-        try:
-            bot.load_extension(f"cogs.{name}")
-        except Exception as e:
-            await ctx.send(f"```py\n{traceback.format_exc()}\n```")
-        else:
-            await ctx.send(f":gear: Successfully Loaded **{name}** Module!")
-
-
-@bot.command(aliases=["unload"])
-@commands.is_owner()
-async def unloadcog(ctx, name):
-    """
-    Unload the specified cog
-    """
-    async with ctx.typing():
-        try:
-            bot.unload_extension(f"cogs.{name}")
-        except Exception as ex:
-            await ctx.send(f"```py\n{traceback.format_exc()}\n```")
-        else:
-            await ctx.send(f":gear: Successfully Unloaded **{name}** Module!")
-
-
-@bot.command(aliases=["reload"])
-@commands.is_owner()
-async def reloadcog(ctx, name):
-    """
-    Reload the specified cog
-    """
-    async with ctx.typing():
-        try:
-            bot.unload_extension(f"cogs.{name}")
-            bot.load_extension(f"cogs.{name}")
-        except Exception as e:
-            await ctx.send(f"```py\n{traceback.format_exc()}\n```")
+            if action == "reload":
+                try:
+                    bot.unload_extension(f"extensions.{name}")
+                    bot.load_extension(f"extensions.{name}")
+                except commands.errors.ExtensionNotLoaded:
+                    bot.load_extension(f"extensions.{name}")
+                    action = "load"
+            elif action == "load":
+                bot.load_extension(f"extensions.{name}")
+            else:
+                bot.unload_extension(f"extensions.{name}")
+        except commands.errors.ExtensionAlreadyLoaded:
+            result = "already_loaded"
         except commands.errors.ExtensionNotLoaded:
-            await ctx.send(f"Extension cannot be found or it hasn't been loaded")
+            result = "not_loaded"
+        except commands.errors.ExtensionNotFound:
+            result = "not_found"
+        except:
+            await ctx.send(f"Exception:```py\n{traceback.format_exc(1980)}\n```")
+            return
         else:
-            await ctx.send(f":gear: Successfully Reloaded the **{name}** module!")
+            result = action + "ed"
 
+        await ctx.send(self.message.format(name=name, result=self.results[result]))
+    
+    async def set_extensions(self, ctx, action:str):
+        """Function for loading/unloading/reloading all the extensions."""
+        for file in glob.iglob("extensions/*.py"):
+            name = re.split(r"/|\\", file)[-1][:-3]
+            await self.set_extension(ctx, name, action=action)
 
-@bot.command(aliases=["reloadall"])
-@commands.is_owner()
-async def reloadallcogs(ctx):
-    """
-    Reload all cogs!
-    """
-    async with ctx.typing():
-        await ctx.send(":gear: Reloading all Cogs!")
+    @commands.is_owner()
+    @commands.command(aliases=["load_cog", "loadcog", "load"])
+    async def load_extension(self, ctx, *, name:str):
+        """Loads the specified extension/cog."""
+        await self.set_extension(ctx, name, action="load")
+
+    @commands.is_owner()
+    @commands.command(aliases=["load_all", "loadall"])
+    async def load_all_extensions(self, ctx):
+        """Loads all available extensions/cogs."""
+        async with ctx.typing():
+            await self.set_extensions(ctx, action="load")
+
+    @commands.is_owner()
+    @commands.command(aliases=["unload_cog", "unloadcog", "unload"])
+    async def unload_extension(self, ctx, *, name:str):
+        """Unloads the specified extension/cog."""
+        await self.set_extension(ctx, name, action="unload")
+
+    @commands.is_owner()
+    @commands.command(aliases=["unload_all", "unloadall"])
+    async def unload_all_extensions(self, ctx):
+        """Unloads all available extensions/cogs."""
+        async with ctx.typing():
+            await self.set_extensions(ctx, action="unload")
+
+    @commands.is_owner()
+    @commands.command(aliases=["reload_cog", "reloadcog", "reload"])
+    async def reload_extension(self, ctx, *, name:str):
+        """Reloads the specified extension/cog."""
+        await self.set_extension(ctx, name, action="reload")
+
+    @commands.is_owner()
+    @commands.command(aliases=["reload_all", "reloadall"])
+    async def reload_all_extensions(self, ctx):
+        """Reloads all available extensions/cogs."""
+        async with ctx.typing():
+            await self.set_extensions(ctx, action="reload")
+            
+    @commands.command(aliases=["clist"])
+    @commands.is_owner()
+    async def loaded(ctx):
+        """Shows loaded/unloaded cogs"""
+        core_cogs = []
+        cogs = [
+            "cogs." + os.path.splitext(f)[0]
+            for f in [os.path.basename(f) for f in glob.glob("cogs/*.py")]
+        ]
+        loaded = [x.__module__.split(".")[1] for x in bot.cogs.values()]
+        unloaded = [c.split(".")[1] for c in cogs if c.split(".")[1] not in loaded]
+        embed = discord.Embed(title="List of loaded cogs")
+        cogs = [w.replace("cogs.", "") for w in cogs]
+        for cog in loaded:
+            if cog in cogs:
+                core_cogs.append(cog)
+        if core_cogs:
+            embed.add_field(
+                name="Loaded", value="\n".join(sorted(core_cogs)), inline=True
+            )
+        if unloaded:
+            embed.add_field(
+                name="Not Loaded", value="\n".join(sorted(unloaded)), inline=True
+            )
+        else:
+            embed.add_field(name="Not Loaded", value="None!", inline=True)
+        await ctx.send(embed=embed)
+            
+    # This one is for testing error messages only
+    @commands.command(aliases=["dummy", "error"])
+    @commands.is_owner()
+    async def crash(ctx):
+        """Use to generate an error message for debugging purpose"""
+        await ctx.send("Generating an Error Message..")
+        raise ValueError('This is an Exception that are manually generated.')
+    
+    @commands.command(aliases=["clearconsole", "cc", "cls"])
+    @commands.is_owner()
+    async def clear(ctx):
+        """Clear the console."""
+        if os.name == "nt":
+            os.system("cls")
+        else:
+            try:
+                os.system("clear")
+            except Exception:
+                for _ in range(100):
+                    print()
+        message = "Logged in as %s." % bot.user
+        uid_message = "User id: %s." % bot.user.id
+        separator = "-" * max(len(message), len(uid_message))
+        print(separator)
         try:
-            for extension in config.extensions:
-                await ctx.send(f":gear: Unloading {extension} Module!", delete_after=5)
-                bot.unload_extension(extension)
-                await ctx.send(f":gear: Reloading {extension} Module!", delete_after=5)
-                bot.load_extension(extension)
-                await ctx.send(f":gear: Successfully Reloaded **{extension}** Module!")
-        except Exception as e:
-            await ctx.send(f"```py\n{traceback.format_exc()}\n```")
-        else:
-            await ctx.send(":gear: Successfully Reloaded all cogs!")
+            print(message)
+        except:  # some bot usernames with special chars fail on shitty platforms
+            print(message.encode(errors="replace").decode())
+        print(uid_message)
+        print(separator)
+        await ctx.send("Console cleared successfully.")
 
-
-@bot.command(aliases=["loadall"])
-@commands.is_owner()
-async def loadallcogs(ctx):
-    async with ctx.typing():
-        """
-        Load all cogs
-        """
-        await ctx.send(":gear: Loading all Cogs!")
+    @commands.command(aliases=["reboot"])
+    @commands.is_owner()
+    async def restart(ctx):
+        """Restarts the bot for updates"""
+        openerr = None
+        core = "main.py"
+        await ctx.send("Restarting!")
         try:
-            for extension in config.extensions:
-                bot.load_extension(extension)
-                await ctx.send(
-                    f":gear: Successfully Loaded {extension} Module!", delete_after=5
-                )
-        except Exception as e:
-            await ctx.send(f"```py\n{traceback.format_exc()}\n```")
-        else:
-            await ctx.send(":gear: Successfully Loaded all cogs!")
+            if sys.platform == "win32":
+                os.startfile(core)
+            else:
+                openerr = "open" if sys.platform == "darwin" else "xdg-open"
+                subprocess.call([openerr, core])
+        except FileNotFoundError:
+            await ctx.send("❌ Unable to open the file!\n Shutting Down.")
+        await ctx.bot.close()
+        sys.exit()
 
 
-@bot.command(aliases=["unloadall"])
-@commands.is_owner()
-async def unloadallcogs(ctx):
-    """
-    Unload all cogs
-    """
-    async with ctx.typing():
-        await ctx.send(":gear: Unloading all Cogs!")
-        try:
-            for extension in config.extensions:
-                bot.unload_extension(extension)
-                await ctx.send(
-                    f":gear: Successfully Unloaded {extension}", delete_after=5
-                )
-        except Exception as e:
-            await ctx.send(f"```py\n{traceback.format_exc()}\n```")
-        else:
-            await ctx.send(":gear: Successfully Unloaded all cogs!")
+    @commands.command(aliases=["poweroff", "shutdown", "kms", "altf4", "fuckmylife", "fml", "fuckoff"])
+    @commands.is_owner()
+    async def poweroof(ctx):
+        """Turn the bot Off"""
+        await ctx.send("Shutting Down...")
+        await ctx.bot.logout()
+        exit()
+
+bot.add_cog(ExtensionManager(bot))
 
 ## RUN THE WHOLE THING ##
 bot.run(TOKEN)
