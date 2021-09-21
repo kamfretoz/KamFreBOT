@@ -1,4 +1,6 @@
 import asyncio
+from os import name
+import re
 import time
 
 from discord.ext import commands
@@ -10,6 +12,7 @@ import discord
 import libneko
 import json
 import ciso8601
+from libneko.pag.optionpicker import option_picker
 import data.topics as topics
 from textwrap import shorten, fill
 from datetime import datetime
@@ -461,49 +464,6 @@ class Fun(HttpCogBase):
             description=joke, timestamp=datetime.utcnow(), color=0x8B0000)
         emb.set_thumbnail(url=icon)
 
-        await ctx.send(embed=emb)
-
-    @commands.command(aliases=["kw", "kanye"])
-    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
-    async def kanyewest(self, ctx):
-        """
-        Get a random Kanye West quote!
-        """
-
-        await ctx.trigger_typing()
-
-        session = self.acquire_session()
-        async with session.get('https://api.kanye.rest/') as resp:
-            resp.raise_for_status()
-            data = await resp.json()
-
-        quote = data["quote"]
-
-        emb = discord.Embed(title="Kanye West said:",
-                            description=quote, timestamp=datetime.utcnow())
-        emb.set_thumbnail(
-            url="https://freepngimg.com/download/kanye_west/7-2-kanye-west-png.png")
-        await ctx.send(embed=emb)
-
-    @commands.command(aliases=["ts", "taylor"])
-    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
-    async def taylorswift(self, ctx):
-        """
-        Get a random Taylor Swift quote!
-        """
-
-        await ctx.trigger_typing()
-
-        session = self.acquire_session()
-        async with session.get('https://api.taylor.rest/') as resp:
-            resp.raise_for_status()
-            data = await resp.json()
-
-        quote = data["quote"]
-
-        emb = discord.Embed(title="Taylor Swift said:",
-                            description=quote, timestamp=datetime.utcnow())
-        emb.set_thumbnail(url="https://i.ibb.co/kH35WZX/taylor.png")
         await ctx.send(embed=emb)
 
     @commands.command(aliases=["succ"], hidden=True)
@@ -1181,20 +1141,16 @@ class Fun(HttpCogBase):
             url="https://cdn.myanimelist.net/img/sp/icon/apple-touch-icon-256.png")
         emb.set_footer(
             icon_url="https://jikan.moe/assets/images/logo/jikan.logo.png", text="Powered By: Jikan")
-        emb.add_field(name="📑 Title",
-                      value=f"[{manga_title}]({manga_url})", inline=False)
+        emb.add_field(name="📑 Title",value=f"[{manga_title}]({manga_url})", inline=False)
 
         if manga_synopsis:
-            emb.add_field(name="ℹ Synopsis",
-                          value=manga_synopsis, inline=False)
+            emb.add_field(name="ℹ Synopsis",value=manga_synopsis, inline=False)
         else:
-            emb.add_field(name="ℹ Synopsis",
-                          value="No Synopsis Found.", inline=False)
+            emb.add_field(name="ℹ Synopsis",value="No Synopsis Found.", inline=False)
 
         emb.add_field(name="⏳ Status", value=stat, inline=False)
         emb.add_field(name="📁 Type", value=manga_type, inline=False)
-        emb.add_field(name="📅 Publish Date",
-                      value=formatted_start, inline=False)
+        emb.add_field(name="📅 Publish Date",value=formatted_start, inline=False)
         emb.add_field(name="📚 Volumes", value=manga_volumes, inline=True)
         emb.add_field(name="📰 Chapters", value=manga_chapters, inline=True)
         emb.add_field(name="⭐ Score", value=f"{score}", inline=True)
@@ -1255,7 +1211,7 @@ class Fun(HttpCogBase):
         try:
             alt_name = data.results[0].alternative_names[0]
             emb.add_field(name="👥 Alternative Name",
-                          value=f"{alt_name}", inline=False)
+                        value=f"{alt_name}", inline=False)
         except IndexError:
             pass
 
@@ -1263,7 +1219,7 @@ class Fun(HttpCogBase):
             char_anime_name = data.results[0].anime[0].name
             char_anime_url = data.results[0].anime[0].url
             emb.add_field(name="📺 Animeography",
-                          value=f"[{char_anime_name}]({char_anime_url})", inline=False)
+                        value=f"[{char_anime_name}]({char_anime_url})", inline=False)
         except IndexError:
             pass
 
@@ -1285,14 +1241,102 @@ class Fun(HttpCogBase):
                                 name="character",
                                 description="Character name you want to use.",
                                 option_type=SlashCommandOptionType.STRING,
-                                required=True
+                                required=True,
+                                choices=[
+                                    create_choice(
+                                        name="Frisk",
+                                        value="frisk"
+                                    ),
+                                    create_choice(
+                                        name="Flowey",
+                                        value="flowey"
+                                    ),
+                                    create_choice(
+                                        name="Toriel",
+                                        value="toriel"
+                                    ),
+                                    create_choice(
+                                        name="Napstablook",
+                                        value="napsta"
+                                    ),
+                                    create_choice(
+                                        name="Sans",
+                                        value="sans"
+                                    ),
+                                    create_choice(
+                                        name="Papyrus",
+                                        value="papyrus"
+                                    ),
+                                    create_choice(
+                                        name="Undyne",
+                                        value="undyne"
+                                    ),
+                                    create_choice(
+                                        name="Alphys",
+                                        value="alphys"
+                                    ),
+                                    create_choice(
+                                        name="Mettaton",
+                                        value="mettaton"
+                                    ),
+                                    create_choice(
+                                        name="Mettaton EX",
+                                        value="mettaton-ex"
+                                    ),
+                                    create_choice(
+                                        name="Asgore",
+                                        value="asgore"
+                                    ),
+                                    create_choice(
+                                        name="Asriel",
+                                        value="asriel"
+                                    ),
+                                    create_choice(
+                                        name="Chara",
+                                        value="chara"
+                                    ),
+                                    create_choice(
+                                        name="WD Gaster",
+                                        value="gaster"
+                                    ),
+                                    create_choice(
+                                        name="Kris",
+                                        value="kris"
+                                    ),
+                                    create_choice(
+                                        name="Toriel (Deltarune)",
+                                        value="deltarune-toriel"
+                                    ),
+                                    create_choice(
+                                        name="Alphys (Deltarun)",
+                                        value="deltarune-alphys"
+                                    ),
+                                    create_choice(
+                                        name="Susie",
+                                        value="susie"
+                                    ),
+                                    create_choice(
+                                        name="Ralsei",
+                                        value="ralsei"
+                                    ),
+                                    create_choice(
+                                        name="Lancer",
+                                        value="lancer"
+                                    ),
+                                    create_choice(
+                                        name="Jevil",
+                                        value="jevil"
+                                    )
+                                ]
                             ),
                             create_option(
                                 name="text",
                                 description="Text you want to write.",
                                 option_type=SlashCommandOptionType.STRING,
                                 required=True
-                            )])
+                            )
+                        ]
+                    )
     async def uboxgen(self, ctx: SlashContext, character: str, text: str):
         parameters = {
             "message": text,
@@ -1304,7 +1348,7 @@ class Fun(HttpCogBase):
 
         img = BytesIO(image_data)
         img.seek(0)
-        await ctx.send(file=discord.File(fp=img, filename="image.png"))
+        await ctx.send(file=discord.File(fp=img, filename="undertalebox.png"))
         
     @cog_ext.cog_slash(name="oneshotbox", description="Creates an OneShot Textbox",
                         options=[
@@ -1338,7 +1382,7 @@ class Fun(HttpCogBase):
                                     ),
                                     create_choice(
                                         name="Neutral",
-                                        value="neutral"
+                                        value="neutralS"
                                     ),
                                     create_choice(
                                         name="Sad",
@@ -1368,7 +1412,7 @@ class Fun(HttpCogBase):
                             )
                         ]
     )
-    async def oneshotgen(self, ctx, text: str, character: str = "niko", emotion: str = "happy", expression: str = "smile"):
+    async def oneshotgen(self, ctx: SlashContext, text: str, character: str = "niko", emotion: str = "happy", expression: str = "smile"):
         with Image.open("res/oneshot/template.png") as template:
             template = template.convert("RGBA")
             with Image.open("res/oneshot/textboxArrow.png") as arrow:
