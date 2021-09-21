@@ -31,7 +31,8 @@ class ErrorHandler(commands.Cog):
     # Main Exception
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        error = error.original
+        if hasattr(error, 'original'):
+            error = error.original
         
         async def send_embed(name, code, *args):
             message = self.error_message[name]
