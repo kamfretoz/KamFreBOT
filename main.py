@@ -15,7 +15,6 @@ import traceback
 import random
 from textwrap import dedent
 from discord.ext import commands
-import discord_slash
 
 if os.name != "nt":
     import uvloop
@@ -58,7 +57,6 @@ def get_prefix(bot, message):
 
 # Bot client initialization
 bot = commands.Bot(command_prefix=get_prefix, description=config.desc, case_insensitive=True, intents=discord.Intents.all(), strip_after_prefix=True)
-slash = discord_slash.SlashCommand(bot, sync_commands=True, sync_on_cog_reload=True)
 
 # Setting up logging
 print("Setting Log files to system.log ...[Success]")

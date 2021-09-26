@@ -1,18 +1,12 @@
 import asyncio
-from os import name
-import re
 import time
 
 from discord.ext import commands
-from discord_slash import cog_ext, SlashContext
-from discord_slash.utils.manage_commands import create_option, create_choice
-from discord_slash.model import SlashCommandOptionType
 
 import discord
 import libneko
 import json
 import ciso8601
-from libneko.pag.optionpicker import option_picker
 import data.topics as topics
 from textwrap import shorten, fill
 from datetime import datetime
@@ -465,6 +459,44 @@ class Fun(HttpCogBase):
         emb.set_thumbnail(url=icon)
 
         await ctx.send(embed=emb)
+        
+    @commands.command(aliases=["joke"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
+    async def jokes(self, ctx):
+        """
+        For All kinds of jokes!
+        Might contain NSFW and OFfensive ones.
+        """
+        
+        await ctx.trigger_typing()
+        
+        parameters = {
+            "format": "json",
+            "amount": 1
+        }
+        
+        session = self.acquire_session()
+        async with session.get(f'https://v2.jokeapi.dev/joke/Any', params = parameters) as resp:
+            resp.raise_for_status()
+            data = await resp.json()
+            
+        emb = discord.Embed(name="Here comes a joke!")
+            
+        jokecategory = data["category"]
+        thetype = data["type"]
+        
+        if thetype == "twopart":
+            setup = data["setup"]
+            delivery = data["delivery"]
+            emb.add_field(name=f"Category: **{jokecategory}**", value=f"{setup}\n{delivery}")
+        if thetype == "single":
+            joke = data["joke"]
+            emb.add_field(name=f"Category: **{jokecategory}**", value=joke)
+        if data["error"] == "true":
+            return await ctx.send("An Error has occured!")
+            
+        await ctx.send(embed=emb, content=None)
+        
 
     @commands.command(aliases=["succ"], hidden=True)
     async def zucc(self, ctx):
@@ -1235,112 +1267,11 @@ class Fun(HttpCogBase):
 
         await ctx.send(embed=emb)
 
-    @cog_ext.cog_slash(name="undertalebox", description="Creates an Undertale textbox",
-                        options=[
-                            create_option(
-                                name="character",
-                                description="Character name you want to use.",
-                                option_type=SlashCommandOptionType.STRING,
-                                required=True,
-                                choices=[
-                                    create_choice(
-                                        name="Frisk",
-                                        value="frisk"
-                                    ),
-                                    create_choice(
-                                        name="Flowey",
-                                        value="flowey"
-                                    ),
-                                    create_choice(
-                                        name="Toriel",
-                                        value="toriel"
-                                    ),
-                                    create_choice(
-                                        name="Napstablook",
-                                        value="napsta"
-                                    ),
-                                    create_choice(
-                                        name="Sans",
-                                        value="sans"
-                                    ),
-                                    create_choice(
-                                        name="Papyrus",
-                                        value="papyrus"
-                                    ),
-                                    create_choice(
-                                        name="Undyne",
-                                        value="undyne"
-                                    ),
-                                    create_choice(
-                                        name="Alphys",
-                                        value="alphys"
-                                    ),
-                                    create_choice(
-                                        name="Mettaton",
-                                        value="mettaton"
-                                    ),
-                                    create_choice(
-                                        name="Mettaton EX",
-                                        value="mettaton-ex"
-                                    ),
-                                    create_choice(
-                                        name="Asgore",
-                                        value="asgore"
-                                    ),
-                                    create_choice(
-                                        name="Asriel",
-                                        value="asriel"
-                                    ),
-                                    create_choice(
-                                        name="Chara",
-                                        value="chara"
-                                    ),
-                                    create_choice(
-                                        name="WD Gaster",
-                                        value="gaster"
-                                    ),
-                                    create_choice(
-                                        name="Kris",
-                                        value="kris"
-                                    ),
-                                    create_choice(
-                                        name="Toriel (Deltarune)",
-                                        value="deltarune-toriel"
-                                    ),
-                                    create_choice(
-                                        name="Alphys (Deltarun)",
-                                        value="deltarune-alphys"
-                                    ),
-                                    create_choice(
-                                        name="Susie",
-                                        value="susie"
-                                    ),
-                                    create_choice(
-                                        name="Ralsei",
-                                        value="ralsei"
-                                    ),
-                                    create_choice(
-                                        name="Lancer",
-                                        value="lancer"
-                                    ),
-                                    create_choice(
-                                        name="Jevil",
-                                        value="jevil"
-                                    )
-                                ]
-                            ),
-                            create_option(
-                                name="text",
-                                description="Text you want to write.",
-                                option_type=SlashCommandOptionType.STRING,
-                                required=True
-                            )
-                        ]
-                    )
-    async def uboxgen(self, ctx: SlashContext, character: str, text: str):
+    @commands.command(name="undertalebox")
+    async def uboxgen(self, ctx, text: str):
         parameters = {
             "message": text,
-            "character": character
+            "character": "sans"
         }
         session = self.acquire_session()
         async with session.get(f"https://demirramon.com/utgen.png", params=parameters) as resp:
@@ -1350,75 +1281,14 @@ class Fun(HttpCogBase):
         img.seek(0)
         await ctx.send(file=discord.File(fp=img, filename="undertalebox.png"))
         
-    @cog_ext.cog_slash(name="oneshotbox", description="Creates an OneShot Textbox",
-                        options=[
-                            create_option(
-                                name="text",
-                                description="The text you want to be written",
-                                option_type=SlashCommandOptionType.STRING,
-                                required=True
-                            ),
-                            create_option(
-                                name="character",
-                                description="Character you want to use (Only Niko is available atm)",
-                                option_type=SlashCommandOptionType.STRING,
-                                required=False,
-                                choices=[
-                                    create_choice(
-                                        name="Niko",
-                                        value="niko"
-                                    )
-                                ]
-                            ),
-                            create_option(
-                                name="emotion",
-                                description="Emotion of the character",
-                                option_type=SlashCommandOptionType.STRING,
-                                required=False,
-                                choices=[
-                                    create_choice(
-                                        name="Happy",
-                                        value="happy"
-                                    ),
-                                    create_choice(
-                                        name="Neutral",
-                                        value="neutralS"
-                                    ),
-                                    create_choice(
-                                        name="Sad",
-                                        value="sad"
-                                    )
-                                ]
-                            ),
-                            create_option(
-                                name="expression",
-                                description="Expression of the character (Please choose the appropriate option regarding the emotion)",
-                                option_type=SlashCommandOptionType.STRING,
-                                required=False,
-                                choices=[
-                                    create_choice(
-                                        name="Smile",
-                                        value="smile"
-                                    ),
-                                    create_choice(
-                                        name="Confused",
-                                        value="what"
-                                    ),
-                                    create_choice(
-                                        name="Cry",
-                                        value="cry"
-                                    )
-                                ]
-                            )
-                        ]
-    )
-    async def oneshotgen(self, ctx: SlashContext, text: str, character: str = "niko", emotion: str = "happy", expression: str = "smile"):
+    @commands.command(aliases=["oneshot"])
+    async def oneshotbox(self, ctx, text: str):
         with Image.open("res/oneshot/template.png") as template:
             template = template.convert("RGBA")
             with Image.open("res/oneshot/textboxArrow.png") as arrow:
                 arrow = arrow.convert("RGBA")
                 template.alpha_composite(arrow, (300, 118))
-                with Image.open(f"res/oneshot/faces/{character}/{emotion}/{expression}.png") as sprite:
+                with Image.open(f"res/oneshot/faces/niko/happy/smile.png") as sprite:
                     sprite = sprite.convert("RGBA")
                     template.alpha_composite(sprite, (496, 16))
 
@@ -1837,7 +1707,7 @@ class Fun(HttpCogBase):
 
         emb = discord.Embed(timestamp=datetime.utcnow())
         emb.set_image(url=img_url)
-        emb.add_field(name="Title", value=f"[{title}]({source})")
+        emb.add_field(name="Title", value=f"[{title}]({source})", inline=False)
         emb.add_field(name="Author", value=author)
         emb.add_field(name="Subreddit", value=subreddit)
         emb.add_field(
@@ -1882,7 +1752,7 @@ class Fun(HttpCogBase):
 
         emb = discord.Embed(timestamp=datetime.utcnow())
         emb.set_image(url=img_url)
-        emb.add_field(name="Title", value=f"[{title}]({source})")
+        emb.add_field(name="Title", value=f"[{title}]({source})", inline=False)
         emb.add_field(name="Author", value=author)
         emb.add_field(name="Subreddit", value=subreddit)
         emb.add_field(
@@ -1935,7 +1805,7 @@ class Fun(HttpCogBase):
 
         emb = discord.Embed(timestamp=datetime.utcnow())
         emb.set_image(url=img_url)
-        emb.add_field(name="Title", value=f"[{title}]({source})")
+        emb.add_field(name="Title", value=f"[{title}]({source})", inline=False)
         emb.add_field(name="Author", value=author)
         emb.add_field(name="Subreddit", value=subreddit)
         emb.add_field(
@@ -1943,8 +1813,7 @@ class Fun(HttpCogBase):
         emb.add_field(name="Comments", value=comments)
         emb.add_field(name="Posted on", value=datetime.fromtimestamp(
             timestamp), inline=False)
-        emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png",
-                       text="Data provided by: KSoft.Si")
+        emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png", text="Data provided by: KSoft.Si")
 
         await ctx.send(embed=emb)
 
@@ -1977,8 +1846,7 @@ class Fun(HttpCogBase):
         emb = discord.Embed(
             description=f"[{title}]({article})", timestamp=datetime.utcnow())
         emb.set_image(url=img_url)
-        emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png",
-                       text="Data provided by: KSoft.Si")
+        emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png", text="Data provided by: KSoft.Si")
         await ctx.send(embed=emb)
 
     ####
@@ -2184,11 +2052,6 @@ class Fun(HttpCogBase):
 
     @commands.command()
     async def sua(self, ctx):
-        """sua irma"""
-        await ctx.send("irma")
-    
-    @cog_ext.cog_slash(name="sua")
-    async def _sua(self, ctx:SlashContext):
         """sua irma"""
         await ctx.send("irma")
 

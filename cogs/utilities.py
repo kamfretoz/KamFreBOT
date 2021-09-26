@@ -21,10 +21,6 @@ import json
 import base64
 import ciso8601
 
-from discord_slash import cog_ext, SlashContext
-from discord_slash.utils.manage_commands import create_option
-from discord_slash.model import SlashCommandOptionType
-
 import libneko
 from libneko import pag, converters
 import discord
@@ -1761,27 +1757,8 @@ class Utilities(HttpCogBase):
             #--Send error message if command fails, as it's assumed a definition isn't found--#
             await msg.edit(content=":x: Sorry, I couldn't find that word. Check your spelling and try again.")
 
-    @cog_ext.cog_slash(name="currency", description="Convert currencies from one to another",
-                       options=[
-                           create_option(
-                               name="amount",
-                               description="Amount you want to convert.",
-                               option_type=SlashCommandOptionType.INTEGER,
-                               required=True
-                           ),
-                           create_option(
-                               name="origin",
-                               description="Currency you want to convert from.",
-                               option_type=SlashCommandOptionType.STRING,
-                               required=True
-                           ),
-                           create_option(
-                               name="destination",
-                               description="Currency you want to convert to.",
-                               option_type=SlashCommandOptionType.STRING,
-                               required=True
-    )])
-    async def currency(self, ctx: SlashContext, amount: int, origin: str, destination: str):
+    @commands.command(aliases=["curr"])
+    async def currency(self, ctx, origin: str, destination: str, amount: int):
         """
         Convert currencies from one to another
         For the list of acceptable format go to: https://en.wikipedia.org/wiki/ISO_4217#Active_codes
