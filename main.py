@@ -116,11 +116,11 @@ async def on_ready():
         """
         )
     )
-    print(
-        f"List of servers i'm in ({len(bot.guilds)} Servers in total):\n===========================")
-    for x in bot.guilds:
-        print(f"{x.name} (ID: {x.id}) (Membert Count: {x.member_count})")
-    print("===========================")
+    # print(
+    #     f"List of servers i'm in ({len(bot.guilds)} Servers in total):\n===========================")
+    # for x in bot.guilds:
+    #     print(f"{x.name} (ID: {x.id}) (Membert Count: {x.member_count})")
+    # print("===========================")
 
 
 async def change_activities():
