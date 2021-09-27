@@ -99,11 +99,9 @@ class Fun(HttpCogBase):
             await ctx.message.add_reaction("❓")
         else:
             await ctx.message.delete()
-            em = discord.Embed(color=randint(0, 0xFFFFFF),
-                               timestamp=datetime.utcnow())
+            em = discord.Embed(color=randint(0, 0xFFFFFF), timestamp=datetime.utcnow())
             em.description = message
-            em.set_footer(icon_url=ctx.message.author.avatar_url,
-                          text=f"Sent by: {ctx.message.author}")
+            em.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Sent by: {ctx.message.author}")
             await ctx.send(embed=em)
 
     @commands.command(aliases=["sto"])
