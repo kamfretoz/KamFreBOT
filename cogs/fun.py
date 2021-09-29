@@ -10,12 +10,13 @@ import ciso8601
 import data.topics as topics
 from textwrap import shorten, fill
 from datetime import datetime
-from random import randint, choice
+from random import choices, randint, choice
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from libneko import embeds
 from owoify import Owoifator
 from vaporwavely import vaporipsum, vaporize
+from pilutils.masks import ellipse
 
 from modules.http import HttpCogBase
 from modules.dictobj import DictObject
@@ -673,67 +674,71 @@ class Fun(HttpCogBase):
         await ctx.send(embed=embed)
 
     @commands.command(aliases=["love", "lovemeter"])
-    async def ship(self, ctx, name1: str = None, name2: str = None):
+    async def ship(self, ctx, user1: libneko.converters.InsensitiveMemberConverter = None, user2: libneko.converters.InsensitiveMemberConverter = None):
         """will it Sank or Sail?"""
-        if name1 is None or name2 is None:
-            await ctx.send(embed=discord.Embed(description="Who are you gonna ship?"))
-            return
+        
+        await ctx.trigger_typing()
+        
+        if user1 is None or user2 is None:
+            user1 = ctx.message.author
+            user2 = choice(await ctx.guild.fetch_members(limit=100).flatten())
 
         shipnumber = randint(0, 100)
+        
 
         # A Small Easter Egg for a server
-        if name1 == "Mixtape" and name2 == "Calliope":
+        if user1 == "Mixtape" and user2 == "Calliope":
             shipnumber = 100
 
         if 0 <= shipnumber <= 10:
             status = "Really low! {}".format(choice(["Friendzone ;(",
-                                                     'Just "friends"',
-                                                     '"Friends"',
-                                                     "Little to no love ;(",
-                                                     "There's barely any love ;("]))
-        elif 10 < shipnumber <= 20:
+                                                    'Just "friends"',
+                                                    '"Friends"',
+                                                    "Little to no love ;(",
+                                                    "There's barely any love ;("]))
+        elif 10 <= shipnumber <= 20:
             status = "Low! {}".format(choice(["Still in the friendzone",
-                                              "Still in that friendzone ;(",
-                                              "There's not a lot of love there... ;("]))
-        elif 20 < shipnumber <= 30:
+                                            "Still in that friendzone ;(",
+                                            "There's not a lot of love there... ;("]))
+        elif 20 <= shipnumber <= 30:
             status = "Poor! {}".format(choice(["But there's a small sense of romance from one person!",
-                                               "But there's a small bit of love somewhere",
-                                               "I sense a small bit of love!",
-                                               "But someone has a bit of love for someone..."]))
-        elif 30 < shipnumber <= 40:
+                                            "But there's a small bit of love somewhere",
+                                            "I sense a small bit of love!",
+                                            "But someone has a bit of love for someone..."]))
+        elif 30 <= shipnumber <= 40:
             status = "Fair! {}".format(choice(["There's a bit of love there!",
-                                               "There is a bit of love there...",
-                                               "A small bit of love is in the air..."]))
-        elif 40 < shipnumber <= 60:
+                                            "There is a bit of love there...",
+                                            "A small bit of love is in the air..."]))
+        elif 40 <= shipnumber <= 60:
             status = "Moderate! {}".format(choice(["But it's very one-sided OwO",
-                                                   "It appears one sided!",
-                                                   "There's some potential!",
-                                                   "I sense a bit of potential!",
-                                                   "There's a bit of romance going on here!",
-                                                   "I feel like there's some romance progressing!",
-                                                   "The love is getting there..."]))
-        elif 60 < shipnumber <= 68:
+                                                "It appears one sided!",
+                                                "There's some potential!",
+                                                "I sense a bit of potential!",
+                                                "There's a bit of romance going on here!",
+                                                "I feel like there's some romance progressing!",
+                                                "The love is getting there..."]))
+        elif 60 <= shipnumber <= 68:
             status = "Good! {}".format(choice(["I feel the romance progressing!",
-                                               "There's some love in the air!",
-                                               "I'm starting to feel some love!",
-                                               "We are definitely getting there!!"]))
+                                            "There's some love in the air!",
+                                            "I'm starting to feel some love!",
+                                            "We are definitely getting there!!"]))
 
         elif shipnumber == 69:
             status = "Nice."
 
-        elif 70 < shipnumber <= 80:
+        elif 70 <= shipnumber <= 80:
             status = "Great! {}".format(choice(["There is definitely love somewhere!",
                                                 "I can see the love is there! Somewhere...",
                                                 "I definitely can see that love is in the air",
                                                 "Its getting more and more intense!!"]))
-        elif 80 < shipnumber <= 90:
+        elif 80 <= shipnumber <= 90:
             status = "Over average! {}".format(choice(["Love is in the air!",
-                                                       "I can definitely feel the love",
-                                                       "I feel the love! There's a sign of a match!",
-                                                       "There's a sign of a match!",
-                                                       "I sense a match!",
-                                                       "A few things can be improved to make this a match made in heaven!"]))
-        elif 90 < shipnumber <= 99:
+                                                    "I can definitely feel the love",
+                                                    "I feel the love! There's a sign of a match!",
+                                                    "There's a sign of a match!",
+                                                    "I sense a match!",
+                                                    "A few things can be improved to make this a match made in heaven!"]))
+        elif 90 <= shipnumber <= 99:
             status = "True love! {}".format(choice(["It's a match!",
                                                     "There's a match made in heaven!",
                                                     "It's definitely a match!",
@@ -778,34 +783,61 @@ class Fun(HttpCogBase):
         else:
             shipColor = 0xee82ee
 
+        name1letters = user1.name[:round(len(user1.name) / 2)]
+        name2letters = user2.name[round(len(user2.name) / 2):]
+        shipname = "".join([name1letters, name2letters])
+
         emb = (discord.Embed(color=shipColor,
-                             title="Love test for:",
-                             timestamp=datetime.utcnow(),
-                             description="**{0}** and **{1}** {2}".format(name1, name2, choice([
-                                 ":sparkling_heart:",
-                                 ":heart_decoration:",
-                                 ":heart_exclamation:",
-                                 ":heartbeat:",
-                                 ":heartpulse:",
-                                 ":hearts:",
-                                 ":blue_heart:",
-                                 ":green_heart:",
-                                 ":purple_heart:",
-                                 ":revolving_hearts:",
-                                 ":yellow_heart:",
-                                 ":two_hearts:"]))))
-        emb.set_author(name="Shipping Machine!",
-                       icon_url="http://moziru.com/images/kopel-clipart-heart-6.png")
+                            title="Love test for:",
+                            timestamp=datetime.utcnow(),
+                            description="**{0}** and **{1}** (**{2}**) {3}".format(user1, user2, shipname, choice([
+                                ":sparkling_heart:",
+                                ":heart_decoration:",
+                                ":heart_exclamation:",
+                                ":heartbeat:",
+                                ":heartpulse:",
+                                ":hearts:",
+                                ":blue_heart:",
+                                ":green_heart:",
+                                ":purple_heart:",
+                                ":revolving_hearts:",
+                                ":yellow_heart:",
+                                ":two_hearts:"]))))
+        emb.set_author(name="Shipping Machine!")
         emb.add_field(name="Results:", value=f"{shipnumber}%", inline=True)
         emb.add_field(name="Status:", value=(status), inline=False)
         emb.add_field(name="Love Meter:", value=meter, inline=False)
-        await ctx.send(embed=emb)
+        
+        bg = Image.open("res/ship.png")
+        bg.convert("RGBA")
+        user1_asset = user1.avatar_url_as(size=512, static_format='png', format="png")
+        user1_pfp = BytesIO(await user1_asset.read())
+        user2_asset = user2.avatar_url_as(size=512, static_format='png', format="png")
+        user2_pfp = BytesIO(await user2_asset.read())
+        pfp1 = Image.open(user1_pfp)
+        pfp1.convert("RGBA")
+        pfp1 = pfp1.resize((200, 200), resample=Image.ANTIALIAS, reducing_gap=3.0)
+        pfp2 = Image.open(user2_pfp)
+        pfp2.convert("RGBA")
+        pfp2 = pfp2.resize((pfp1.size), resample=Image.ANTIALIAS, reducing_gap=3.0)
+        
+        mask = ellipse(pfp1.size)
+        
+        bg.paste(pfp1, (30, 30), mask)
+        bg.paste(pfp2, (bg.width - pfp1.width - 30, 30), mask)
+        
+        with BytesIO() as image_binary:
+            bg.save(image_binary, format="PNG")
+            image_binary.seek(0)
+            await ctx.send(embed=emb, file=discord.File(fp=image_binary, filename="ship.png"))
 
     @commands.command(aliases=['gay-scanner', 'gayscanner', 'gay', 'homo'])
     async def gay_scanner(self, ctx, *, user: str = None):
         """very mature command yes haha"""
         if not user:
             user = ctx.author.name
+            
+        await ctx.trigger_typing()
 
         gayness = randint(0, 100)
 

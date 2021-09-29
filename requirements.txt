@@ -1,5 +1,6 @@
 py-cord[voice]
 git+https://gitlab.com/Tmpod/libneko
+git+https://github.com/Supersebi3/pilutils
 aiodns
 brotli
 cchardet
