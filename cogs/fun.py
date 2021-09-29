@@ -829,7 +829,9 @@ class Fun(HttpCogBase):
         with BytesIO() as image_binary:
             bg.save(image_binary, format="PNG")
             image_binary.seek(0)
-            await ctx.send(embed=emb, file=discord.File(fp=image_binary, filename="ship.png"))
+            img=discord.File(fp=image_binary, filename="ship.png")
+            emb.set_image(url="attachment://ship.png")
+            await ctx.send(embed=emb, file=img)
 
     @commands.command(aliases=['gay-scanner', 'gayscanner', 'gay', 'homo'])
     async def gay_scanner(self, ctx, *, user: str = None):
