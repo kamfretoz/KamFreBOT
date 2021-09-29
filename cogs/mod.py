@@ -85,115 +85,114 @@ class Mod(commands.Cog):
     @commands.command()
     async def ban(self, ctx, members:str, *, reason="Not Specified."):
         """Bans the member(s) from the guild."""
+        if ctx.author.top_role > members.top_role or ctx.author == ctx.guild.owner:
+            members_list = members.split()
+            l_bar = "█"
+            l_empty = "░"
 
-        members_list = members.split()
+            async with ctx.typing():
+                m_amount = len(members_list)
+                m = 0
 
-        l_bar = "█"
-        l_empty = "░"
+                banned = []
+                alr_banned = []
+                not_found = []
+                forbidden = []
+                failed = []
 
-        async with ctx.typing():
-            m_amount = len(members_list)
-            m = 0
+                embed = discord.Embed(
+                    title="Banning Members...",
+                    description=f"0% **(0/{m_amount})**",
+                    color=discord.Color.blurple()
+                )
+                message : discord.Message = await ctx.reply(embed=embed)
+                dot = 0
 
-            banned = []
-            alr_banned = []
-            not_found = []
-            forbidden = []
-            failed = []
+                for member_id in members_list:
 
-            embed = discord.Embed(
-                title="Banning Members...",
-                description=f"0% **(0/{m_amount})**",
-                color=discord.Color.blurple()
-            )
-            message : discord.Message = await ctx.reply(embed=embed)
-            dot = 0
-
-            for member_id in members_list:
-
-                await asyncio.sleep(0.5)
-                try:
-                    member = await commands.MemberConverter().convert(ctx, member_id)
-                    await member.ban(reason=f'"{reason}" by {ctx.author}')
-                    banned.append(f"{member.mention} {member}")
-                except commands.MemberNotFound or discord.UserNotFound:
+                    await asyncio.sleep(0.5)
                     try:
-                        user_ = await commands.UserConverter().convert(ctx, member_id)
-                        await ctx.message.guild.fetch_ban(user_)
-                        alr_banned.append(f"{user_.mention} {user_}")
+                        member = await commands.MemberConverter().convert(ctx, member_id)
+                        await member.ban(reason=f'"{reason}" by {ctx.author}')
+                        banned.append(f"{member.mention} {member}")
+                    except commands.MemberNotFound or discord.UserNotFound:
+                        try:
+                            user_ = await commands.UserConverter().convert(ctx, member_id)
+                            await ctx.message.guild.fetch_ban(user_)
+                            alr_banned.append(f"{user_.mention} {user_}")
+                        except:
+                            not_found.append(f"<@{member_id}>")
+                    except discord.Forbidden:
+                        memb = await commands.MemberConverter().convert(ctx, member_id)
+                        forbidden.append(f"{memb.mention} {memb}")
                     except:
-                        not_found.append(f"<@{member_id}>")
-                except discord.Forbidden:
-                    memb = await commands.MemberConverter().convert(ctx, member_id)
-                    forbidden.append(f"{memb.mention} {memb}")
-                except:
-                    failed.append(f"<@{member_id}>")
+                        failed.append(f"<@{member_id}>")
 
-                m += 1
-                if m < m_amount:
-                    dot += 1
-                    if dot > 3:
-                        dot = 1
-                    embed.title = "Banning members" + dot*"."
-                    progress = m/m_amount
-                    bars = int(progress * 10)
-                    embed.description = l_bar*bars + l_empty*(10-bars) + f" {int(progress*100)}% **({m}/{m_amount})**"
-                    await message.edit(embed=embed)
+                    m += 1
+                    if m < m_amount:
+                        dot += 1
+                        if dot > 3:
+                            dot = 1
+                        embed.title = "Banning members" + dot*"."
+                        progress = m/m_amount
+                        bars = int(progress * 10)
+                        embed.description = l_bar*bars + l_empty*(10-bars) + f" {int(progress*100)}% **({m}/{m_amount})**"
+                        await message.edit(embed=embed)
 
-            Results = namedtuple("Results", ["banned", "already_banned", "not_found", "forbidden", "failed"])
+                Results = namedtuple("Results", ["banned", "already_banned", "not_found", "forbidden", "failed"])
 
-            def add_ban_fields(embed:discord.Embed, fields):
-                field_names = Results(
-                    banned=":white_check_mark: Banned: `{}`",
-                    already_banned=":ballot_box_with_check: Already Banned: `{}`",
-                    not_found=":warning: Not Found: `{}`",
-                    forbidden=":no_entry_sign: Missing Permissions: `{}`",
-                    failed=":x: Failed: `{}`",
-                )
-                field_names_txt = Results(
-                    banned="Banned: {}",
-                    already_banned="Already Banned: {}",
-                    not_found="Not Found: {}",
-                    forbidden="Missing Permissions: {}",
-                    failed="Failed: {}",
-                )
-                results = []
-                inline = False
-                use_txt = False
+                def add_ban_fields(embed:discord.Embed, fields):
+                    field_names = Results(
+                        banned=":white_check_mark: Banned: `{}`",
+                        already_banned=":ballot_box_with_check: Already Banned: `{}`",
+                        not_found=":warning: Not Found: `{}`",
+                        forbidden=":no_entry_sign: Missing Permissions: `{}`",
+                        failed=":x: Failed: `{}`",
+                    )
+                    field_names_txt = Results(
+                        banned="Banned: {}",
+                        already_banned="Already Banned: {}",
+                        not_found="Not Found: {}",
+                        forbidden="Missing Permissions: {}",
+                        failed="Failed: {}",
+                    )
+                    results = []
+                    inline = False
+                    use_txt = False
 
-                for m_list in fields:
-                    j = "\n".join(m_list)
-                    results.append(j)
-                    if len(j) > 1024:
-                        use_txt = True
+                    for m_list in fields:
+                        j = "\n".join(m_list)
+                        results.append(j)
+                        if len(j) > 1024:
+                            use_txt = True
 
-                f_list = ["BAN REPORT\n"]
+                    f_list = ["BAN REPORT\n"]
 
-                for i in range(len(results)):
-                    if results[i]:
-                        if not use_txt:
-                            embed.add_field(name=field_names[i].format(len(fields[i])), value=results[i], inline=inline)
-                        else:
-                            f_list.append(f"{field_names_txt[i].format(len(fields[i]))}\n{results[i]}\n")
+                    for i in range(len(results)):
+                        if results[i]:
+                            if not use_txt:
+                                embed.add_field(name=field_names[i].format(len(fields[i])), value=results[i], inline=inline)
+                            else:
+                                f_list.append(f"{field_names_txt[i].format(len(fields[i]))}\n{results[i]}\n")
 
-                if use_txt:
-                    everything = "\n".join(f_list)
-                    return [True, BytesIO(everything.encode("utf-8"))]
+                    if use_txt:
+                        everything = "\n".join(f_list)
+                        return [True, BytesIO(everything.encode("utf-8"))]
+                    else:
+                        return [False, None]
+
+                embed.title = ":hammer: Finished! :hammer:"
+                embed.description = f"**{len(banned)}** members banned for: ``{reason}``\n⠀"
+                embed.set_thumbnail(url="https://media.discordapp.net/attachments/758301208082513920/824494391942316072/tenor_2.gif")
+                embed.color = discord.Color.red()
+                use_text, data = add_ban_fields(embed, Results(banned, alr_banned, not_found, forbidden, failed))
+                embed.set_footer(text=f"Ran by {ctx.author}", icon_url=ctx.author.avatar_url)
+                embed.timestamp = datetime.utcnow()
+                await message.delete()
+                if use_text:
+                    await ctx.send(embed=embed, file=discord.File(data, filename="ban_summary.txt"))
                 else:
-                    return [False, None]
-
-            embed.title = ":hammer: Finished! :hammer:"
-            embed.description = f"**{len(banned)}** members banned for: ``{reason}``\n⠀"
-            embed.set_thumbnail(url="https://media.discordapp.net/attachments/758301208082513920/824494391942316072/tenor_2.gif")
-            embed.color = discord.Color.red()
-            use_text, data = add_ban_fields(embed, Results(banned, alr_banned, not_found, forbidden, failed))
-            embed.set_footer(text=f"Ran by {ctx.author}", icon_url=ctx.author.avatar_url)
-            embed.timestamp = datetime.utcnow()
-            await message.delete()
-            if use_text:
-                await ctx.send(embed=embed, file=discord.File(data, filename="ban_summary.txt"))
-            else:
-                await ctx.send(embed=embed)
+                    await ctx.send(embed=embed)
 
 
     # This one is meant to be used as a joke
@@ -496,8 +495,8 @@ class Mod(commands.Cog):
                             muted = await ctx.guild.create_role(name="Muted", reason="To be used for muting")
                             for channel in ctx.guild.channels: # removes permission to view and send in the channels 
                                 await channel.set_permissions(muted, send_messages=False,
-                                                              read_message_history=False,
-                                                              read_messages=False)
+                                                            read_message_history=False,
+                                                            read_messages=False)
                                 await member.add_roles(muted, reason=reason) # add newly created role
                         except discord.Forbidden:
                             return await ctx.send("I have no permissions to make a muted role") # self-explainatory
