@@ -1248,7 +1248,7 @@ class Fun(HttpCogBase):
         await ctx.send(embed=emb)
 
     @commands.command(name="undertalebox")
-    async def uboxgen(self, ctx, text: str):
+    async def uboxgen(self, ctx, * ,text: str):
         parameters = {
             "message": text,
             "character": "sans"
@@ -1262,7 +1262,7 @@ class Fun(HttpCogBase):
         await ctx.send(file=discord.File(fp=img, filename="undertalebox.png"))
         
     @commands.command(aliases=["oneshot"])
-    async def oneshotbox(self, ctx, text: str):
+    async def oneshotbox(self, ctx, * ,text: str):
         with Image.open("res/oneshot/template.png") as template:
             template = template.convert("RGBA")
             with Image.open("res/oneshot/textboxArrow.png") as arrow:
