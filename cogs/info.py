@@ -542,6 +542,39 @@ class Information(commands.Cog):
             icon_url=f"{ctx.message.author.avatar_url}",
         )
         await ctx.send(embed=emb)
+        
+    @serverinfo.command(name="oldestacc", aliases=["oldacc"] ,brief="Shows the oldest account in the server")
+    async def oldestaccount(self, ctx, page = 1, sort_type = "oldest"):
+        """
+        Shows the oldest account in the server
+        """
+        page = abs(int(page))
+        if page > 99: page = 99
+
+        every_member = []
+        for x in ctx.guild.members:
+            userinfo = (f"{x} - {x.created_at.strftime('%d/%m/%Y')}", x.created_at)
+            every_member.append(userinfo)
+        every_member.sort(key=lambda x:x[1])
+
+        if sort_type == "oldest": every_member_sliced = every_member[((page-1)*10):(page*10)]
+        if sort_type == "newest": every_member_sliced = every_member[(len(every_member)-(((page-1)*10)+1)):((-10*page)-1):-1]
+
+        output_string = ""
+        cycle_int = 0
+        for x, z in every_member_sliced:
+            cycle_int = cycle_int + 1
+            output_string += f"**{cycle_int+((page-1)*10)}** - {x}\n"
+
+        if output_string != "":
+            em = discord.Embed(color=ctx.author.color)
+            em.add_field(name=f"{sort_type.capitalize()} accounts in **{ctx.guild.name}**", value=output_string, inline=False)
+
+            em.set_footer(text=f"Page: {page}")
+            em.timestamp = datetime.utcnow()
+
+            await ctx.send(embed=em)
+        else: await ctx.send("Nothing here.")
 
     @serverinfo.command(name="owner", aliases=["own"], brief="Shows the owner of this server")
     @commands.guild_only()
@@ -555,7 +588,7 @@ class Information(commands.Cog):
         else:
             pic_frmt = "png"
         own.add_field(name=f"Who own {ctx.guild.name}?",
-                      value=f"{ctx.guild.owner} ({ctx.guild.owner.mention}) owns the server!")
+                    value=f"{ctx.guild.owner} ({ctx.guild.owner.mention}) owns the server!")
         own.set_thumbnail(url=ctx.guild.owner.avatar_url_as(
             format=pic_frmt, size=4096))
         await ctx.send(embed=own)
@@ -623,7 +656,7 @@ class Information(commands.Cog):
 
         for user in ctx.guild.members:
             if ctx.channel.permissions_for(user).kick_members or \
-               ctx.channel.permissions_for(user).ban_members:
+                ctx.channel.permissions_for(user).ban_members:
                 if not user.bot and user.status is discord.Status.online:
                     online.append(f"{user}")
                 if not user.bot and user.status is discord.Status.idle:
