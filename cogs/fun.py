@@ -687,7 +687,7 @@ class Fun(HttpCogBase):
         
 
         # A Small Easter Egg for a server
-        if user1.id == 407064385815576607 and user2 == 689772584417362112:
+        if user1.id == 407064385815576607 and user2.id == 689772584417362112:
             shipnumber = 100
 
         if 0 <= shipnumber <= 10:
