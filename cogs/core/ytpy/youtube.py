@@ -69,7 +69,7 @@ class YoutubeService(BaseYoutubeAPI):
             developerKey=self.DEVELOPER_KEY,
         )
 
-    def search(self, keyword, max_results=7):
+    def search(self, keyword, max_results=3):
         """Search videos/playlist/channel by keywords."""
 
         search_response = (
