@@ -85,114 +85,100 @@ class Mod(commands.Cog):
     @commands.command()
     async def ban(self, ctx, members:str, *, reason="Not Specified."):
         """Bans the member(s) from the guild."""
-        if ctx.author.top_role > members.top_role or ctx.author == ctx.guild.owner:
-            members_list = members.split()
-            l_bar = "█"
-            l_empty = "░"
-
-            async with ctx.typing():
-                m_amount = len(members_list)
-                m = 0
-
-                banned = []
-                alr_banned = []
-                not_found = []
-                forbidden = []
-                failed = []
-
-                embed = discord.Embed(
-                    title="Banning Members...",
-                    description=f"0% **(0/{m_amount})**",
-                    color=discord.Color.blurple()
-                )
-                message : discord.Message = await ctx.reply(embed=embed)
-                dot = 0
-
-                for member_id in members_list:
-
-                    await asyncio.sleep(0.5)
+        members_list = members.split()
+        l_bar = "█"
+        l_empty = "░"
+        async with ctx.typing():
+            m_amount = len(members_list)
+            m = 0
+            banned = []
+            alr_banned = []
+            not_found = []
+            forbidden = []
+            failed = []
+            embed = discord.Embed(
+                title="Banning Members...",
+                description=f"0% **(0/{m_amount})**",
+                color=discord.Color.blurple()
+            )
+            message : discord.Message = await ctx.reply(embed=embed)
+            dot = 0
+            for member_id in members_list:
+                await asyncio.sleep(0.5)
+                try:
+                    member = await commands.MemberConverter().convert(ctx, member_id)
+                    await member.ban(reason=f'"{reason}" by {ctx.author}')
+                    banned.append(f"{member.mention} {member}")
+                except commands.MemberNotFound or discord.UserNotFound:
                     try:
-                        member = await commands.MemberConverter().convert(ctx, member_id)
-                        await member.ban(reason=f'"{reason}" by {ctx.author}')
-                        banned.append(f"{member.mention} {member}")
-                    except commands.MemberNotFound or discord.UserNotFound:
-                        try:
-                            user_ = await commands.UserConverter().convert(ctx, member_id)
-                            await ctx.message.guild.fetch_ban(user_)
-                            alr_banned.append(f"{user_.mention} {user_}")
-                        except:
-                            not_found.append(f"<@{member_id}>")
-                    except discord.Forbidden:
-                        memb = await commands.MemberConverter().convert(ctx, member_id)
-                        forbidden.append(f"{memb.mention} {memb}")
+                        user_ = await commands.UserConverter().convert(ctx, member_id)
+                        await ctx.message.guild.fetch_ban(user_)
+                        alr_banned.append(f"{user_.mention} {user_}")
                     except:
-                        failed.append(f"<@{member_id}>")
-
-                    m += 1
-                    if m < m_amount:
-                        dot += 1
-                        if dot > 3:
-                            dot = 1
-                        embed.title = "Banning members" + dot*"."
-                        progress = m/m_amount
-                        bars = int(progress * 10)
-                        embed.description = l_bar*bars + l_empty*(10-bars) + f" {int(progress*100)}% **({m}/{m_amount})**"
-                        await message.edit(embed=embed)
-
-                Results = namedtuple("Results", ["banned", "already_banned", "not_found", "forbidden", "failed"])
-
-                def add_ban_fields(embed:discord.Embed, fields):
-                    field_names = Results(
-                        banned=":white_check_mark: Banned: `{}`",
-                        already_banned=":ballot_box_with_check: Already Banned: `{}`",
-                        not_found=":warning: Not Found: `{}`",
-                        forbidden=":no_entry_sign: Missing Permissions: `{}`",
-                        failed=":x: Failed: `{}`",
-                    )
-                    field_names_txt = Results(
-                        banned="Banned: {}",
-                        already_banned="Already Banned: {}",
-                        not_found="Not Found: {}",
-                        forbidden="Missing Permissions: {}",
-                        failed="Failed: {}",
-                    )
-                    results = []
-                    inline = False
-                    use_txt = False
-
-                    for m_list in fields:
-                        j = "\n".join(m_list)
-                        results.append(j)
-                        if len(j) > 1024:
-                            use_txt = True
-
-                    f_list = ["BAN REPORT\n"]
-
-                    for i in range(len(results)):
-                        if results[i]:
-                            if not use_txt:
-                                embed.add_field(name=field_names[i].format(len(fields[i])), value=results[i], inline=inline)
-                            else:
-                                f_list.append(f"{field_names_txt[i].format(len(fields[i]))}\n{results[i]}\n")
-
-                    if use_txt:
-                        everything = "\n".join(f_list)
-                        return [True, BytesIO(everything.encode("utf-8"))]
-                    else:
-                        return [False, None]
-
-                embed.title = ":hammer: Finished! :hammer:"
-                embed.description = f"**{len(banned)}** members banned for: ``{reason}``\n⠀"
-                embed.set_thumbnail(url="https://media.discordapp.net/attachments/758301208082513920/824494391942316072/tenor_2.gif")
-                embed.color = discord.Color.red()
-                use_text, data = add_ban_fields(embed, Results(banned, alr_banned, not_found, forbidden, failed))
-                embed.set_footer(text=f"Ran by {ctx.author}", icon_url=ctx.author.avatar_url)
-                embed.timestamp = datetime.utcnow()
-                await message.delete()
-                if use_text:
-                    await ctx.send(embed=embed, file=discord.File(data, filename="ban_summary.txt"))
+                        not_found.append(f"<@{member_id}>")
+                except discord.Forbidden:
+                    memb = await commands.MemberConverter().convert(ctx, member_id)
+                    forbidden.append(f"{memb.mention} {memb}")
+                except:
+                    failed.append(f"<@{member_id}>")
+                m += 1
+                if m < m_amount:
+                    dot += 1
+                    if dot > 3:
+                        dot = 1
+                    embed.title = "Banning members" + dot*"."
+                    progress = m/m_amount
+                    bars = int(progress * 10)
+                    embed.description = l_bar*bars + l_empty*(10-bars) + f" {int(progress*100)}% **({m}/{m_amount})**"
+                    await message.edit(embed=embed)
+            Results = namedtuple("Results", ["banned", "already_banned", "not_found", "forbidden", "failed"])
+            def add_ban_fields(embed:discord.Embed, fields):
+                field_names = Results(
+                    banned=":white_check_mark: Banned: `{}`",
+                    already_banned=":ballot_box_with_check: Already Banned: `{}`",
+                    not_found=":warning: Not Found: `{}`",
+                    forbidden=":no_entry_sign: Missing Permissions: `{}`",
+                    failed=":x: Failed: `{}`",
+                )
+                field_names_txt = Results(
+                    banned="Banned: {}",
+                    already_banned="Already Banned: {}",
+                    not_found="Not Found: {}",
+                    forbidden="Missing Permissions: {}",
+                    failed="Failed: {}",
+                )
+                results = []
+                inline = False
+                use_txt = False
+                for m_list in fields:
+                    j = "\n".join(m_list)
+                    results.append(j)
+                    if len(j) > 1024:
+                        use_txt = True
+                f_list = ["BAN REPORT\n"]
+                for i in range(len(results)):
+                    if results[i]:
+                        if not use_txt:
+                            embed.add_field(name=field_names[i].format(len(fields[i])), value=results[i], inline=inline)
+                        else:
+                            f_list.append(f"{field_names_txt[i].format(len(fields[i]))}\n{results[i]}\n")
+                if use_txt:
+                    everything = "\n".join(f_list)
+                    return [True, BytesIO(everything.encode("utf-8"))]
                 else:
-                    await ctx.send(embed=embed)
+                    return [False, None]
+            embed.title = ":hammer: Finished! :hammer:"
+            embed.description = f"**{len(banned)}** members banned for: ``{reason}``\n⠀"
+            embed.set_thumbnail(url="https://media.discordapp.net/attachments/758301208082513920/824494391942316072/tenor_2.gif")
+            embed.color = discord.Color.red()
+            use_text, data = add_ban_fields(embed, Results(banned, alr_banned, not_found, forbidden, failed))
+            embed.set_footer(text=f"Ran by {ctx.author}", icon_url=ctx.author.avatar_url)
+            embed.timestamp = datetime.utcnow()
+            await message.delete()
+            if use_text:
+                await ctx.send(embed=embed, file=discord.File(data, filename="ban_summary.txt"))
+            else:
+                await ctx.send(embed=embed)
 
 
     # This one is meant to be used as a joke
@@ -212,6 +198,7 @@ class Mod(commands.Cog):
         emb.add_field(name="Reason", value=reason)
         await ctx.send(embed=emb)
 
+
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
@@ -220,23 +207,22 @@ class Mod(commands.Cog):
         """
         Bans and unbans the user, so their messages are deleted
         """
-        if ctx.author.top_role > user.top_role or ctx.author == ctx.guild.owner:
-            try:
-                if user == ctx.author:
-                    return await ctx.send("***:no_entry: You can't softban yourself...***")
-                await user.ban(reason=reason)
-                await user.unban(reason=reason)
-                if not reason:
-                    success = True
-                    emb = await self.format_mod_embed(ctx, user, success, "softban",)
-                else:
-                    success = True
-                    emb = await self.format_mod_embed(ctx, user, success, "softban", reason)
-            except Exception as e:
-                success = False
-                return await ctx.send(embed=await self.format_mod_embed(ctx, user, success, "softban", e))
-            
-            await ctx.send(embed = emb)
+        try:
+            if user == ctx.author:
+                return await ctx.send("***:no_entry: You can't softban yourself...***")
+            await user.ban(reason=reason)
+            await user.unban(reason=reason)
+            if not reason:
+                success = True
+                emb = await self.format_mod_embed(ctx, user, success, "softban",)
+            else:
+                success = True
+                emb = await self.format_mod_embed(ctx, user, success, "softban", reason)
+        except Exception as e:
+            success = False
+            return await ctx.send(embed=await self.format_mod_embed(ctx, user, success, "softban", e))
+        
+        await ctx.send(embed = emb)
 
 
 
@@ -273,7 +259,7 @@ class Mod(commands.Cog):
     @commands.bot_has_permissions(manage_messages=True)
     @commands.guild_only()
     @commands.command(aliases = ["del", "pr", "prune"])
-    async def purge(self, ctx, amount: int, member: libneko.converters.InsensitiveMemberConverter = None):
+    async def purge(self, ctx, amount: int = None, member: libneko.converters.InsensitiveMemberConverter = None):
         """
         Clean a number of messages from a channel.
         You can also clean messages of a specific member.
@@ -286,7 +272,7 @@ class Mod(commands.Cog):
                     async for message in ctx.channel.history(limit = amount + 2):
                         if message.author is member:
                             await message.delete()
-            elif amount == 0:
+            elif amount is None:
                 await ctx.send(discord.Embed(description="⚠ Please Specify the amount of messages to be deleted!"))
             else:
                 await ctx.send(discord.Embed(description="❌ Maximum amount of purging reached. You can only purge 500 messages at a time"))
@@ -364,14 +350,13 @@ class Mod(commands.Cog):
     @commands.command(aliases=["assignrole","giverole"])
     async def addrole(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, role: libneko.converters.RoleConverter = None):
         """Add a role to someone else."""
-        if ctx.author.top_role > member.top_role or ctx.author == ctx.guild.owner:
-            try:
-                if not role:
-                    return await ctx.send("That role does not exist.")
-                await member.add_roles(role)
-                await ctx.send(embed=discord.Embed(description=f"Added: `{role.name}` to `{member}`"))
-            except discord.Forbidden:
-                    await ctx.send(embed=discord.Embed(description="⚠ I don't have permission to manage roles!"))
+        try:
+            if not role:
+                return await ctx.send("That role does not exist.")
+            await member.add_roles(role)
+            await ctx.send(embed=discord.Embed(description=f"Added: `{role.name}` to `{member}`"))
+        except discord.Forbidden:
+                await ctx.send(embed=discord.Embed(description="⚠ I don't have permission to manage roles!"))
 
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -427,11 +412,10 @@ class Mod(commands.Cog):
     @commands.command(aliases=["unassignrole"])
     async def removerole(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, rolename: libneko.converters.RoleConverter):
         """Remove a role from someone else."""
-        if ctx.author.top_role > member.top_role or ctx.author == ctx.guild.owner:
-            if not rolename:
-                return await ctx.send("That role does not exist.")
-            await member.remove_roles(rolename)
-            await ctx.send(embed=discord.Embed(description=f"Removed: `{rolename}` from `{member}`"))
+        if not rolename:
+            return await ctx.send("That role does not exist.")
+        await member.remove_roles(rolename)
+        await ctx.send(embed=discord.Embed(description=f"Removed: `{rolename}` from `{member}`"))
 
     @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
     @commands.has_permissions(ban_members=True)
@@ -465,61 +449,59 @@ class Mod(commands.Cog):
         """
         Denies someone from chatting in all text channels and talking in voice channels for a specified duration    
         """
-        if ctx.author.top_role > member.top_role or ctx.author == ctx.guild.owner:
-            unit = duration[-1]
-            if unit == "s":
-                time = int(duration[:-1])
-                longunit = "seconds"
-            elif unit == "m":
-                time = int(duration[:-1]) * 60
-                longunit = "minutes"
-            elif unit == "h":
-                time = int(duration[:-1]) * 60 * 60
-                longunit = "hours"
-            else:
-                return await ctx.send("Invalid Unit! Use `s`, `m`, or `h`.")
-            
-            muted = self.muted.get(f"{member.id}@{ctx.guild.id}")
-            if muted is not None:
-                await ctx.channel.send(
-                    embed=discord.Embed(
-                        description=f"{member.mention} is already muted!",
-                        color=discord.Colour.red(),
-                    )
+        unit = duration[-1]
+        if unit == "s":
+            time = int(duration[:-1])
+            longunit = "seconds"
+        elif unit == "m":
+            time = int(duration[:-1]) * 60
+            longunit = "minutes"
+        elif unit == "h":
+            time = int(duration[:-1]) * 60 * 60
+            longunit = "hours"
+        else:
+            return await ctx.send("Invalid Unit! Use `s`, `m`, or `h`.")
+        
+        muted = self.muted.get(f"{member.id}@{ctx.guild.id}")
+        if muted is not None:
+            await ctx.channel.send(
+                embed=discord.Embed(
+                    description=f"{member.mention} is already muted!",
+                    color=discord.Colour.red(),
                 )
-            else:
-                async def mute_task(self):
-                    role = discord.utils.get(ctx.guild.roles, name="Muted") # retrieves muted role returns none if there isn't 
-                    if not role: # checks if there is muted role
-                        try: # creates muted role 
-                            muted = await ctx.guild.create_role(name="Muted", reason="To be used for muting")
-                            for channel in ctx.guild.channels: # removes permission to view and send in the channels 
-                                await channel.set_permissions(muted, send_messages=False,
-                                                            read_message_history=False,
-                                                            read_messages=False)
-                                await member.add_roles(muted, reason=reason) # add newly created role
-                        except discord.Forbidden:
-                            return await ctx.send("I have no permissions to make a muted role") # self-explainatory
-                    else:
-                        await member.add_roles(role) # gives the member the muted role
-                    
-                    success = True
-                    emb = await self.format_mod_embed(ctx, member, success, "mute", f"{str(duration[:-1])} {longunit}")
-                    emb.add_field(name="Reason", value=reason)
-                    await ctx.send(embed = emb, content="💀 You're gonna have a bad time")
-                    
-                    await asyncio.sleep(time)
-                    
-                    try:
-                        await member.remove_roles(discord.utils.get(ctx.guild.roles, name="Muted")) # removes muted role
-                    except:
-                        pass
-                    
-                    del self.muted[f"{member.id}@{ctx.guild.id}"]
+            )
+        else:
+            async def mute_task(self):
+                role = discord.utils.get(ctx.guild.roles, name="Muted") # retrieves muted role returns none if there isn't 
+                if not role: # checks if there is muted role
+                    try: # creates muted role 
+                        muted = await ctx.guild.create_role(name="Muted", reason="To be used for muting")
+                        for channel in ctx.guild.channels: # removes permission to view and send in the channels 
+                            await channel.set_permissions(muted, send_messages=False,
+                                                        read_message_history=False,
+                                                        read_messages=False)
+                            await member.add_roles(muted, reason=reason) # add newly created role
+                    except discord.Forbidden:
+                        return await ctx.send("I have no permissions to make a muted role") # self-explainatory
+                else:
+                    await member.add_roles(role) # gives the member the muted role
                 
-                mute = self.bot.loop.create_task(mute_task(self))
-                self.muted.update({f"{member.id}@{ctx.guild.id}": mute})
-                    
+                success = True
+                emb = await self.format_mod_embed(ctx, member, success, "mute", f"{str(duration[:-1])} {longunit}")
+                emb.add_field(name="Reason", value=reason)
+                await ctx.send(embed = emb, content="💀 You're gonna have a bad time")
+                
+                await asyncio.sleep(time)
+                
+                try:
+                    await member.remove_roles(discord.utils.get(ctx.guild.roles, name="Muted")) # removes muted role
+                except:
+                    pass
+                
+                del self.muted[f"{member.id}@{ctx.guild.id}"]
+            
+            mute = self.bot.loop.create_task(mute_task(self))
+            self.muted.update({f"{member.id}@{ctx.guild.id}": mute})
 
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(manage_channels=True)
@@ -527,25 +509,23 @@ class Mod(commands.Cog):
     @commands.command()
     async def unmute(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, reason: str = None):
         """Unmute someone so they can talk again"""
-        if ctx.author.top_role > member.top_role or ctx.author == ctx.guild.owner:
-            try:
-                muted = self.muted.get(f"{member.id}@{ctx.guild.id}")
-                if muted is None:
-                    return await ctx.send(
-                        embed=discord.Embed(
-                            description=f"{member.mention} is not muted!",
-                            color=discord.Colour.red(),
-                        )
+        try:
+            muted = self.muted.get(f"{member.id}@{ctx.guild.id}")
+            if muted is None:
+                return await ctx.send(
+                    embed=discord.Embed(
+                        description=f"{member.mention} is not muted!",
+                        color=discord.Colour.red(),
                     )
-                del self.muted[f"{member.id}@{ctx.guild.id}"]
-                await member.remove_roles(discord.utils.get(ctx.guild.roles, name="Muted")) # removes muted role
-            except:
-                success = False
-            else:
-                success = True
-
-            emb = await self.format_mod_embed(ctx, member, success, "unmute")
-            await ctx.send(embed = emb)
+                )
+            del self.muted[f"{member.id}@{ctx.guild.id}"]
+            await member.remove_roles(discord.utils.get(ctx.guild.roles, name="Muted")) # removes muted role
+        except:
+            success = False
+        else:
+            success = True
+        emb = await self.format_mod_embed(ctx, member, success, "unmute")
+        await ctx.send(embed = emb)
 
     @commands.has_permissions(manage_nicknames=True)
     @commands.bot_has_permissions(manage_nicknames=True)
