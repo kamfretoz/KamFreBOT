@@ -10,14 +10,14 @@ import ciso8601
 import data.topics as topics
 from textwrap import shorten, fill
 from datetime import datetime
-from random import choices, randint, choice
+from random import randint, choice
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from libneko import embeds
 from owoify import Owoifator
 from vaporwavely import vaporipsum, vaporize
-from pilutils.masks import ellipse
 
+from utils.masks import ellipse
 from modules.http import HttpCogBase
 from modules.dictobj import DictObject
 
