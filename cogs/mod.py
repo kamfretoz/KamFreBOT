@@ -431,15 +431,14 @@ class Mod(commands.Cog):
             success = True
 
         if success:
-            async for entry in ctx.guild.audit_logs(
-                limit = 1, user = ctx.guild.me, action = discord.AuditLogAction.ban
-            ):
+            async for entry in ctx.guild.audit_logs(limit = 1, user = ctx.guild.me, action = discord.AuditLogAction.ban):
                 emb = await self.format_mod_embed(ctx, entry.target, success, "hackban")
                 emb.add_field(name="Reason", value=reason)
+            await ctx.send(embed = emb)
         else:
             emb = await self.format_mod_embed(ctx, userid, success, "hackban")
             emb.add_field(name="Reason", value=reason)
-        await ctx.send(embed = emb)
+            await ctx.send(embed = emb)
 
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(manage_channels=True)
