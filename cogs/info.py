@@ -484,8 +484,7 @@ class Information(commands.Cog):
     @serverinfo_roleinfo.error
     async def roleinfo_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
-            await ctx.send('Cannot find that role. Make sure the spelling and the case-sensitivity is correct!')
-            return
+            return await ctx.send('Cannot find that role. Make sure the spelling and the case-sensitivity is correct!')
 
     @serverinfo.command(name="inrole", aliases=["inrl"], brief="Show the list of users on a particular role.")
     @commands.guild_only()
@@ -525,8 +524,7 @@ class Information(commands.Cog):
     @serverinfo_inrole.error
     async def inrole_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
-            await ctx.send('Cannot find that role. Make sure the spelling and the case-sensitivity is correct!')
-            return
+            return await ctx.send('Cannot find that role. Make sure the spelling and the case-sensitivity is correct!')
 
     @serverinfo.command(aliases=["lsrole", "listrole"], brief="Shows the list of all roles in this server")
     @commands.has_permissions(manage_roles=True)
@@ -906,7 +904,7 @@ class Information(commands.Cog):
     @userinfo.error
     async def userinfo_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
-            await ctx.send('Cannot find that user.')
+            return await ctx.send('Cannot find that user.')
             
     @commands.guild_only()
     @userinfo.command(name="banner", brief="Show the banner of a user, if any")

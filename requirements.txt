@@ -1,5 +1,6 @@
 py-cord[voice]
 git+https://gitlab.com/Tmpod/libneko
+aiohttp[speedups]
 aiodns
 brotli
 cchardet

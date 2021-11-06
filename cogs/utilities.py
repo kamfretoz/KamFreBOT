@@ -20,6 +20,8 @@ from collections import deque
 import json
 import base64
 import ciso8601
+import urllib
+import textwrap
 
 import libneko
 from libneko import pag, converters
@@ -252,13 +254,13 @@ class Utilities(HttpCogBase):
     async def codeblock(self, ctx, *, msg="I am Codeblock!"):
         """Write text in code format."""
         await ctx.message.delete()
-        await ctx.send("```" + msg.replace("`", "") + "```")
+        await ctx.reply("```" + msg.replace("`", "") + "```")
 
     @commands.command(aliases=["char"])
     async def charinfo(self, ctx, *, char: str):
         """Shows you information about a number of characters."""
         if len(char) > 15:
-            return await ctx.send(f'Too many characters ({len(char)}/15)')
+            return await ctx.reply(f'Too many characters ({len(char)}/15)')
 
         fmt = '`\\U{0:>08}`: `\\N{{{1}}}` - `{2}` -  http://www.fileformat.info/info/unicode/char/{0}'
 
@@ -267,7 +269,7 @@ class Utilities(HttpCogBase):
             name = unicodedata.name(c, 'Name not found.')
             return fmt.format(digit, name, c)
 
-        await ctx.send('\n'.join(map(to_string, char)))
+        await ctx.reply('\n'.join(map(to_string, char)))
 
     @commands.command(aliases=["servlist"])
     @commands.is_owner()
@@ -316,12 +318,12 @@ class Utilities(HttpCogBase):
                 p.add_line(line)
             p.start(ctx)
         except:
-            await ctx.send("No source was found...")
+            await ctx.reply("No source was found...")
 
     @commands.command(aliases=["uc", "uni"])
     async def uniconvert(self, ctx, *, msg: str):
         """Convert to unicode emoji if possible. Ex: [p]uni :eyes:"""
-        await ctx.send("`" + msg.replace("`", "") + "`")
+        await ctx.reply("`" + msg.replace("`", "") + "`")
 
     # pingstorm command
     @commands.cooldown(rate=2, per=1800.0, type=commands.BucketType.guild)
@@ -331,31 +333,31 @@ class Utilities(HttpCogBase):
     async def pingstorm(self, ctx, user: libneko.converters.InsensitiveMemberConverter, amount: int = 5):
         """Ping specified user number of times, 5 if no amount specified, Maximum amount is 200. (Cooldown: 1 use per 60 mins, Use wisely.)"""
         if user == ctx.bot.user:
-            await ctx.send("HA! You think it'll work against me?? Nice Try.")
+            await ctx.reply("HA! You think it'll work against me?? Nice Try.")
             user = ctx.message.author
             await asyncio.sleep(2)
 
         if not self.lock.locked():
             async with self.lock:
-                await ctx.send("Ping Machine Initializing in 3 seconds!")                
+                await ctx.reply("Ping Machine Initializing in 3 seconds!")                
                 await asyncio.sleep(3)
-                await ctx.send("Begin!")
+                await ctx.reply("Begin!")
 
                 async def ping_task(self):
                     ping = 0
                     while ping < int(amount):
                         if amount > 100:
-                            await ctx.send(
+                            await ctx.reply(
                                 "**WARNING:** **Maximum allowed amount is 100.**"
                             )
                             await ctx.message.add_reaction("❌")
                             break
                         await ctx.trigger_typing()
-                        await ctx.send(
+                        await ctx.reply(
                             f"{user.mention} - {ping + 1}/{amount}"
                         )
                         ping += 1
-                    await ctx.send("Finished!", delete_after=10.0)
+                    await ctx.reply("Finished!", delete_after=10.0)
                     await ctx.message.delete()
 
             ping = ctx.bot.loop.create_task(ping_task(self))
@@ -366,13 +368,13 @@ class Utilities(HttpCogBase):
     async def pingstop(self, ctx, user: libneko.converters.InsensitiveMemberConverter):
         pinged = self.pingeries.get(f"{user.id}@{ctx.guild.id}")
         if pinged is None:
-            return await ctx.send(
+            return await ctx.reply(
                 embed=discord.Embed(
                     description=f"{user.mention} is not being pinged!",
                     color=discord.Colour.red(),
                 )
             )
-        await ctx.send(f"Stopping the pings for {user.mention} on {ctx.guild.name}")
+        await ctx.reply(f"Stopping the pings for {user.mention} on {ctx.guild.name}")
         del self.pingeries[f"{user.id}@{ctx.guild.id}"]
         
         
@@ -384,9 +386,9 @@ class Utilities(HttpCogBase):
         start = time.monotonic()
 
         if ctx.invoked_with == "ping":
-            msg = await ctx.send(f":ping_pong: Pong!")
+            msg = await ctx.reply(f":ping_pong: Pong!")
         else:
-            msg = await ctx.send(f":ping_pong: Ping!")
+            msg = await ctx.reply(f":ping_pong: Ping!")
 
         millis = (time.monotonic() - start) * 1000
         heartbeat = ctx.bot.latency * 1000
@@ -436,13 +438,13 @@ class Utilities(HttpCogBase):
             clock.add_field(name="🕓 Current Time", value=time, inline=False)
             clock.add_field(name="📆 Current Date", value=date, inline=False)
             clock.add_field(name="🌐 Timezone", value=loc.title(), inline=False)
-            await ctx.send(embed=clock, content=f"⏰ Tick.. Tock..")
+            await ctx.reply(embed=clock, content=f"⏰ Tick.. Tock..")
         except:
             err = discord.Embed(title="⚠ **Warning!** An Error Occured.",
                                 description="""Make sure that the timezone format is correct and is also available.
                                             Take the following examples for formatting: `New York`, `America/New_York` 
                                             For timezone list, use [p]clock list""")
-            await ctx.send(embed=err)
+            await ctx.reply(embed=err)
 
     @commands.cooldown(rate=2, per=15, type=commands.BucketType.user)
     @clock.command(name="list", aliases=["timezone", "timezones", "lists", "tz", "tzs"], brief="Vew the list of available timezones")
@@ -469,9 +471,9 @@ class Utilities(HttpCogBase):
         you should put quotes around the option.
         """
         if not options or len(options) == 1:
-            await ctx.send("Provide two or more options")
+            await ctx.reply("Provide two or more options")
         else:
-            await ctx.send(f"I pick **{random.choice(options)}**!")
+            await ctx.reply(f"I pick **{random.choice(options)}**!")
 
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
     @commands.command()
@@ -485,12 +487,12 @@ class Utilities(HttpCogBase):
             em = discord.Embed()
             em.set_image(
                 url=str(gif.get("data", {}).get("image_original_url")))
-            await ctx.send(embed=em)
+            await ctx.reply(embed=em)
         except AttributeError:
-            await ctx.send("An Error Occured! Please try again later.")
+            await ctx.reply("An Error Occured! Please try again later.")
             return
         except discord.HTTPException:
-            await ctx.send("Unable to send the messages, make sure i have access to embed.")
+            await ctx.reply("Unable to send the messages, make sure i have access to embed.")
             return
 
     # https://levelup.gitconnected.com/3-ways-to-write-a-calculator-in-python-61642f2e4a9a
@@ -521,8 +523,8 @@ class Utilities(HttpCogBase):
             em.add_field(name="Output:", value=str(calculate(calculation.replace(
                 "**", "^").replace("x", "*").replace(" ", "").strip())), inline=False)
         except Exception as e:
-            return await ctx.send(embed=discord.Embed(description=f"An Error Occured! **{e}**"))
-        await ctx.send(content=None, embed=em)
+            return await ctx.reply(embed=discord.Embed(description=f"An Error Occured! **{e}**"))
+        await ctx.reply(content=None, embed=em)
         await ctx.message.delete()
 
     @commands.command(name="sqrt", aliases=["squareroot"])
@@ -531,12 +533,12 @@ class Utilities(HttpCogBase):
         try:
             out = sqrt(x)
         except Exception as e:
-            return await ctx.send(embed=discord.Embed(description=f"An Error Occured! **{e}**"))
+            return await ctx.reply(embed=discord.Embed(description=f"An Error Occured! **{e}**"))
 
         em = discord.Embed(color=0xD3D3D3, title="Square Root (√)")
         em.add_field(name="Input:", value=f"√{x}", inline=False,)
         em.add_field(name="Output:", value=out, inline=False)
-        await ctx.send(content=None, embed=em)
+        await ctx.reply(content=None, embed=em)
         try:
             await ctx.message.delete()
         except:
@@ -547,7 +549,7 @@ class Utilities(HttpCogBase):
     @commands.guild_only()
     async def messagedump(self, ctx, filename, limit: int = 50, details="yes", reverse="yes"):
         """Dump messages into a text file."""
-        await ctx.send("Now downloading messages...")
+        await ctx.reply("Now downloading messages...")
         if not os.path.isdir("data/message_dump"):
             os.mkdir("data/message_dump")
             
@@ -587,10 +589,10 @@ class Utilities(HttpCogBase):
                     ):
                         f.write(message.content + "\n")
                         
-        await ctx.send("Finished downloading!")
+        await ctx.reply("Finished downloading!")
         
         with open("data/message_dump/" + filename.rsplit(".", 1)[0] + ".txt","r",encoding="utf-8",) as dump:
-            await ctx.send(file=discord.File(dump), content="Here is the message dump.")
+            await ctx.reply(file=discord.File(dump), content="Here is the message dump.")
 
     @commands.cooldown(rate=2, per=3, type=commands.BucketType.user)
     @commands.command(aliases=["getcolor", "colour", "getcolour"])
@@ -599,7 +601,7 @@ class Utilities(HttpCogBase):
         colour_codes = colour_codes.split()
         size = (60, 80) if len(colour_codes) > 1 else (200, 200)
         if len(colour_codes) > 5:
-            return await ctx.send("Sorry, 5 colour codes maximum")
+            return await ctx.reply("Sorry, 5 colour codes maximum")
         for colour_code in colour_codes:
             if not colour_code.startswith("#"):
                 colour_code = "#" + colour_code
@@ -607,7 +609,7 @@ class Utilities(HttpCogBase):
             with io.BytesIO() as file:
                 image.save(file, "PNG")
                 file.seek(0)
-                await ctx.send(
+                await ctx.reply(
                     f"Colour with hex code `{colour_code}`:",
                     file=discord.File(file, "colour_file.png"),
                 )
@@ -644,12 +646,12 @@ class Utilities(HttpCogBase):
                 e.add_field(name="Voice Channels", value=f"```{voice}```")
 
             try:
-                await ctx.send(embed=e)
+                await ctx.reply(embed=e)
             except discord.HTTPException:
-                loading = await ctx.send(embed=discord.Embed(title="Please Wait..."), delete_after=3)
+                loading = await ctx.reply(embed=discord.Embed(title="Please Wait..."), delete_after=3)
                 everything = f"Text Channels:\n{text}\nCategories:\n{categories}\nVoice Channels:\n{voice}"
                 data = BytesIO(everything.encode('utf-8'))
-                await ctx.send(content=f"**{ctx.guild.name}'s Channel List**", file=discord.File(data, filename=f"{ctx.guild.name}_Channel_Lists.txt"))
+                await ctx.reply(content=f"**{ctx.guild.name}'s Channel List**", file=discord.File(data, filename=f"{ctx.guild.name}_Channel_Lists.txt"))
                 await loading.delete()
 
     @commands.cooldown(rate=1, per=600, type=commands.BucketType.guild)
@@ -680,10 +682,10 @@ class Utilities(HttpCogBase):
                     members_amount += 1
                     total += 1
 
-            loading = await ctx.send(embed=discord.Embed(title="⌛ Please Wait..."), delete_after=3)
+            loading = await ctx.reply(embed=discord.Embed(title="⌛ Please Wait..."), delete_after=3)
             everything = f"Server: {server.name}\nServer ID: {server.id}\nMember Amount: {members_amount}\nBot Amount: {bots_amount}\nTotal: {total}\n\nMember List:\n{members + bots}"
             data = BytesIO(everything.encode('utf-8'))
-            await ctx.send(content=f"**{server.name}'s Member List**", file=discord.File(data, filename=f"{server.name}_Member_Lists.txt"))
+            await ctx.reply(content=f"**{server.name}'s Member List**", file=discord.File(data, filename=f"{server.name}_Member_Lists.txt"))
             await loading.delete()
 
     @commands.cooldown(rate=1, per=600, type=commands.BucketType.guild)
@@ -702,7 +704,7 @@ class Utilities(HttpCogBase):
                 for num, role in enumerate(sorted(server.roles, reverse=True), start=1):
                     allroles += f"[{str(num).zfill(2)}] {role.id}\t[ Users: {len(role.members)} ]\t{role.name}\t\r\n"
                 data = BytesIO(allroles.encode('utf-8'))
-                await ctx.send(content=f"Roles in **{server.name}**", file=discord.File(data, filename=f"{server.name}_Role_Lists.txt"))
+                await ctx.reply(content=f"Roles in **{server.name}**", file=discord.File(data, filename=f"{server.name}_Role_Lists.txt"))
 
     @commands.command(aliases=["discriminator", "tagnum", "tags"])
     @commands.guild_only()
@@ -710,11 +712,11 @@ class Utilities(HttpCogBase):
         """Allows you to see whose user has the certain Discriminator/Tag!"""
 
         if tag is None:
-            await ctx.send(embed=discord.Embed(description="⚠ Please enter the desired tag number!"))
+            await ctx.reply(embed=discord.Embed(description="⚠ Please enter the desired tag number!"))
             return
 
         elif len(tag) > 4 or tag.isdigit() is False:
-            await ctx.send(embed=discord.Embed(description="⚠ Please enter the correct format!"))
+            await ctx.reply(embed=discord.Embed(description="⚠ Please enter the correct format!"))
             return
 
         else:
@@ -739,7 +741,7 @@ class Utilities(HttpCogBase):
                 page += "\n".join(member_list)
                 page.start(ctx)
             else:
-                await ctx.send(embed=discord.Embed(description="ℹ No user found!"))
+                await ctx.reply(embed=discord.Embed(description="ℹ No user found!"))
 
     @commands.cooldown(rate=2, per=3, type=commands.BucketType.user)
     @commands.has_permissions(add_reactions=True)
@@ -761,9 +763,9 @@ class Utilities(HttpCogBase):
         if time:
             options.remove(time)
         if len(options) <= 1:
-            return await ctx.send("You must have 2 options or more.")
+            return await ctx.reply("You must have 2 options or more.")
         if len(options) >= 11:
-            return await ctx.send("You must have 9 options or less.")
+            return await ctx.reply("You must have 9 options or less.")
         if time:
             time = int(time.strip("time="))
         else:
@@ -775,7 +777,7 @@ class Utilities(HttpCogBase):
             confirmation_msg += "{} - {}\n".format(emoji[idx], option)
             to_react.append(emoji[idx])
         confirmation_msg += "\n\nYou have {} seconds to vote!".format(time)
-        poll_msg = await ctx.send(confirmation_msg)
+        poll_msg = await ctx.reply(confirmation_msg)
         for emote in to_react:
             await poll_msg.add_reaction(emote)
         await asyncio.sleep(time)
@@ -803,12 +805,12 @@ class Utilities(HttpCogBase):
         else:
             top_result = options[emoji.index(top_result) + 1]
             end_msg += f"\n**{top_result}** is the winner!"
-        await ctx.send(end_msg)
+        await ctx.reply(end_msg)
 
     @poll.error
     async def poll_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send('Missing the question.')
+            await ctx.reply('Missing the question.')
             return
 
     @commands.cooldown(rate=2, per=3, type=commands.BucketType.user)
@@ -819,16 +821,16 @@ class Utilities(HttpCogBase):
         """
         command = ctx.bot.get_command(command)
         if command is None:
-            return await ctx.send("That command does not exist...", delete_after=5)
+            return await ctx.reply("That command does not exist...", delete_after=5)
         try:
             can_run = await command.can_run(ctx)
         except Exception as ex:
-            await ctx.send(
+            await ctx.reply(
                 "You cannot run the command here, because: "
                 f"`{type(ex).__name__}: {ex!s}`"
             )
         else:
-            await ctx.send(
+            await ctx.reply(
                 f'You {can_run and "can" or "cannot"} run this ' "command here."
             )
 
@@ -847,13 +849,13 @@ class Utilities(HttpCogBase):
             return chr(base + c)
 
         if len(questions_and_choices) < 3:
-            return await ctx.send('Need at least 1 question with 2 choices.')
+            return await ctx.reply('Need at least 1 question with 2 choices.')
         elif len(questions_and_choices) > 21:
-            return await ctx.send('You can only have up to 20 choices.')
+            return await ctx.reply('You can only have up to 20 choices.')
 
         perms = ctx.channel.permissions_for(ctx.me)
         if not (perms.read_message_history or perms.add_reactions):
-            return await ctx.send('Need Read Message History and Add Reactions permissions.')
+            return await ctx.reply('Need Read Message History and Add Reactions permissions.')
 
         question = questions_and_choices[0]
         choices = [(to_emoji(e), v)
@@ -865,7 +867,7 @@ class Utilities(HttpCogBase):
             pass
 
         body = "\n".join(f"{key}: {c}" for key, c in choices)
-        poll = await ctx.send(f'{ctx.author} asks: {question}\n\n{body}')
+        poll = await ctx.reply(f'{ctx.author} asks: {question}\n\n{body}')
         for emoji, _ in choices:
             await poll.add_reaction(emoji)
 
@@ -873,12 +875,12 @@ class Utilities(HttpCogBase):
     async def randint(self, ctx, a: int, b: int):
         """Usage: *ranint [least number][greatest number]. RanDOM!"""
         if a is None or b is None:
-            await ctx.send("Boi, are you random! Usage: *ranint [least #] [greatest #], to set the range of the randomized number. Please use integers.")
+            await ctx.reply("Boi, are you random! Usage: *ranint [least #] [greatest #], to set the range of the randomized number. Please use integers.")
         else:
             color = discord.Color(value=0x00ff00)
             em = discord.Embed(color=color, title='Your randomized number:')
             em.description = random.randint(a, b)
-            await ctx.send(embed=em)
+            await ctx.reply(embed=em)
 
     @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)
     @commands.command(aliases=["qr"])
@@ -895,7 +897,7 @@ class Utilities(HttpCogBase):
         with BytesIO() as file:
                 img.save(file, "PNG")
                 file.seek(0)
-                await ctx.send(f"{ctx.author.mention}", file=discord.File(file, f"QR_{ctx.author.name}_{ctx.message.id}.png"))
+                await ctx.reply(f"{ctx.author.mention}", file=discord.File(file, f"QR_{ctx.author.name}_{ctx.message.id}.png"))
 
     @commands.command(aliases=["qrinv"])
     @commands.guild_only()
@@ -918,14 +920,14 @@ class Utilities(HttpCogBase):
         with BytesIO() as file:
                 img.save(file, "PNG")
                 file.seek(0)
-                await ctx.send(f"{ctx.author.mention}, here is the QR Code Invite of {ctx.guild.name}", file=discord.File(file, f"QR_{ctx.author.name}_{ctx.guild.name}.png"))
+                await ctx.reply(f"{ctx.author.mention}, here is the QR Code Invite of {ctx.guild.name}", file=discord.File(file, f"QR_{ctx.author.name}_{ctx.guild.name}.png"))
 
     @commands.command(aliases=["whoisplaying"])
     @commands.guild_only()
     async def whosplaying(self, ctx, *, game: str):
         """Shows who's playing a specific game"""
         if len(game) <= 1:
-            await ctx.send("```The game should be at least 2 characters long...```", delete_after=5.0)
+            await ctx.reply("```The game should be at least 2 characters long...```", delete_after=5.0)
             return
 
         guild = ctx.message.guild
@@ -947,7 +949,7 @@ class Utilities(HttpCogBase):
                     playing_game += f"{emote} {member.name}#{member.discriminator} ({member.mention}) ({member.activity.name})\n"
 
         if playing_game == "":
-            await ctx.send("```Search results:\nNo users are currently playing that game.```")
+            await ctx.reply("```Search results:\nNo users are currently playing that game.```")
         else:
             msg = playing_game
             if count_playing > 15:
@@ -959,7 +961,7 @@ class Utilities(HttpCogBase):
                 description=msg, colour=discord.Colour(value=0x36393e))
             em.set_author(
                 name=f"""Who's playing "{game}"? {showing} User(s) in total.""")
-            await ctx.send(embed=em)
+            await ctx.reply(embed=em)
 
     @commands.command(aliases=["currentgame"])
     @commands.guild_only()
@@ -983,7 +985,7 @@ class Utilities(HttpCogBase):
         sorted_list = sorted(freq_list.items(),key=itemgetter(1),reverse=True)
 
         if not freq_list:
-            await ctx.send("```Search results:\nNo users are currently playing any games. Odd...```")
+            await ctx.reply("```Search results:\nNo users are currently playing any games. Odd...```")
         else:
             # Create display and embed
             msg = ""
@@ -1003,7 +1005,7 @@ class Utilities(HttpCogBase):
                 text="Do [p]whosplaying <game> to see whos playing a specific game")
             em.set_author(
                 name="Top games being played right now in the server:")
-            await ctx.send(embed=em)
+            await ctx.reply(embed=em)
 
     @commands.command(aliases=['drunkify'])
     async def mock(self, ctx, *, txt: commands.clean_content):
@@ -1014,13 +1016,13 @@ class Utilities(HttpCogBase):
         lst = [str.upper, str.lower]
         newText = await commands.clean_content().convert(ctx, ''.join(random.choice(lst)(c) for c in txt))
         if len(newText) <= 900:
-            await ctx.send(newText)
+            await ctx.reply(newText)
         else:
             try:
                 await ctx.author.send(newText)
-                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+                await ctx.reply(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
             except Exception:
-                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+                await ctx.reply(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
     @commands.command()
     async def expand(self, ctx,  gap: int, *, txt: commands.clean_content):
@@ -1033,15 +1035,15 @@ class Utilities(HttpCogBase):
                 spacing += " "
             result = spacing.join(txt)
             if len(result) <= 256:
-                await ctx.send(result)
+                await ctx.reply(result)
             else:
                 try:
                     await ctx.author.send(result)
-                    await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+                    await ctx.reply(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
                 except Exception:
-                    await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+                    await ctx.reply(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
         else:
-            await ctx.send("```fix\nError: The number can only be from 1 to 5```")
+            await ctx.reply("```fix\nError: The number can only be from 1 to 5```")
 
     @commands.command(aliases=["rev"])
     async def reverse(self, ctx, *, txt: commands.clean_content):
@@ -1050,13 +1052,13 @@ class Utilities(HttpCogBase):
         """
         result = await commands.clean_content().convert(ctx, txt[::-1])
         if len(result) <= 350:
-            await ctx.send(f"{result}")
+            await ctx.reply(f"{result}")
         else:
             try:
                 await ctx.author.send(f"{result}")
-                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+                await ctx.reply(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
             except Exception:
-                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+                await ctx.reply(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
     @commands.command(aliases=["ascii2hex", "a2h"])
     async def texttohex(self, ctx, *, txt: str):
@@ -1066,15 +1068,15 @@ class Utilities(HttpCogBase):
         try:
             hexoutput = await commands.clean_content().convert(ctx, (" ".join("{:02x}".format(ord(c)) for c in txt)))
         except Exception as e:
-            await ctx.send(f"**Error: `{e}`. This probably means the text is malformed. Sorry, you can always try here: http://www.unit-conversion.info/texttools/hexadecimal/#data**")
+            await ctx.reply(f"**Error: `{e}`. This probably means the text is malformed. Sorry, you can always try here: http://www.unit-conversion.info/texttools/hexadecimal/#data**")
         if len(hexoutput) <= 479:
-            await ctx.send(f"```fix\n{hexoutput}```")
+            await ctx.reply(f"```fix\n{hexoutput}```")
         else:
             try:
                 await ctx.author.send(f"```fix\n{hexoutput}```")
-                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+                await ctx.reply(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
             except Exception:
-                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+                await ctx.reply(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
     @commands.command(aliases=["hex2ascii", "h2a"])
     async def hextotext(self, ctx, *, txt: str):
@@ -1084,16 +1086,16 @@ class Utilities(HttpCogBase):
         try:
             cleanS = await commands.clean_content().convert(ctx, bytearray.fromhex(txt).decode())
         except Exception as e:
-            await ctx.send(f"**Error: `{e}`. This probably means the text is malformed. Sorry, you can always try here: http://www.unit-conversion.info/texttools/hexadecimal/#data**")
+            await ctx.reply(f"**Error: `{e}`. This probably means the text is malformed. Sorry, you can always try here: http://www.unit-conversion.info/texttools/hexadecimal/#data**")
             return
         if len(cleanS) <= 479:
-            await ctx.send(f"```{cleanS}```")
+            await ctx.reply(f"```{cleanS}```")
         else:
             try:
                 await ctx.author.send(f"```{cleanS}```")
-                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+                await ctx.reply(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
             except Exception:
-                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+                await ctx.reply(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
     @commands.command(aliases=["ascii2bin", "a2b"])
     async def texttobinary(self, ctx, *, txt: str):
@@ -1103,16 +1105,16 @@ class Utilities(HttpCogBase):
         try:
             cleanS = await commands.clean_content().convert(ctx, ' '.join(format(ord(x), 'b') for x in txt))
         except Exception as e:
-            await ctx.send(f"**Error: `{e}`. This probably means the text is malformed. Sorry, you can always try here: http://www.unit-conversion.info/texttools/convert-text-to-binary/#data**")
+            await ctx.reply(f"**Error: `{e}`. This probably means the text is malformed. Sorry, you can always try here: http://www.unit-conversion.info/texttools/convert-text-to-binary/#data**")
             return
         if len(cleanS) <= 479:
-            await ctx.send(f"```fix\n{cleanS}```")
+            await ctx.reply(f"```fix\n{cleanS}```")
         else:
             try:
                 await ctx.author.send(f"```fix\n{cleanS}```")
-                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+                await ctx.reply(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
             except Exception:
-                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+                await ctx.reply(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
     @commands.command(aliases=["bin2ascii", "b2a"])
     async def binarytotext(self, ctx, *, txt: str):
@@ -1122,16 +1124,16 @@ class Utilities(HttpCogBase):
         try:
             cleanS = await commands.clean_content().convert(ctx, ''.join([chr(int(txt, 2)) for txt in txt.split()]))
         except Exception as e:
-            await ctx.send(f"**Error: `{e}`. This probably means the text is malformed. Sorry, you can always try here: http://www.unit-conversion.info/texttools/convert-text-to-binary/#data**")
+            await ctx.reply(f"**Error: `{e}`. This probably means the text is malformed. Sorry, you can always try here: http://www.unit-conversion.info/texttools/convert-text-to-binary/#data**")
             return
         if len(cleanS) <= 479:
-            await ctx.send(f"```{cleanS}```")
+            await ctx.reply(f"```{cleanS}```")
         else:
             try:
                 await ctx.author.send(f"```{cleanS}```")
-                await ctx.send(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
+                await ctx.reply(f"**{ctx.author.mention} The output too was too large, so I sent it to your DMs! :mailbox_with_mail:**")
             except Exception:
-                await ctx.send(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
+                await ctx.reply(f"**{ctx.author.mention} There was a problem, and I could not send the output. It may be too large or malformed**")
 
     @commands.command(aliases=["ncs"])
     async def nickscan(self, ctx, user: libneko.converters.InsensitiveUserConverter = None):
@@ -1169,11 +1171,11 @@ class Utilities(HttpCogBase):
         API Provided by: https://ipapi.co/
         """
         if ip is None:
-            await ctx.send(embed=discord.Embed(description="⚠ Please Specify the IP Address!"))
+            await ctx.reply(embed=discord.Embed(description="⚠ Please Specify the IP Address!"))
             return
 
         if ip == "0.0.0.0" or ip == "127.0.0.1":
-            await ctx.send(embed=discord.Embed(description="You have played yourself. Wait... You can't!"))
+            await ctx.reply(embed=discord.Embed(description="You have played yourself. Wait... You can't!"))
             return
 
         await ctx.trigger_typing()
@@ -1228,11 +1230,11 @@ class Utilities(HttpCogBase):
             embd.set_footer(
                 text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
 
-            await ctx.send(embed=embd)
+            await ctx.reply(embed=embd)
         except IndexError:
-            await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! Make sure the IP and the formatting are correct!"))
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error Occured! Make sure the IP and the formatting are correct!"))
         except KeyError:
-            await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! Make sure the IP and the formatting are correct!"))
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error Occured! Make sure the IP and the formatting are correct!"))
 
     @commands.command(aliases=["m2a"])
     async def morse2ascii(self, ctx, *, text: commands.clean_content = None):
@@ -1240,7 +1242,7 @@ class Utilities(HttpCogBase):
         Convert Morse code to ASCII
         """
         if text is None:
-            await ctx.send(embed=discord.Embed(description="⚠ Please specify the input."))
+            await ctx.reply(embed=discord.Embed(description="⚠ Please specify the input."))
             return
 
         inverseMorseAlphabet = dict((v, k) for (k, v) in morseAlphabet.items())
@@ -1252,7 +1254,7 @@ class Utilities(HttpCogBase):
                 decodeMessage += inverseMorseAlphabet[char]
             else:
                 decodeMessage += '<ERROR>'
-        await ctx.send(embed=discord.Embed(title="Morse to ASCII Conversion:", description=decodeMessage, timestamp=datetime.utcnow()))
+        await ctx.reply(embed=discord.Embed(title="Morse to ASCII Conversion:", description=decodeMessage, timestamp=datetime.utcnow()))
 
     @commands.command(aliases=["a2m"])
     async def ascii2morse(self, ctx, *, text: commands.clean_content = None):
@@ -1260,7 +1262,7 @@ class Utilities(HttpCogBase):
         Convert ASCII into Morse Code
         """
         if text is None:
-            await ctx.send(embed=discord.Embed(description="⚠ Please specify the input."))
+            await ctx.reply(embed=discord.Embed(description="⚠ Please specify the input."))
             return
 
         encodedMessage = ""
@@ -1269,7 +1271,7 @@ class Utilities(HttpCogBase):
                 encodedMessage += morseAlphabet[char.upper()] + " "
             else:
                 encodedMessage += '<CHARACTER NOT FOUND>'
-        await ctx.send(embed=discord.Embed(title="ASCII to Morse Conversion:", description=encodedMessage, timestamp=datetime.utcnow()))
+        await ctx.reply(embed=discord.Embed(title="ASCII to Morse Conversion:", description=encodedMessage, timestamp=datetime.utcnow()))
 
     @commands.command(aliases=["ascii2b64", "b64e"])
     async def base64encode(self, ctx, *, text: str = None):
@@ -1277,7 +1279,7 @@ class Utilities(HttpCogBase):
         Encode ASCII chars to Base64
         """
         if text == None:
-            await ctx.send(embed=discord.Embed(description="Please input the text!"))
+            await ctx.reply(embed=discord.Embed(description="Please input the text!"))
             return
 
         try:
@@ -1286,9 +1288,9 @@ class Utilities(HttpCogBase):
 
             base64_bytes = base64.b64encode(sample_string_bytes)
             base64_string = base64_bytes.decode("ascii")
-            await ctx.send(embed=discord.Embed(description=f"```{base64_string}```"))
+            await ctx.reply(embed=discord.Embed(description=f"```{base64_string}```"))
         except UnicodeEncodeError:
-            await ctx.send(embed=discord.Embed(description=f"⚠️ Unable to encode the text, possible unsupported characters are found."))
+            await ctx.reply(embed=discord.Embed(description=f"⚠️ Unable to encode the text, possible unsupported characters are found."))
 
     @commands.command(aliases=["b642ascii", "b64d"])
     async def base64decode(self, ctx, text: str = None):
@@ -1296,7 +1298,7 @@ class Utilities(HttpCogBase):
         Decode Base64 chars to ASCII
         """
         if text == None:
-            await ctx.send(embed=discord.Embed(description="Please input the text!"))
+            await ctx.reply(embed=discord.Embed(description="Please input the text!"))
             return
 
         try:
@@ -1305,9 +1307,9 @@ class Utilities(HttpCogBase):
 
             sample_string_bytes = base64.b64decode(base64_bytes)
             sample_string = sample_string_bytes.decode("ascii")
-            await ctx.send(embed=discord.Embed(description=f"```{sample_string}```"))
+            await ctx.reply(embed=discord.Embed(description=f"```{sample_string}```"))
         except UnicodeDecodeError:
-            await ctx.send(embed=discord.Embed(description=f"⚠️ Unable to decode the text, possible unsupported characters are found."))
+            await ctx.reply(embed=discord.Embed(description=f"⚠️ Unable to decode the text, possible unsupported characters are found."))
 
     @commands.command(aliases=["nationalize"])
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
@@ -1318,7 +1320,7 @@ class Utilities(HttpCogBase):
         """
 
         if name is None:
-            await ctx.send(embed=discord.Embed(description="Please input the name."))
+            await ctx.reply(embed=discord.Embed(description="Please input the name."))
             return
 
         await ctx.trigger_typing()
@@ -1336,7 +1338,7 @@ class Utilities(HttpCogBase):
             country = data.country[0].country_id
             probability = data.country[0].probability
         except IndexError:
-            await ctx.send(embed=discord.Embed(description="⚠ An Error Occured! Cannot determine the result."))
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error Occured! Cannot determine the result."))
             return
 
         percentage = float(probability) * 100
@@ -1350,7 +1352,7 @@ class Utilities(HttpCogBase):
         emb.set_footer(
             text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
 
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
     @commands.command(aliases=["wth"])
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
@@ -1361,7 +1363,7 @@ class Utilities(HttpCogBase):
         """
 
         if city is None:
-            await ctx.send(embed=discord.Embed(description="Please provide the city name!"))
+            await ctx.reply(embed=discord.Embed(description="Please provide the city name!"))
             return
 
         await ctx.trigger_typing()
@@ -1448,13 +1450,13 @@ class Utilities(HttpCogBase):
             if code != 200:
                 msg = data.message
                 if code == 404:
-                    await ctx.send(embed=discord.Embed(description="City cannot be found!"))
+                    await ctx.reply(embed=discord.Embed(description="City cannot be found!"))
                     return
                 elif code == 401:
-                    await ctx.send(embed=discord.Embed(description="Invalid API Key!"))
+                    await ctx.reply(embed=discord.Embed(description="Invalid API Key!"))
                     return
                 else:
-                    await ctx.send(embed=discord.Embed(description=f"An Error Occured! `{msg.capitalize()}` (Code: `{code}`)"))
+                    await ctx.reply(embed=discord.Embed(description=f"An Error Occured! `{msg.capitalize()}` (Code: `{code}`)"))
                     return
 
             cityname = data.name
@@ -1484,23 +1486,23 @@ class Utilities(HttpCogBase):
             wind_direction = degToCompass(wind_degree)
             icon = f"http://openweathermap.org/img/wn/{data.weather[0].icon}@2x.png"
         except IndexError:
-            await ctx.send(embed=discord.Embed(description="⚠ An Error Occured while parsing the data."))
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error Occured while parsing the data."))
             return
         except KeyError:
-            await ctx.send(embed=discord.Embed(description="⚠ An Error Occured while parsing the data."))
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error Occured while parsing the data."))
             return
         except aiohttp.client_exceptions.ClientResponseError:
             if resp.status == 404:
-                await ctx.send(embed=discord.Embed(description="⚠ Not Found."))
+                await ctx.reply(embed=discord.Embed(description="⚠ Not Found."))
                 return
             if resp.status == 403:
-                await ctx.send(embed=discord.Embed(description="⚠ Forbidden."))
+                await ctx.reply(embed=discord.Embed(description="⚠ Forbidden."))
                 return
             elif resp.status >= 500:
-                await ctx.send(embed=discord.Embed(description="⚠ Unable to access the REST API, it may be down or inaccessible at the moment."))
+                await ctx.reply(embed=discord.Embed(description="⚠ Unable to access the REST API, it may be down or inaccessible at the moment."))
                 return
             else:
-                await ctx.send(embed=discord.Embed(description="⚠ Undefined Error."))
+                await ctx.reply(embed=discord.Embed(description="⚠ Undefined Error."))
                 return
 
         colours = ""
@@ -1558,12 +1560,12 @@ class Utilities(HttpCogBase):
         embed.add_field(name="🧭 Wind Direction",
                         value=f"{wind_degree}° {wind_direction}", inline=True)
 
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
 
     @commands.command(name="define", aliases=["definition", "dictionary", "def"])
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def _define(self, ctx, *, word: str):
-        msg = await ctx.send("Looking for a definition...")
+        msg = await ctx.reply("Looking for a definition...")
         try:
             #--Connect to unofficial Google Dictionary API and get results--#
             session = self.acquire_session()
@@ -1779,66 +1781,59 @@ class Utilities(HttpCogBase):
         except KeyError:
             code = data.code
             msg = data.message
-            await ctx.send(embed=discord.Embed(description=f"⚠ An Error Occured! **{msg.capitalize()}** (Code: {code})"))
+            await ctx.reply(embed=discord.Embed(description=f"⚠ An Error Occured! **{msg.capitalize()}** (Code: {code})"))
             return
 
         emb = discord.Embed(timestamp=datetime.utcnow())
         emb.add_field(
             name=f"Conversion from {origin.upper()} to {destination.upper()}", value=prt)
         emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png",text="Data provided by: KSoft.Si")
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
-    @commands.command(aliases=["lyric", "ly", "lrc"], enabled = False)
+    @commands.command(aliases=["lyric", "ly", "lrc"])
     @commands.cooldown(2, 5, commands.BucketType.user)
-    async def lyrics(self, ctx, *, query: str = None):
-        """
-        Search the lyrics of a given song
-        """
-        if query is None:
-            await ctx.send(embed=discord.Embed(description=f"Usage: `[p]lyrics <query>`"))
-            return
+    async def lyrics(self, ctx, *, search = None):
+        """A command to find lyrics easily!"""
+        if not search: # if user hasnt given an argument, throw a error and come out of the command
+            embed = discord.Embed(
+                title = "No search argument!",
+                description = "You havent entered anything, so i couldnt find lyrics!"
+            )
+            return await ctx.reply(embed = embed)
+            # ctx.reply is available only on discord.py version 1.6.0, if you have a version lower than that use ctx.reply
 
-        await ctx.trigger_typing()
+        song = urllib.parse.quote(search) # url-encode the song provided so it can be passed on to the API
 
-        msg = await ctx.send(f"🔍 Looking for `{query}`")
-
-        head = {
-            "Authorization": ksoft_key
+        parameters = {
+            "title" : song
         }
-        params = {
-            "q": query,
-            "limit": 1
-        }
+
         session = self.acquire_session()
-        async with session.get('https://api.ksoft.si/lyrics/search', headers=head, params=params) as resp:
-            data = json.loads(await resp.read(), object_hook=DictObject)
-        try:
-            artist = data.data[0].artist
-            title = data.data[0].name
-            lyric = data.data[0].lyrics
-            album_art = data.data[0].album_art
-        except IndexError:
-            await ctx.send(embed=discord.Embed(description=f"⚠ An Error Occured! Cannot find the lyric for that song."))
-            return
+        async with session.get(f'https://some-random-api.ml/lyrics', params = parameters) as jsondata: # define jsondata and fetch from API
+            if not 300 > jsondata.status >= 200: # if an unexpected HTTP status code is recieved from the website, throw an error and come out of the command
+                return await ctx.reply(f'Received poor status code of {jsondata.status}')
+            lyricsData = await jsondata.json() # load the json data into its json form
 
-        if len(lyric) >= 2000:
-            lyric1 = lyric[:2000]
-            lyric2 = lyric[2000:]
-            emb = discord.Embed(description=f"```{lyric1}```")
-            emb2 = discord.Embed(
-                description=f"```{lyric2}```", timestamp=datetime.utcnow())
-            emb.set_author(name=f"{title} — {artist}", icon_url=album_art)
-            emb2.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png",
-                            text="Data provided by: KSoft.Si")
-            await msg.edit(embed=emb, content=None)
-            await ctx.send(embed=emb2, content=None)
-        else:
-            emb = discord.Embed(
-                description=f"```{lyric}```", timestamp=datetime.utcnow())
-            emb.set_author(name=f"{title} — {artist}")
-            emb.set_thumbnail(url=album_art)
-            emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png", text="Data provided by: KSoft.Si")
-            await msg.edit(embed=emb, content=None)
+        error = lyricsData.get('error')
+        if error: # checking if there is an error recieved by the API, and if there is then throwing an error message and returning out of the command
+            return await ctx.reply(f'Recieved unexpected error: {error}')
+
+        songLyrics = lyricsData['lyrics'] # the lyrics
+        songArtist = lyricsData['author'] # the author's name
+        songTitle = lyricsData['title'] # the song's title
+        songThumbnail = lyricsData['thumbnail']['genius'] # the song's picture/thumbnail
+
+        # sometimes the song's lyrics can be above 4096 characters, and if it is then we will not be able to send it in one single message on Discord due to the character limit
+        # this is why we split the song into chunks of 4096 characters and send each part individually
+        for chunk in textwrap.wrap(songLyrics, 4096, replace_whitespace = False):
+            embed = discord.Embed(
+                title = f"{songArtist} - {songTitle}",
+                description = chunk,
+                color = discord.Color.blurple(),
+                timestamp = datetime.utcnow()
+            )
+            embed.set_thumbnail(url = songThumbnail)
+            await ctx.reply(embed = embed)
 
     @commands.command(aliases=["cvd", "covid19"])
     @commands.cooldown(2, 5, commands.BucketType.user)
@@ -1848,10 +1843,10 @@ class Utilities(HttpCogBase):
         Accepted values are **Country name** or **Alpha-2 ISO Code**.
         """
         if country is None:
-            await ctx.send(embed=discord.Embed(description=f"Please specify the country!"))
+            await ctx.reply(embed=discord.Embed(description=f"Please specify the country!"))
             return
         elif len(country) > 16:
-            await ctx.send(embed=discord.Embed(description=f"Only 16 chacarcters are allowed."))
+            await ctx.reply(embed=discord.Embed(description=f"Only 16 chacarcters are allowed."))
             return
 
         await ctx.trigger_typing()
@@ -1869,7 +1864,7 @@ class Utilities(HttpCogBase):
             rec = data.data.recovered
             act = data.data.active
         except KeyError:
-            await ctx.send(embed=discord.Embed(description=f"⚠ An Error Occured! **Location not found!**"))
+            await ctx.reply(embed=discord.Embed(description=f"⚠ An Error Occured! **Location not found!**"))
             return
 
         if rec == 0:
@@ -1891,7 +1886,7 @@ class Utilities(HttpCogBase):
         emb.add_field(name="Deaths", value=dead, inline=False)
         emb.add_field(name="Recovered", value=rec, inline=False)
         emb.add_field(name="Active Cases", value=act, inline=False)
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
     @commands.command(aliases=["cd", "timer"])
     @commands.cooldown(2, 5, commands.BucketType.user)
@@ -1901,8 +1896,8 @@ class Utilities(HttpCogBase):
         A Simple countdown timer
         """
         if time > 3600:
-            return await ctx.send("Maximum duration is 1 hour (3600 seconds)")
-        msg = await ctx.send(content="Preparing...")
+            return await ctx.reply("Maximum duration is 1 hour (3600 seconds)")
+        msg = await ctx.reply(content="Preparing...")
         await asyncio.sleep(3)
         iteration = time
         while iteration:
@@ -1921,11 +1916,11 @@ class Utilities(HttpCogBase):
         SCP Database, Requires Access Clearance Level 4 or Higher.
         """
         if query is None:
-            return await ctx.send(embed=discord.Embed(description=f":x: ERROR: **Please insert your query.**"))
+            return await ctx.reply(embed=discord.Embed(description=f":x: ERROR: **Please insert your query.**"))
 
         await ctx.trigger_typing()
 
-        msg = await ctx.send(f"💿 Accessing Database... Please Wait.")
+        msg = await ctx.reply(f"💿 Accessing Database... Please Wait.")
 
         params = {
             "q": query,

@@ -72,12 +72,12 @@ class Mod(commands.Cog):
                 await ctx.guild.kick(member, reason = reason)
             except Exception as e:
                 success = False
-                return await ctx.send(embed=await self.format_mod_embed(ctx, member, success, "kick", e))
+                return await ctx.reply(embed=await self.format_mod_embed(ctx, member, success, "kick", e))
             else:
                 success = True
             emb = await self.format_mod_embed(ctx, member, success, "kick")
 
-            await ctx.send(embed = emb)
+            await ctx.reply(embed = emb)
 
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
@@ -176,9 +176,9 @@ class Mod(commands.Cog):
             embed.timestamp = datetime.utcnow()
             await message.delete()
             if use_text:
-                await ctx.send(embed=embed, file=discord.File(data, filename="ban_summary.txt"))
+                await ctx.reply(embed=embed, file=discord.File(data, filename="ban_summary.txt"))
             else:
-                await ctx.send(embed=embed)
+                await ctx.reply(embed=embed)
 
 
     # This one is meant to be used as a joke
@@ -189,14 +189,14 @@ class Mod(commands.Cog):
         Ban (or mute) someone from the server. Or is it...?
         """
         if member.id == ctx.bot.user.id:
-            return await ctx.send("For real?")
+            return await ctx.reply("For real?")
         success = True
         if "mute" in ctx.invoked_with:
             emb = await self.format_mod_embed(ctx, member, success, "mute")
         else:
             emb = await self.format_mod_embed(ctx, member, success, "ban")
         emb.add_field(name="Reason", value=reason)
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
 
     @commands.guild_only()
@@ -209,7 +209,7 @@ class Mod(commands.Cog):
         """
         try:
             if user == ctx.author:
-                return await ctx.send("***:no_entry: You can't softban yourself...***")
+                return await ctx.reply("***:no_entry: You can't softban yourself...***")
             await user.ban(reason=reason)
             await user.unban(reason=reason)
             if not reason:
@@ -220,9 +220,9 @@ class Mod(commands.Cog):
                 emb = await self.format_mod_embed(ctx, user, success, "softban", reason)
         except Exception as e:
             success = False
-            return await ctx.send(embed=await self.format_mod_embed(ctx, user, success, "softban", e))
+            return await ctx.reply(embed=await self.format_mod_embed(ctx, user, success, "softban", e))
         
-        await ctx.send(embed = emb)
+        await ctx.reply(embed = emb)
 
 
 
@@ -252,7 +252,7 @@ class Mod(commands.Cog):
 
         emb = await self.format_mod_embed(ctx, ban.user, success, "unban")
 
-        await ctx.send(embed = emb)
+        await ctx.reply(embed = emb)
 
     @commands.cooldown(rate=1, per=5.0)
     @commands.has_permissions(manage_messages=True)
@@ -273,11 +273,11 @@ class Mod(commands.Cog):
                         if message.author is member:
                             await message.delete()
             elif amount is None:
-                await ctx.send(discord.Embed(description="⚠ Please Specify the amount of messages to be deleted!"))
+                await ctx.reply(discord.Embed(description="⚠ Please Specify the amount of messages to be deleted!"))
             else:
-                await ctx.send(discord.Embed(description="❌ Maximum amount of purging reached. You can only purge 500 messages at a time"))
+                await ctx.reply(discord.Embed(description="❌ Maximum amount of purging reached. You can only purge 500 messages at a time"))
         except:
-            await ctx.send(embed=discord.Embed(description="⚠ An error has occured! Please make sure that i have the correct permission!"))
+            await ctx.reply(embed=discord.Embed(description="⚠ An error has occured! Please make sure that i have the correct permission!"))
 
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
@@ -316,7 +316,7 @@ class Mod(commands.Cog):
         em.set_thumbnail(url=ban.user.avatar_url)
         em.set_footer(text=f"User ID: {ban.user.id}")
 
-        await ctx.send(embed=em)
+        await ctx.reply(embed=em)
 
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
@@ -325,7 +325,7 @@ class Mod(commands.Cog):
     async def banfinder(self, ctx, *, string: str = None):
         """Count the amount of bans in the guild that contain the search in their reasons."""
         if string is None:
-            await ctx.send("Type something to search!", delete_after=5)
+            await ctx.reply("Type something to search!", delete_after=5)
         
         n = 0
         async with ctx.typing():
@@ -336,7 +336,7 @@ class Mod(commands.Cog):
                 if string.lower() in ban.reason.lower():
                     n += 1
         
-        await ctx.send(
+        await ctx.reply(
             embed = discord.Embed(
                 title="Done!",
                 description=f"``{n}`` Bans corresponding to ``{string}``.",
@@ -352,11 +352,11 @@ class Mod(commands.Cog):
         """Add a role to someone else."""
         try:
             if not role:
-                return await ctx.send("That role does not exist.")
+                return await ctx.reply("That role does not exist.")
             await member.add_roles(role)
-            await ctx.send(embed=discord.Embed(description=f"Added: `{role.name}` to `{member}`"))
+            await ctx.reply(embed=discord.Embed(description=f"Added: `{role.name}` to `{member}`"))
         except discord.Forbidden:
-                await ctx.send(embed=discord.Embed(description="⚠ I don't have permission to manage roles!"))
+                await ctx.reply(embed=discord.Embed(description="⚠ I don't have permission to manage roles!"))
 
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -372,9 +372,9 @@ class Mod(commands.Cog):
                 name=role_name,
                 colour=colour,
             )
-            await ctx.send(embed=discord.Embed(description=f"Successfully created New Role **{role_name}**!", colour=colour))
+            await ctx.reply(embed=discord.Embed(description=f"Successfully created New Role **{role_name}**!", colour=colour))
         except discord.Forbidden:
-            await ctx.send("Can't do that!")
+            await ctx.reply("Can't do that!")
 
     @commands.has_permissions(administrator=True)
     @commands.command(disabled=True, hidden=True)
@@ -389,12 +389,12 @@ class Mod(commands.Cog):
         """
         if ctx.author == ctx.guild.owner:
             if not role:
-                return await ctx.send("That role does not exist.")
+                return await ctx.reply("That role does not exist.")
             curr = 0
             total = len(ctx.guild.members)
             progress = f"{curr}/{total}"
-            await ctx.send(progress)
-            await ctx.send("Assigning roles to every member... (THIS WILL TAKE A WHILE)")
+            await ctx.reply(progress)
+            await ctx.reply("Assigning roles to every member... (THIS WILL TAKE A WHILE)")
             for users in ctx.guild.members:
                 if users.bot is False:
                     if users not in role.members:
@@ -403,7 +403,7 @@ class Mod(commands.Cog):
                         await progress.edit(content=f"({curr}/{total})")
                         print(f"Added Role: {role.name} to Member: {users}")
                         await asyncio.sleep(5)
-                await ctx.send("Completed!")
+                await ctx.reply("Completed!")
                 print("Completed!")
         
     @commands.has_permissions(manage_roles=True)
@@ -413,9 +413,9 @@ class Mod(commands.Cog):
     async def removerole(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, rolename: libneko.converters.RoleConverter):
         """Remove a role from someone else."""
         if not rolename:
-            return await ctx.send("That role does not exist.")
+            return await ctx.reply("That role does not exist.")
         await member.remove_roles(rolename)
-        await ctx.send(embed=discord.Embed(description=f"Removed: `{rolename}` from `{member}`"))
+        await ctx.reply(embed=discord.Embed(description=f"Removed: `{rolename}` from `{member}`"))
 
     @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
     @commands.has_permissions(ban_members=True)
@@ -434,11 +434,11 @@ class Mod(commands.Cog):
             async for entry in ctx.guild.audit_logs(limit = 1, user = ctx.guild.me, action = discord.AuditLogAction.ban):
                 emb = await self.format_mod_embed(ctx, entry.target, success, "hackban")
                 emb.add_field(name="Reason", value=reason)
-            await ctx.send(embed = emb)
+            await ctx.reply(embed = emb)
         else:
             emb = await self.format_mod_embed(ctx, userid, success, "hackban")
             emb.add_field(name="Reason", value=reason)
-            await ctx.send(embed = emb)
+            await ctx.reply(embed = emb)
 
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(manage_channels=True)
@@ -459,7 +459,7 @@ class Mod(commands.Cog):
             time = int(duration[:-1]) * 60 * 60
             longunit = "hours"
         else:
-            return await ctx.send("Invalid Unit! Use `s`, `m`, or `h`.")
+            return await ctx.reply("Invalid Unit! Use `s`, `m`, or `h`.")
         
         muted = self.muted.get(f"{member.id}@{ctx.guild.id}")
         if muted is not None:
@@ -481,14 +481,14 @@ class Mod(commands.Cog):
                                                         read_messages=False)
                             await member.add_roles(muted, reason=reason) # add newly created role
                     except discord.Forbidden:
-                        return await ctx.send("I have no permissions to make a muted role") # self-explainatory
+                        return await ctx.reply("I have no permissions to make a muted role") # self-explainatory
                 else:
                     await member.add_roles(role) # gives the member the muted role
                 
                 success = True
                 emb = await self.format_mod_embed(ctx, member, success, "mute", f"{str(duration[:-1])} {longunit}")
                 emb.add_field(name="Reason", value=reason)
-                await ctx.send(embed = emb, content="💀 You're gonna have a bad time")
+                await ctx.reply(embed = emb, content="💀 You're gonna have a bad time")
                 
                 await asyncio.sleep(time)
                 
@@ -511,7 +511,7 @@ class Mod(commands.Cog):
         try:
             muted = self.muted.get(f"{member.id}@{ctx.guild.id}")
             if muted is None:
-                return await ctx.send(
+                return await ctx.reply(
                     embed=discord.Embed(
                         description=f"{member.mention} is not muted!",
                         color=discord.Colour.red(),
@@ -524,7 +524,7 @@ class Mod(commands.Cog):
         else:
             success = True
         emb = await self.format_mod_embed(ctx, member, success, "unmute")
-        await ctx.send(embed = emb)
+        await ctx.reply(embed = emb)
 
     @commands.has_permissions(manage_nicknames=True)
     @commands.bot_has_permissions(manage_nicknames=True)
@@ -535,18 +535,18 @@ class Mod(commands.Cog):
         guild = ctx.guild
         if newname is None:
             await guild.me.edit(nick=None)
-            await ctx.send(
+            await ctx.reply(
                 embed=discord.Embed(description=f"Successfully reset my nickname.")
             )
         elif len(newname) > 32:
-            await ctx.send(
+            await ctx.reply(
                 embed=discord.Embed(
                     description=f":warning: The new nickname must be 32 or fewer in length."
                 )
             )
         else:
             await guild.me.edit(nick=newname)
-            await ctx.send(
+            await ctx.reply(
                 embed=discord.Embed(
                     description=f"Successfully changed my nickname to **{newname}**!"
                 )
@@ -561,26 +561,26 @@ class Mod(commands.Cog):
             try:
                 if newname is None:
                     await member.edit(nick=None)
-                    await ctx.send(
+                    await ctx.reply(
                         embed=discord.Embed(
                             description=f"Successfully reset the nickname of **{member.name}**"
                         )
                     )
                 elif len(newname) > 32:
-                    await ctx.send(
+                    await ctx.reply(
                         embed=discord.Embed(
                             description=f":warning: The new nickname must be 32 or fewer in length."
                         )
                     )
                 else:
                     await member.edit(nick=newname)
-                    await ctx.send(
+                    await ctx.reply(
                         embed=discord.Embed(
                             description=f"Successfully changed the nickname of **{member.name}** to **{newname}**"
                         )
                     )
             except discord.Forbidden:
-                    await ctx.send(embed=discord.Embed(description="⚠ I don't have permission to change their nickname!"))
+                    await ctx.reply(embed=discord.Embed(description="⚠ I don't have permission to change their nickname!"))
 
     @commands.guild_only()
     @commands.has_permissions(manage_channels=True)
@@ -600,28 +600,28 @@ class Mod(commands.Cog):
                 time = int(duration[:-1]) * 60 * 60
                 longunit = "hours"
             else:
-                await ctx.send("Invalid Unit! Use `s`, `m`, or `h`.")
+                await ctx.reply("Invalid Unit! Use `s`, `m`, or `h`.")
                 return
         except ValueError:
-            await ctx.send("Invalid Value! Example: `30s`, `5m`, or `1h`.")
+            await ctx.reply("Invalid Value! Example: `30s`, `5m`, or `1h`.")
             return
 
         if len(duration) > 4:
-            await ctx.send("Invalid Input!")
+            await ctx.reply("Invalid Input!")
             return
 
         if time > 21600:
-            await ctx.send(embed=discord.Embed(description="⛔ Duration can't be over than 6 hours!"))
+            await ctx.reply(embed=discord.Embed(description="⛔ Duration can't be over than 6 hours!"))
             return
 
         if duration == "0s":
             await ctx.channel.edit(slowmode_delay=time)
-            a = await ctx.send(embed=discord.Embed(description="ℹ **Slowmode is turned off for this channel**"))
+            a = await ctx.reply(embed=discord.Embed(description="ℹ **Slowmode is turned off for this channel**"))
             await a.add_reaction("⏱")
             return
         else:
             await ctx.channel.edit(slowmode_delay=time)
-            confirm = await ctx.send(embed=discord.Embed(description=f"**Set the channel slow mode delay to `{str(duration[:-1])} {longunit}` \nTo turn this off, run the command without any value**"))
+            confirm = await ctx.reply(embed=discord.Embed(description=f"**Set the channel slow mode delay to `{str(duration[:-1])} {longunit}` \nTo turn this off, run the command without any value**"))
             await confirm.add_reaction("⏱")
 
     @commands.command(aliases=["send", "dm"])
@@ -632,7 +632,7 @@ class Mod(commands.Cog):
         Send a message to a user's DM
         Can only be used by moderators
         """
-        msg = await ctx.send("Preparing...")
+        msg = await ctx.reply("Preparing...")
         if text is None:
             err = discord.Embed(description="What do you want me to say?")
             await msg.edit(embed=err, content=None)

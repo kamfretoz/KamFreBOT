@@ -7,6 +7,7 @@ import discord
 import libneko
 import json
 import ciso8601
+import io
 import data.topics as topics
 from textwrap import shorten, fill
 from datetime import datetime
@@ -68,24 +69,24 @@ class Fun(HttpCogBase):
     async def saytts(self, ctx, *, text=None):
         """Say whatever you typed in, this time with TTS!"""
         if text == None:
-            await ctx.send("❓ What do you want me to say?", delete_after=10.0)
+            await ctx.reply("❓ What do you want me to say?", delete_after=10.0)
             await ctx.message.add_reaction("❓")
         else:
             try:
                 await ctx.message.delete()
                 await ctx.trigger_typing()
-                await ctx.send(content=text, tts=True)
+                await ctx.sayy(content=text, tts=True)
             except discord.Forbidden:
                 await ctx.author.send(
                     ":no_entry_sign: I'm not allowed to send message here!",
                     delete_after=10.0,
                 )
             except discord.NotFound:
-                await ctx.send(
+                await ctx.say(
                     ":grey_exclamation: ERROR: Original message not found! (404 UNKNOWN MESSAGE)"
                 )
             except discord.ext.commands.BotMissingPermissions:
-                await ctx.send(
+                await ctx.say(
                     "I don't have permission to delete the original message!",
                     delete_after=5.0,
                 )
@@ -96,14 +97,14 @@ class Fun(HttpCogBase):
     async def sayembed(self, ctx, *, message: commands.clean_content = None):
         '''A command to embed messages quickly.'''
         if message is None:
-            await ctx.send(discord.Embed(description="❓ What do you want me to say?", delete_after=5))
+            await ctx.reply(discord.Embed(description="❓ What do you want me to say?", delete_after=5))
             await ctx.message.add_reaction("❓")
         else:
             await ctx.message.delete()
             em = discord.Embed(color=randint(0, 0xFFFFFF), timestamp=datetime.utcnow())
             em.description = message
             em.set_footer(icon_url=ctx.message.author.avatar_url, text=f"Sent by: {ctx.message.author}")
-            await ctx.send(embed=em)
+            await ctx.say(embed=em)
 
     @commands.command(aliases=["sto"])
     @commands.bot_has_permissions(manage_messages=True)
@@ -111,7 +112,7 @@ class Fun(HttpCogBase):
     async def sayto(self, ctx, destination: discord.TextChannel, *, text=None):
         """Send whatever you want to specific channel"""
         if text == None:
-            await ctx.send("What do you want me to say?", delete_after=10.0)
+            await ctx.say("What do you want me to say?", delete_after=10.0)
             await ctx.message.add_reaction("❓")
         else:
             try:
@@ -119,12 +120,12 @@ class Fun(HttpCogBase):
                 await destination.trigger_typing()
                 await destination.send(text)
             except discord.Forbidden:
-                await ctx.send(
+                await ctx.say(
                     f"I'm not allowed to send a message on #{destination}!",
                     delete_after=10.0,
                 )
             except discord.ext.commands.BotMissingPermissions:
-                await ctx.send(
+                await ctx.say(
                     "I don't have permission to delete the original message!",
                     delete_after=5.0,
                 )
@@ -134,7 +135,7 @@ class Fun(HttpCogBase):
         """ Press F to pay respect """
         hearts = ['❤', '💛', '💚', '💙', '💜', '♥']
         reason = f"for **{text}** " if text else ""
-        await ctx.send(f"**{ctx.author.name}** has paid their respect {reason}{choice(hearts)}")
+        await ctx.reply(f"**{ctx.author.name}** has paid their respect {reason}{choice(hearts)}")
 
     @commands.command()
     async def hack(self, ctx, user: libneko.converters.InsensitiveMemberConverter = None):
@@ -152,7 +153,7 @@ class Fun(HttpCogBase):
         ]
         gifemb = discord.Embed()
         gifemb.set_image(url=choice(gifs))
-        msg = await ctx.send(embed=gifemb, content=f"Hacking! Target: {user}")
+        msg = await ctx.reply(embed=gifemb, content=f"Hacking! Target: {user}")
         await asyncio.sleep(2)
         await msg.edit(content="Accessing Discord Files... [▓▓    ]")
         await asyncio.sleep(2)
@@ -211,14 +212,14 @@ class Fun(HttpCogBase):
         eightball.set_footer(
             text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
         eightball.set_thumbnail(url="https://i.imgur.com/Q9dxpTz.png")
-        await ctx.send(embed=eightball, content=None)
+        await ctx.reply(embed=eightball, content=None)
 
     @commands.command(hidden=True, aliases=["ily"])
     async def iloveyou(self, ctx):
         """
         ❤❤❤
         """
-        await ctx.send(f"{ctx.author.mention}, I love you too! :heart::heart::heart:")
+        await ctx.reply(f"{ctx.author.mention}, I love you too! :heart::heart::heart:")
 
     @commands.command(aliases=["rr"], hidden=True)
     async def rickroll(self, ctx):
@@ -229,7 +230,7 @@ class Fun(HttpCogBase):
 
         rick.set_image(
             url="https://i.kym-cdn.com/photos/images/original/000/041/494/1241026091_youve_been_rickrolled.gif")
-        await ctx.send(embed=rick)
+        await ctx.reply(embed=rick)
 
     @commands.command(aliases=["bg"])
     async def bigtext(self, ctx, *, text: str):
@@ -245,7 +246,7 @@ class Fun(HttpCogBase):
                 s += f":regional_indicator_{char.lower()}: "
             elif char.isspace():
                 s += "   "
-        await ctx.send(s)
+        await ctx.reply(s)
 
     @commands.command(aliases=["kitty", "kitten", "kat", "catto"])
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
@@ -267,7 +268,7 @@ class Fun(HttpCogBase):
         embed.set_footer(icon_url=ctx.message.author.avatar_url,
                          text=f"Requested by: {ctx.message.author}")
         embed.set_image(url=url)
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
 
     @commands.command(aliases=["doggie", "doge", "doggo"])
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
@@ -284,12 +285,10 @@ class Fun(HttpCogBase):
 
         url = data[0]["url"]
         color = ctx.author.color
-        embed = discord.Embed(description="Here's a cute doggo!! :D",
-                              color=color, timestamp=datetime.utcnow())
-        embed.set_footer(icon_url=ctx.message.author.avatar_url,
-                         text=f"Requested by: {ctx.message.author}")
+        embed = discord.Embed(description="Here's a cute doggo!! :D",color=color, timestamp=datetime.utcnow())
+        embed.set_footer(icon_url=ctx.message.author.avatar_url,text=f"Requested by: {ctx.message.author}")
         embed.set_image(url=url)
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
 
     @commands.command(aliases=["foxes"])
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
@@ -308,9 +307,9 @@ class Fun(HttpCogBase):
         emb = discord.Embed(description="Here's a cute fox!! :D",
                             color=ctx.author.color, timestamp=datetime.utcnow())
         emb.set_footer(icon_url=ctx.message.author.avatar_url,
-                       text=f"Requested by: {ctx.message.author}")
+                        text=f"Requested by: {ctx.message.author}")
         emb.set_image(url=image)
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
     @commands.command()
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
@@ -329,29 +328,289 @@ class Fun(HttpCogBase):
         emb = discord.Embed(description="Here's a cute shibe!! :D",
                             color=ctx.author.color, timestamp=datetime.utcnow())
         emb.set_footer(icon_url=ctx.message.author.avatar_url,
-                       text=f"Requested by: {ctx.message.author}")
+                        text=f"Requested by: {ctx.message.author}")
         emb.set_image(url=img)
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
-    @commands.command(aliases=["catfact"])
-    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
-    async def catfacts(self, ctx):
-        """
-        Get a random cat facts!
-        """
+    @commands.command()
+    async def triggered(self, ctx, member: libneko.converters.InsensitiveMemberConverter=None):
+        """**TRIGGERED**"""
+        member = member or ctx.author
+
         await ctx.trigger_typing()
 
+        parameters = {
+            "avatar" : str(member.avatar_url_as(format="png", size=1024))
+        }
+
         session = self.acquire_session()
-        async with session.get('https://cat-fact.herokuapp.com/facts/random') as resp:
-            resp.raise_for_status()
-            data = await resp.json()
+        async with session.get(f'https://some-random-api.ml/canvas/triggered', params = parameters) as resp:
+                imageData = io.BytesIO(await resp.read()) # read the image/bytes
+                img = discord.File(imageData, "triggered.gif")
+                em = discord.Embed(
+                        title=f"{member.name} have been triggered!",
+                        color=0xf1f1f1,
+                    )
+                em.set_image(url="attachment://triggered.gif")
+                
+                await ctx.reply(embed=em,file=img) # sending the file
+                
+    @commands.command(aliases=["mpass"])
+    async def missionpass(self, ctx, member: libneko.converters.InsensitiveMemberConverter=None):
+        """Mission Passed!"""
+        member = member or ctx.author
 
-        fact = data["text"]
+        await ctx.trigger_typing()
 
-        emb = discord.Embed(
-            description=fact, color=ctx.author.color, timestamp=datetime.utcnow())
+        parameters = {
+            "avatar" : str(member.avatar_url_as(format="png", size=1024))
+        }
 
-        await ctx.send(embed=emb)
+        session = self.acquire_session()
+        async with session.get(f'https://some-random-api.ml/canvas/passed', params = parameters) as resp:
+                imageData = io.BytesIO(await resp.read()) # read the image/bytes
+                img = discord.File(imageData, "passed.png")
+                em = discord.Embed(
+                        title=f"Mission passed",
+                        description="Respect +100",
+                        color=0xf1f1f1,
+                    )
+                em.set_image(url="attachment://passed.png")
+                
+                await ctx.reply(embed=em,file=img) # sending the file
+                
+    @commands.command()
+    async def wasted(self, ctx, member: libneko.converters.InsensitiveMemberConverter=None):
+        """You Died"""
+        member = member or ctx.author
+
+        await ctx.trigger_typing()
+
+        parameters = {
+            "avatar" : str(member.avatar_url_as(format="png", size=1024))
+        }
+
+        session = self.acquire_session()
+        async with session.get(f'https://some-random-api.ml/canvas/wasted', params=parameters) as resp:
+                imageData = io.BytesIO(await resp.read()) # read the image/bytes
+                img = discord.File(imageData, "Wasted.png")
+                em = discord.Embed(
+                        title=f"Wasted",
+                        color=0xf1f1f1,
+                    )
+                em.set_image(url="attachment://Wasted.png")
+                
+                await ctx.reply(embed=em,file=img) # sending the file
+                
+    @commands.command(aliases=["prison"])
+    async def jail(self, ctx, member: libneko.converters.InsensitiveMemberConverter=None):
+        """Welcome to the Jail"""
+        member = member or ctx.author
+
+        await ctx.trigger_typing()
+
+        parameters = {
+            "avatar" : str(member.avatar_url_as(format="png", size=1024))
+        }
+
+        session = self.acquire_session()
+        async with session.get(f'https://some-random-api.ml/canvas/jail', params=parameters) as resp:
+                imageData = io.BytesIO(await resp.read()) # read the image/bytes
+                img = discord.File(imageData, "jail.png")
+                em = discord.Embed(
+                        title=f"{member.name} have been jailed.",
+                        color=0xf1f1f1,
+                    )
+                em.set_image(url="attachment://jail.png")
+                
+                await ctx.reply(embed=em,file=img) # sending the file
+                
+    @commands.command(aliases=["simp"])
+    async def simpcard(self, ctx, member: libneko.converters.InsensitiveMemberConverter=None):
+        """Simp card for u"""
+        member = member or ctx.author
+
+        await ctx.trigger_typing()
+
+        parameters = {
+            "avatar" : str(member.avatar_url_as(format="png", size=1024))
+        }
+
+        session = self.acquire_session()
+        async with session.get(f'https://some-random-api.ml/canvas/simpcard', params=parameters) as resp:
+                imageData = io.BytesIO(await resp.read()) # read the image/bytes
+                img = discord.File(imageData, "simpcard.png")
+                em = discord.Embed(
+                        title=f"what a simp, {member.name}.",
+                        color=0xf1f1f1,
+                    )
+                em.set_image(url="attachment://simp.png")
+                
+                await ctx.reply(embed=em,file=img) # sending the file
+                
+    @commands.command(aliases=["lolice"])
+    async def lolipolice(self, ctx, member: libneko.converters.InsensitiveMemberConverter=None):
+        """the police coming to your house"""
+        member = member or ctx.author
+
+        await ctx.trigger_typing()
+
+        parameters = {
+            "avatar" : str(member.avatar_url_as(format="png", size=1024))
+        }
+
+        session = self.acquire_session()
+        async with session.get(f'https://some-random-api.ml/canvas/lolice', params=parameters) as resp:
+                imageData = io.BytesIO(await resp.read()) # read the image/bytes
+                img = discord.File(imageData, "lolice.png")
+                em = discord.Embed(
+                        color=0xf1f1f1,
+                    )
+                em.set_image(url="attachment://lolice.png")
+                
+                await ctx.reply(embed=em,file=img) # sending the file
+                
+    @commands.command(aliases=["sputid"])
+    async def stupid(self, ctx, member: libneko.converters.InsensitiveMemberConverter=None, * ,text: str = "im stupid"):
+        """Oh no its stupid"""
+        member = member or ctx.author
+
+        await ctx.trigger_typing()
+
+        parameters = {
+            "avatar" : str(member.avatar_url_as(format="png", size=1024)),
+            "dog" : text
+        }
+
+        session = self.acquire_session()
+        async with session.get(f'https://some-random-api.ml/canvas/its-so-stupid', params=parameters) as resp:
+                imageData = io.BytesIO(await resp.read()) # read the image/bytes
+                img = discord.File(imageData, "stupid.png")
+                em = discord.Embed(
+                        color=0xf1f1f1,
+                    )
+                em.set_image(url="attachment://stupid.png")
+                
+                await ctx.reply(embed=em,file=img) # sending the file
+                
+    @commands.command()
+    async def gay(self, ctx, member: libneko.converters.InsensitiveMemberConverter=None):
+        """gay-laser"""
+        member = member or ctx.author
+
+        await ctx.trigger_typing()
+
+        parameters = {
+            "avatar" : str(member.avatar_url_as(format="png", size=1024))
+        }
+
+        session = self.acquire_session()
+        async with session.get(f'https://some-random-api.ml/canvas/gay', params=parameters) as resp:
+                imageData = io.BytesIO(await resp.read()) # read the image/bytes
+                img = discord.File(imageData, "gay.png")
+                em = discord.Embed(
+                        color=0xf1f1f1,
+                    )
+                em.set_image(url="attachment://gay.png")
+                
+                await ctx.reply(embed=em,file=img) # sending the file
+                
+    @commands.command(aliases=["ussr"])
+    async def comrade(self, ctx, member: libneko.converters.InsensitiveMemberConverter=None):
+        member = member or ctx.author
+
+        await ctx.trigger_typing()
+
+        parameters = {
+            "avatar" : str(member.avatar_url_as(format="png", size=1024))
+        }
+
+        session = self.acquire_session()
+        async with session.get(f'https://some-random-api.ml/canvas/comrade', params=parameters) as resp:
+                imageData = io.BytesIO(await resp.read()) # read the image/bytes
+                img = discord.File(imageData, "comrade.png")
+                em = discord.Embed(
+                        color=0xf1f1f1,
+                    )
+                em.set_image(url="attachment://comrade.png")
+                
+                await ctx.reply(embed=em,file=img) # sending the file
+                
+    @commands.command(aliases=["ytc"])
+    async def ytcomment(self, ctx, member: libneko.converters.InsensitiveMemberConverter=None, * ,msg: str = "Never gonna give you up!"):
+        """Create a fake youtube comment"""
+        member = member or ctx.author
+
+        await ctx.trigger_typing()
+
+        parameters = {
+            "avatar" : str(member.avatar_url_as(format="png", size=1024)),
+            "username" : member.name,
+            "comment" : msg
+        }
+
+        session = self.acquire_session()
+        async with session.get(f'https://some-random-api.ml/canvas/youtube-comment', params=parameters) as resp:
+                imageData = io.BytesIO(await resp.read()) # read the image/bytes
+                img = discord.File(imageData, "comment.png")
+                em = discord.Embed(
+                        color=0xf1f1f1,
+                    )
+                em.set_image(url="attachment://comment.png")
+                
+                await ctx.reply(embed=em,file=img) # sending the file
+                
+    @commands.command(aliases=["tw"])
+    async def tweet(self, ctx, member: libneko.converters.InsensitiveMemberConverter=None, * , message: str = "Never gonna give you up!"):
+        """Create a fake tweet!"""
+        member = member or ctx.author
+
+        await ctx.trigger_typing()
+
+        parameters = {
+            "avatar" : str(member.avatar_url_as(format="png", size=1024)),
+            "username" : member.name,
+            "displayname" : member.display_name or member.name,
+            "comment" : message
+        }
+
+        session = self.acquire_session()
+        async with session.get(f'https://some-random-api.ml/canvas/tweet', params=parameters) as resp:
+                imageData = io.BytesIO(await resp.read()) # read the image/bytes
+                img = discord.File(imageData, "tweet.png")
+                em = discord.Embed(
+                        color=0xf1f1f1,
+                    )
+                em.set_image(url="attachment://tweet.png")
+                
+                await ctx.reply(embed=em,file=img) # sending the file
+
+    @commands.command()
+    async def horny(self, ctx, member: libneko.converters.InsensitiveMemberConverter = None):
+        """Horny card for u"""
+        member = member or ctx.author
+        await ctx.trigger_typing()
+        
+        parameters = {
+            "avatar" : str(member.avatar_url_as(format="png", size=1024))
+        }
+        
+        session = self.acquire_session()
+        async with session.get(f'https://some-random-api.ml/canvas/horny', params = parameters) as af:
+            
+                if 300 > af.status >= 200:
+                    fp = io.BytesIO(await af.read())
+                    file = discord.File(fp, "horny.png")
+                    em = discord.Embed(
+                        title="bonk",
+                        color=0xf1f1f1,
+                    )
+                    em.set_image(url="attachment://horny.png")
+                    await ctx.reply(embed=em, file=file)
+                else:
+                    await ctx.reply('No horny :(')
+                    
+
 
     @commands.command(aliases=["adv"])
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
@@ -370,7 +629,7 @@ class Fun(HttpCogBase):
 
         emb = discord.Embed(title="Here's some advice for you :)", description=adv,
                             color=ctx.author.color, timestamp=datetime.utcnow())
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
     @commands.command(aliases=["randquote", "inspire", "qt"])
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
@@ -392,7 +651,7 @@ class Fun(HttpCogBase):
             description=quote, color=ctx.author.color, timestamp=datetime.utcnow())
         emb.set_footer(text=f"Quote by: {author}")
 
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
     @commands.command(aliases=["daddyjokes", "dadjoke", "djoke"])
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
@@ -416,7 +675,7 @@ class Fun(HttpCogBase):
                             timestamp=datetime.utcnow(), color=ctx.author.color)
         emb.set_thumbnail(url="https://i.ibb.co/6WjYXsP/dad.jpg")
 
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
     @commands.command(aliases=["chnorris", "chnr", "cn", "chuck"])
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
@@ -439,7 +698,31 @@ class Fun(HttpCogBase):
             description=joke, timestamp=datetime.utcnow(), color=0x8B0000)
         emb.set_thumbnail(url=icon)
 
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
+        
+    @commands.command(aliases=["insult"])
+    @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
+    async def roast(self, ctx, member: libneko.converters.InsensitiveMemberConverter = None):
+        """
+        Roasting simulator 2077
+        """
+        member = member or ctx.author
+
+        await ctx.trigger_typing()
+
+        parameters = {
+            "lang" : "en",
+            "type" : "json"
+        }
+
+        session = self.acquire_session()
+        async with session.get('https://evilinsult.com/generate_insult.php', params = parameters) as resp:
+            resp.raise_for_status()
+            data = await resp.json()
+
+        insult = data["insult"]
+
+        await ctx.reply(content=f"{member.mention}, {insult}")
         
     @commands.command(aliases=["joke"])
     @commands.cooldown(rate=3, per=5, type=commands.BucketType.user)
@@ -474,9 +757,9 @@ class Fun(HttpCogBase):
             joke = data["joke"]
             emb.add_field(name=f"Category: **{jokecategory}**", value=joke)
         if data["error"] == "true":
-            return await ctx.send("An Error has occured!")
+            return await ctx.reply("An Error has occured!")
             
-        await ctx.send(embed=emb, content=None)
+        await ctx.reply(embed=emb, content=None)
         
 
     @commands.command(aliases=["succ"], hidden=True)
@@ -486,7 +769,7 @@ class Fun(HttpCogBase):
         zuccy.set_image(
             url="https://pics.me.me/he-protec-he-attac-but-most-importantly-he-zucc-28716903.png"
         )
-        await ctx.send(embed=zuccy, content="<:zucc:451945809144184862>")
+        await ctx.reply(embed=zuccy, content="<:zucc:451945809144184862>")
 
     @commands.command(hidden=True, aliases=["pelota"])
     async def bola(self, ctx):
@@ -497,12 +780,12 @@ class Fun(HttpCogBase):
         if ctx.invoked_with == "pelota":
             pel = discord.Embed()
             pel.set_image(url=def_pelota)
-            await ctx.send(embed=pel)
+            await ctx.reply(embed=pel)
             return
 
         bol = discord.Embed()
         bol.set_image(url=def_bola)
-        await ctx.send(embed=bol)
+        await ctx.reply(embed=bol)
 
     @commands.command(hidden=True)
     async def interject(self, ctx):
@@ -512,7 +795,7 @@ class Fun(HttpCogBase):
         uwu.set_image(
             url="https://i.ytimg.com/vi/QXUSvSUsx80/maxresdefault.jpg"
         )
-        await ctx.send(embed=uwu)
+        await ctx.reply(embed=uwu)
 
     @commands.command(hidden=True, aliases=["banned"])
     async def banido(self, ctx):
@@ -521,7 +804,7 @@ class Fun(HttpCogBase):
         ban.set_image(
             url="https://media1.tenor.com/images/8a7663d1d754046373a5735fab9c14fa/tenor.gif"
         )
-        await ctx.send(embed=ban)
+        await ctx.reply(embed=ban)
 
     @commands.command(hidden=True, aliases=["distraction"])
     async def distract(self, ctx):
@@ -530,7 +813,7 @@ class Fun(HttpCogBase):
         dis.set_image(
             url="https://i.ibb.co/1ZHX2SZ/stickdancin.gif"
         )
-        await ctx.send(embed=dis)
+        await ctx.reply(embed=dis)
 
     @commands.command(hidden=True, aliases=["rw"])
     async def rewind(self, ctx):
@@ -543,7 +826,7 @@ class Fun(HttpCogBase):
         rew.set_image(
             url=choice(imgs)
         )
-        await ctx.send(embed=rew)
+        await ctx.reply(embed=rew)
 
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.guild)
     @commands.command(name="curse", aliases=("oppugno", "jynx", "kutuk", "santet"))
@@ -552,16 +835,16 @@ class Fun(HttpCogBase):
         Curse someone with an emoji for 30 minutes
         """
         if user is None and emoji is None:
-            await ctx.send(embed=discord.Embed(description="Please specify who to curse and with what emoji!"))
+            await ctx.reply(embed=discord.Embed(description="Please specify who to curse and with what emoji!"))
             return
 
         if emoji is None:
-            await ctx.send(embed=discord.Embed(description="Please specify what emoji to use!"))
+            await ctx.reply(embed=discord.Embed(description="Please specify what emoji to use!"))
             return
 
         if user.id == ctx.bot.user.id:
             user = ctx.message.author
-            await ctx.send(embed=discord.Embed(description="HA! Nice try! But unfortunately i'm immune to the curse and so the curse goes back to sender!"))
+            await ctx.reply(embed=discord.Embed(description="HA! Nice try! But unfortunately i'm immune to the curse and so the curse goes back to sender!"))
 
         emoji = (
             self.bot.get_emoji(int(emoji.split(":")[2].strip(">")))
@@ -580,7 +863,7 @@ class Fun(HttpCogBase):
             try:
                 await ctx.message.add_reaction(emoji)
             except:
-                await ctx.send(
+                await ctx.reply(
                     embed=embeds.Embed(
                         description=":octagonal_sign: Cannot find that emoji!",
                         color=discord.Colour.red(),
@@ -616,7 +899,7 @@ class Fun(HttpCogBase):
         """Cure someone from a curse"""
         cursed = self.jynxed.get(f"{user.id}@{ctx.guild.id}")
         if user == ctx.author and user != self.bot.creator:
-            await ctx.send(
+            await ctx.reply(
                 embed=embeds.Embed(
                     description=":octagonal_sign: You cannot counter-curse yourself",
                     color=discord.Colour.red(),
@@ -625,14 +908,14 @@ class Fun(HttpCogBase):
         elif cursed is not None:
             cursed.cancel()
             del self.jynxed[f"{user.id}@{ctx.guild.id}"]
-            await ctx.send(
+            await ctx.reply(
                 embed=embeds.Embed(
                     description=f":green_heart: {user.mention} Has been blessed and the curse had faded away",
                     color=discord.Colour.from_rgb(55, 147, 105),
                 )
             )
         else:
-            await ctx.send(
+            await ctx.reply(
                 embed=embeds.Embed(
                     description=f":octagonal_sign: {user.mention} is not cursed!",
                     color=discord.Colour.red(),
@@ -671,7 +954,7 @@ class Fun(HttpCogBase):
         embed.description = xkcd["alt"]
         embed.set_image(url=xkcd["img"])
         embed.set_footer(text="Powered by xkcd")
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
 
     @commands.command(aliases=["love", "lovemeter"])
     async def ship(self, ctx, user1: libneko.converters.InsensitiveMemberConverter = None, user2: libneko.converters.InsensitiveMemberConverter = None):
@@ -831,9 +1114,9 @@ class Fun(HttpCogBase):
             image_binary.seek(0)
             img=discord.File(fp=image_binary, filename="ship.png")
             emb.set_image(url="attachment://ship.png")
-            await ctx.send(embed=emb, file=img)
+            await ctx.reply(embed=emb, file=img)
 
-    @commands.command(aliases=['gay-scanner', 'gayscanner', 'gay', 'homo'])
+    @commands.command(aliases=['gay-scanner', 'gayscanner' , 'homo'])
     async def gay_scanner(self, ctx, *, user: str = None):
         """very mature command yes haha"""
         if not user:
@@ -905,7 +1188,7 @@ class Fun(HttpCogBase):
         emb.add_field(name="Gay Meter:", value=meter, inline=False)
         emb.set_author(name="Gay-O-Meter™",
                        icon_url="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/ICA_flag.svg/2000px-ICA_flag.svg.png")
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
     @commands.command()
     async def textmojify(self, ctx, *, text: str):
@@ -941,11 +1224,11 @@ class Fun(HttpCogBase):
                       .replace('w', '\u200B🇼').replace('x', '\u200B🇽')\
                       .replace('y', '\u200B🇾').replace('z', '\u200B🇿')
             try:
-                await ctx.send(text)
+                await ctx.reply(text)
             except Exception as e:
-                await ctx.send(f'```{e}```')
+                await ctx.reply(f'```{e}```')
         else:
-            await ctx.send('Write something, reee!', delete_after=3.0)
+            await ctx.reply('Write something, reee!', delete_after=3.0)
 
     @commands.command(aliases=["topics"])
     @commands.cooldown(rate=2, per=300, type=commands.BucketType.guild)
@@ -957,7 +1240,7 @@ class Fun(HttpCogBase):
                               description=f"{choices}", timestamp=datetime.utcnow())
         embed.set_footer(icon_url=ctx.message.author.avatar_url,
                          text=f"Requested by: {ctx.message.author}")
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
 
     @commands.command(aliases=["truths", "thetruth"])
     @commands.cooldown(rate=1, per=60, type=commands.BucketType.guild)
@@ -971,7 +1254,7 @@ class Fun(HttpCogBase):
                 title="Let's start a Truth game!", description=f"{choices}", timestamp=datetime.utcnow())
             embed_quote.set_footer(
                 icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
-            await ctx.send(embed=embed_quote)
+            await ctx.reply(embed=embed_quote)
             topics.usedTruth.popleft()
 
     @commands.command(aliases=["dares"])
@@ -986,7 +1269,7 @@ class Fun(HttpCogBase):
                 title="Here is a Dare for you!", description=f"{choices}", timestamp=datetime.utcnow())
             embed_quote.set_footer(
                 icon_url=ctx.message.author.avatar_url, text=f"Requested by: {ctx.message.author}")
-            await ctx.send(embed=embed_quote)
+            await ctx.reply(embed=embed_quote)
             topics.usedDare.popleft()
 
     @commands.group(aliases=["mal", "anime"], invoke_without_command=True)
@@ -998,11 +1281,11 @@ class Fun(HttpCogBase):
         data = None
 
         if name is None:
-            await ctx.send(embed=discord.Embed(description="Please specifiy the anime title to find!"))
+            await ctx.reply(embed=discord.Embed(description="Please specifiy the anime title to find!"))
             return
 
         if len(name) < 3:
-            await ctx.send(embed=discord.Embed(description="Three or more characters are required for the query!"))
+            await ctx.reply(embed=discord.Embed(description="Three or more characters are required for the query!"))
             return
 
         await ctx.trigger_typing()
@@ -1025,7 +1308,7 @@ class Fun(HttpCogBase):
             anime_type = data.results[0].type
             score = data.results[0].score
         except IndexError:
-            await ctx.send(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
             return
 
         emb = discord.Embed(
@@ -1114,7 +1397,7 @@ class Fun(HttpCogBase):
         emb.add_field(name="👥 Members", value=mem, inline=True)
         emb.add_field(name="💳 ID", value=anime_id, inline=True)
 
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
     @myanimelist.command(name="manga", brief="Find Manga information")
     @commands.cooldown(rate=2, per=3.0, type=commands.BucketType.guild)
@@ -1123,11 +1406,11 @@ class Fun(HttpCogBase):
         Find manga information from MyAnimeList!
         """
         if name is None:
-            await ctx.send(embed=discord.Embed(description="Please specifiy the manga title to find!"))
+            await ctx.reply(embed=discord.Embed(description="Please specifiy the manga title to find!"))
             return
 
         if len(name) < 3:
-            await ctx.send(embed=discord.Embed(description="Three or more characters are required for the query!"))
+            await ctx.reply(embed=discord.Embed(description="Three or more characters are required for the query!"))
             return
 
         await ctx.trigger_typing()
@@ -1141,7 +1424,7 @@ class Fun(HttpCogBase):
             data = json.loads(await resp.read(), object_hook=DictObject)
 
         if not data.results:
-            await ctx.send(embed=discord.Embed(description="⚠ Not Found."))
+            await ctx.reply(embed=discord.Embed(description="⚠ Not Found."))
             return
 
         try:
@@ -1160,10 +1443,10 @@ class Fun(HttpCogBase):
             time_start = ciso8601.parse_datetime(pub_date)
             formatted_start = time_start.strftime("%B %d, %Y")
         except IndexError:
-            await ctx.send(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
             return
         except KeyError:
-            await ctx.send(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
             return
 
         if stat is True:
@@ -1203,7 +1486,7 @@ class Fun(HttpCogBase):
         emb.add_field(name="👥 Members", value=memb, inline=True)
         emb.add_field(name="💳 ID", value=manga_id, inline=True)
 
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
     @myanimelist.command(name="character", brief="Find character information", aliases=["chara", "char"])
     @commands.cooldown(rate=2, per=3.0, type=commands.BucketType.guild)
@@ -1212,11 +1495,11 @@ class Fun(HttpCogBase):
         Find character information from MyAnimeList!
         """
         if name is None:
-            await ctx.send(embed=discord.Embed(description="Please specifiy the character name to find!"))
+            await ctx.reply(embed=discord.Embed(description="Please specifiy the character name to find!"))
             return
 
         if len(name) < 3:
-            await ctx.send(embed=discord.Embed(description="Three or more characters are required for the query!"))
+            await ctx.reply(embed=discord.Embed(description="Three or more characters are required for the query!"))
             return
 
         await ctx.trigger_typing()
@@ -1235,13 +1518,13 @@ class Fun(HttpCogBase):
             char_img = data.results[0].image_url
             char_name = data.results[0].name
         except UnboundLocalError:
-            await ctx.send(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
             return
         except IndexError:
-            await ctx.send(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
             return
         except KeyError:
-            await ctx.send(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
             return
 
         emb = discord.Embed(
@@ -1279,7 +1562,7 @@ class Fun(HttpCogBase):
 
         emb.add_field(name="💳 ID", value=char_id, inline=True)
 
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
     @commands.command(name="undertalebox")
     async def uboxgen(self, ctx, * ,text: str):
@@ -1293,7 +1576,7 @@ class Fun(HttpCogBase):
 
         img = BytesIO(image_data)
         img.seek(0)
-        await ctx.send(file=discord.File(fp=img, filename="undertalebox.png"))
+        await ctx.reply(file=discord.File(fp=img, filename="undertalebox.png"))
         
     @commands.command(aliases=["oneshot"])
     async def oneshotbox(self, ctx, * ,text: str):
@@ -1315,7 +1598,7 @@ class Fun(HttpCogBase):
                         template.save(image_binary, format="PNG")
                         image_binary.seek(0)
 
-                        await ctx.send(file=discord.File(fp=image_binary, filename="textbox.png"))
+                        await ctx.reply(file=discord.File(fp=image_binary, filename="textbox.png"))
 
     # https://github.com/sks316/mewtwo-bot/blob/master/cogs/fun.py#L220
     @commands.command(aliases=["amb"])
@@ -1357,9 +1640,9 @@ class Fun(HttpCogBase):
                 embed.set_image(url=image)
                 embed.set_thumbnail(
                     url="https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Amiibo.svg/1024px-Amiibo.svg.png")
-                await ctx.send(embed=embed)
+                await ctx.reply(embed=embed)
             except KeyError:
-                return await ctx.send(":x: I couldn't find any Amiibo with that name. Double-check your spelling and try again.")
+                return await ctx.reply(":x: I couldn't find any Amiibo with that name. Double-check your spelling and try again.")
 
     # https://github.com/sks316/mewtwo-bot/blob/master/cogs/fun.py#L252
     @commands.command(aliases=["ud"])
@@ -1368,7 +1651,7 @@ class Fun(HttpCogBase):
         """
         Look up a definition of a word from Urban Dictionary!
         """
-        msg = await ctx.send("Looking for a definition...")
+        msg = await ctx.reply("Looking for a definition...")
         try:
             #--First we connect to Urban Dictionary's API and get the results--#
             session = self.acquire_session()
@@ -1495,9 +1778,9 @@ class Fun(HttpCogBase):
                             embed.add_field(name='Abilities', value=f"{pkmn_ability1}, {pkmn_ability2};\n**Hidden:** {pkmn_hiddenability}")
                     embed.add_field(name='Generation Introduced', value=f"Gen {pkmn_gen}")
                     embed.set_thumbnail(url=pkmn_img)
-                    await ctx.send(embed=embed)
+                    await ctx.reply(embed=embed)
                 except (KeyError, TypeError):
-                    return await ctx.send(":x: I couldn't find any Pokémon with that name. Double-check your spelling and try again.")
+                    return await ctx.reply(":x: I couldn't find any Pokémon with that name. Double-check your spelling and try again.")
 
     @commands.command(aliases=["pats", "pet"])
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -1506,9 +1789,9 @@ class Fun(HttpCogBase):
         *pats you*
         """
         if target == None:
-            return await ctx.send(":x: You need someone to give headpats to! You can give me a headpat if you want...")
+            return await ctx.reply(":x: You need someone to give headpats to! You can give me a headpat if you want...")
         if target == ctx.author:
-            return await ctx.send(":x: You can't give yourself headpats! You can give me a headpat if you want...")
+            return await ctx.reply(":x: You can't give yourself headpats! You can give me a headpat if you want...")
         #--Get image from NekosLife API--#
         session = self.acquire_session()
         async with session.get('https://nekos.life/api/v2/img/pat') as pat:
@@ -1517,7 +1800,7 @@ class Fun(HttpCogBase):
             embed = discord.Embed(
                 description=f"{ctx.author.display_name} gives {target} some headpats!",  color=0x8253c3)
             embed.set_image(url=result)
-            await ctx.send(embed=embed)
+            await ctx.reply(embed=embed)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -1526,9 +1809,9 @@ class Fun(HttpCogBase):
         *cuddles you*
         """
         if target == None:
-            return await ctx.send(":x: You need someone to cuddle! You can cuddle me if you want...")
+            return await ctx.reply(":x: You need someone to cuddle! You can cuddle me if you want...")
         if target == ctx.author:
-            return await ctx.send(":x: You can't cuddle yourself! You can cuddle me if you want...")
+            return await ctx.reply(":x: You can't cuddle yourself! You can cuddle me if you want...")
         #--Get image from NekosLife API--#
         session = self.acquire_session()
         async with session.get('https://nekos.life/api/v2/img/cuddle') as cuddle:
@@ -1537,7 +1820,7 @@ class Fun(HttpCogBase):
             embed = discord.Embed(
                 description=f"🤗 {ctx.author.display_name} cuddles {target}!",  color=0x8253c3)
             embed.set_image(url=result)
-            await ctx.send(embed=embed)
+            await ctx.reply(embed=embed)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -1546,9 +1829,9 @@ class Fun(HttpCogBase):
         *pokes you*
         """
         if target == None:
-            return await ctx.send(":x: You need someone to poke!")
+            return await ctx.reply(":x: You need someone to poke!")
         if target == ctx.author:
-            return await ctx.send(":x: You can't poke yourself.")
+            return await ctx.reply(":x: You can't poke yourself.")
         #--Get image from NekosLife API--#
         session = self.acquire_session()
         async with session.get('https://nekos.life/api/v2/img/poke') as poke:
@@ -1557,7 +1840,7 @@ class Fun(HttpCogBase):
             embed = discord.Embed(
                 description=f"👉 {ctx.author.display_name} poked {target}!",  color=0x8253c3)
             embed.set_image(url=result)
-            await ctx.send(embed=embed)
+            await ctx.reply(embed=embed)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -1566,9 +1849,9 @@ class Fun(HttpCogBase):
         *slaps you*
         """
         if target == None:
-            return await ctx.send(":x: You need someone to slap!")
+            return await ctx.reply(":x: You need someone to slap!")
         if target == ctx.author:
-            return await ctx.send(":x: You can slap yourself if you want, i wont judge you.")
+            return await ctx.reply(":x: You can slap yourself if you want, i wont judge you.")
         #--Get image from NekosLife API--#
         session = self.acquire_session()
         async with session.get('https://nekos.life/api/v2/img/slap') as slap:
@@ -1577,7 +1860,7 @@ class Fun(HttpCogBase):
             embed = discord.Embed(
                 description=f"🤜 {ctx.author.display_name} slapped {target}!",  color=0x8253c3)
             embed.set_image(url=result)
-            await ctx.send(embed=embed)
+            await ctx.reply(embed=embed)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -1586,9 +1869,9 @@ class Fun(HttpCogBase):
         *tickles you*
         """
         if target == None:
-            return await ctx.send(":x: You need someone to tickle!")
+            return await ctx.reply(":x: You need someone to tickle!")
         if target == ctx.author:
-            return await ctx.send(":x: You can tickle yourself if you want, i wont judge you.")
+            return await ctx.reply(":x: You can tickle yourself if you want, i wont judge you.")
         #--Get image from NekosLife API--#
         session = self.acquire_session()
         async with session.get('https://nekos.life/api/v2/img/tickle') as tickle:
@@ -1597,7 +1880,7 @@ class Fun(HttpCogBase):
             embed = discord.Embed(
                 description=f"👐 {ctx.author.display_name} tickles {target}!",  color=0x8253c3)
             embed.set_image(url=result)
-            await ctx.send(embed=embed)
+            await ctx.reply(embed=embed)
 
     @commands.command(aliases=["smooch"])
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -1606,9 +1889,9 @@ class Fun(HttpCogBase):
         *kisses you*
         """
         if target == None:
-            return await ctx.send(":x: You need someone to kiss! You can kiss me if you want...")
+            return await ctx.reply(":x: You need someone to kiss! You can kiss me if you want...")
         if target == ctx.author:
-            return await ctx.send(":x: You can't kiss yourself! You can kiss me if you want...")
+            return await ctx.reply(":x: You can't kiss yourself! You can kiss me if you want...")
         #--Get image from NekosLife API--#
         session = self.acquire_session()
         async with session.get('https://nekos.life/api/v2/img/kiss') as kiss:
@@ -1617,7 +1900,7 @@ class Fun(HttpCogBase):
             embed = discord.Embed(
                 description=f"❤ {ctx.author.display_name} kisses {target}!",  color=0x8253c3)
             embed.set_image(url=result)
-            await ctx.send(embed=embed)
+            await ctx.reply(embed=embed)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -1626,9 +1909,9 @@ class Fun(HttpCogBase):
         *snuggles you*
         """
         if target == None:
-            return await ctx.send(":x: You need someone to cuddle! You can cuddle me if you want...")
+            return await ctx.reply(":x: You need someone to cuddle! You can cuddle me if you want...")
         if target == ctx.author:
-            return await ctx.send(":x: You can't cuddle yourself! You can cuddle me if you want...")
+            return await ctx.reply(":x: You can't cuddle yourself! You can cuddle me if you want...")
         #--Get image from NekosLife API--#
         session = self.acquire_session()
         async with session.get('https://nekos.life/api/v2/img/cuddle') as snuggle:
@@ -1637,7 +1920,7 @@ class Fun(HttpCogBase):
             embed = discord.Embed(
                 description=f"🤗 {ctx.author.display_name} snuggles {target}!",  color=0x8253c3)
             embed.set_image(url=result)
-            await ctx.send(embed=embed)
+            await ctx.reply(embed=embed)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -1646,9 +1929,9 @@ class Fun(HttpCogBase):
         *hugs you*
         """
         if target == None:
-            return await ctx.send(":x: You need someone to hug! You can hug me if you want...")
+            return await ctx.reply(":x: You need someone to hug! You can hug me if you want...")
         if target == ctx.author:
-            return await ctx.send(":x: You can't hug yourself! You can hug me if you want...")
+            return await ctx.reply(":x: You can't hug yourself! You can hug me if you want...")
         #--Get image from NekosLife API--#
         session = self.acquire_session()
         async with session.get('https://nekos.life/api/v2/img/hug') as hug:
@@ -1657,7 +1940,7 @@ class Fun(HttpCogBase):
             embed = discord.Embed(
                 description=f"🤗 {ctx.author.display_name} hugs {target}!",  color=0x8253c3)
             embed.set_image(url=result)
-            await ctx.send(embed=embed)
+            await ctx.reply(embed=embed)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -1672,7 +1955,7 @@ class Fun(HttpCogBase):
             result = data.get('name')
             embed = discord.Embed(
                 description=result, color=0x8253c3)
-            await ctx.send(embed=embed)
+            await ctx.reply(embed=embed)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -1687,7 +1970,7 @@ class Fun(HttpCogBase):
             result = data.get('why')
             embed = discord.Embed(
                 description=result, color=0x8253c3)
-            await ctx.send(embed=embed)
+            await ctx.reply(embed=embed)
 
     @commands.command(aliases=["memes", "meem"])
     @commands.cooldown(2, 5, commands.BucketType.user)
@@ -1716,7 +1999,7 @@ class Fun(HttpCogBase):
         except KeyError:
             code = data.code
             msg = data.message
-            await ctx.send(embed=discord.Embed(description=f"⚠ An Error Occured! **{msg.capitalize()}** (Code: {code})"))
+            await ctx.reply(embed=discord.Embed(description=f"⚠ An Error Occured! **{msg.capitalize()}** (Code: {code})"))
             return
 
         emb = discord.Embed(timestamp=datetime.utcnow())
@@ -1730,9 +2013,23 @@ class Fun(HttpCogBase):
         emb.add_field(name="Posted on", value=datetime.fromtimestamp(
             timestamp), inline=False)
         emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png",
-                       text="Data provided by: KSoft.Si")
+                        text="Data provided by: KSoft.Si")
 
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
+        
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def wink(self, ctx):
+        """
+        *wink*
+        """
+        session = self.acquire_session()
+        async with session.get('https://some-random-api.ml/animu/wink') as name:
+            data = await name.json()
+            result = data.get('link')
+            embed = discord.Embed(color=0x8253c3)
+            embed.set_image(url=result)
+            await ctx.reply(embed=embed)
 
     @commands.command(aliases=["cute"])
     @commands.cooldown(2, 5, commands.BucketType.user)
@@ -1761,7 +2058,7 @@ class Fun(HttpCogBase):
         except KeyError:
             code = data.code
             msg = data.message
-            await ctx.send(embed=discord.Embed(description=f"⚠ An Error Occured! **{msg.capitalize()}** (Code: {code})"))
+            await ctx.reply(embed=discord.Embed(description=f"⚠ An Error Occured! **{msg.capitalize()}** (Code: {code})"))
             return
 
         emb = discord.Embed(timestamp=datetime.utcnow())
@@ -1777,7 +2074,7 @@ class Fun(HttpCogBase):
         emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png",
                        text="Data provided by: KSoft.Si")
 
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
     @commands.command(aliases=["sub"])
     @commands.cooldown(2, 5, commands.BucketType.user)
@@ -1786,7 +2083,7 @@ class Fun(HttpCogBase):
         Send a random post from the specified subreddit
         """
         if sub is None:
-            await ctx.send("Please specify the subreddit name!")
+            await ctx.reply("Please specify the subreddit name!")
             return
 
         await ctx.trigger_typing()
@@ -1814,7 +2111,7 @@ class Fun(HttpCogBase):
         except KeyError:
             code = data.code
             msg = data.message
-            await ctx.send(embed=discord.Embed(description=f"⚠ An Error Occured! **{msg.capitalize()}** (Code: {code})"))
+            await ctx.reply(embed=discord.Embed(description=f"⚠ An Error Occured! **{msg.capitalize()}** (Code: {code})"))
             return
 
         emb = discord.Embed(timestamp=datetime.utcnow())
@@ -1829,7 +2126,7 @@ class Fun(HttpCogBase):
             timestamp), inline=False)
         emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png", text="Data provided by: KSoft.Si")
 
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
     @commands.command(aliases=["weirdkihow", "wkh", "wikihow"])
     @commands.cooldown(2, 5, commands.BucketType.user)
@@ -1854,14 +2151,14 @@ class Fun(HttpCogBase):
         except KeyError:
             code = data.code
             msg = data.message
-            await ctx.send(embed=discord.Embed(description=f"⚠ An Error Occured! **{msg.capitalize()}** (Code: {code})"))
+            await ctx.reply(embed=discord.Embed(description=f"⚠ An Error Occured! **{msg.capitalize()}** (Code: {code})"))
             return
 
         emb = discord.Embed(
             description=f"[{title}]({article})", timestamp=datetime.utcnow())
         emb.set_image(url=img_url)
         emb.set_footer(icon_url="https://cdn.ksoft.si/images/Logo128.png", text="Data provided by: KSoft.Si")
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
     ####
     # https://github.com/DeCoded-Void/Minesweeper_discord.py for the minesweeper command
@@ -1881,7 +2178,7 @@ class Fun(HttpCogBase):
         """
         if columns is None or rows is None and bombs is None:
             if columns is not None or rows is not None or bombs is not None:
-                await ctx.send(self.errortxt)
+                await ctx.reply(self.errortxt)
                 return
             else:
                 # Gives a random range of columns and rows from 4-13 if no arguments are given
@@ -1898,19 +2195,19 @@ class Fun(HttpCogBase):
             rows = int(rows)
             bombs = int(bombs)
         except ValueError:
-            await ctx.send(self.errortxt)
+            await ctx.reply(self.errortxt)
             return
         except TypeError:
-            await ctx.send(self.errortxt)
+            await ctx.reply(self.errortxt)
             return
         if columns > 13 or rows > 13:
-            await ctx.send('The limit for the columns and rows are 13 due to discord limits...')
+            await ctx.reply('The limit for the columns and rows are 13 due to discord limits...')
             return
         if columns < 1 or rows < 1 or bombs < 1:
-            await ctx.send('The provided numbers cannot be zero or negative...')
+            await ctx.reply('The provided numbers cannot be zero or negative...')
             return
         if bombs + 1 > columns * rows:
-            await ctx.send(':boom:**BOOM**, you have more bombs than spaces on the grid or you attempted to make all of the spaces bombs!')
+            await ctx.reply(':boom:**BOOM**, you have more bombs than spaces on the grid or you attempted to make all of the spaces bombs!')
             return
 
         # Creates a list within a list and fills them with 0s, this is our makeshift grid
@@ -1989,11 +2286,11 @@ class Fun(HttpCogBase):
                         value=f'{percentage}%', inline=True)
         embed.add_field(name='Requested by:',
                         value=ctx.author.mention, inline=True)
-        await ctx.send(content=f'\U0000FEFF\n{final}', embed=embed)
+        await ctx.reply(content=f'\U0000FEFF\n{final}', embed=embed)
 
     @minesweeper.error
     async def minesweeper_error(self, ctx, error):
-        await ctx.send(self.errortxt)
+        await ctx.reply(self.errortxt)
         return
 
     @commands.command(aliases=["owo"])
@@ -2003,7 +2300,7 @@ class Fun(HttpCogBase):
         fin = owoifator.owoify(text)  # Hewwo fwiend (*^ω^)
         if len(fin) > 2000:
             shorten(fin, width=2000, placeholder="...")
-        await ctx.send(embed=discord.Embed(description=fin))
+        await ctx.reply(embed=discord.Embed(description=fin))
 
     @commands.command(aliases=["vwi"])
     async def vaporipsum(self, ctx):
@@ -2013,7 +2310,7 @@ class Fun(HttpCogBase):
         vapor = vaporize(vaporipsum(2)).upper()
         if len(vapor) > 2000:
             shorten(vapor, width=2000, placeholder="...")
-        await ctx.send(embed=discord.Embed(description=vapor))
+        await ctx.reply(embed=discord.Embed(description=vapor))
 
     @commands.command(aliases=["vwy", "vapor"])
     async def vaporizer(self, ctx, *, text: commands.clean_content = "Hello World"):
@@ -2021,10 +2318,10 @@ class Fun(HttpCogBase):
         Convert your text from this Hello World to this Ｈｅｌｌｏ Ｗｏｒｌｄ
         """
         if len(text) > 2000:
-            await ctx.send(embed=discord.Embed(description="Only 2000 characters or fewer are allowed."))
+            await ctx.reply(embed=discord.Embed(description="Only 2000 characters or fewer are allowed."))
             return
         vapor = vaporize(text)
-        await ctx.send(embed=discord.Embed(description=vapor))
+        await ctx.reply(embed=discord.Embed(description=vapor))
 
     @commands.command()
     @commands.cooldown(3, 5, commands.BucketType.user)
@@ -2034,9 +2331,9 @@ class Fun(HttpCogBase):
         A Simple Rock Paper Scissor countdown
         """
         if time > 10:
-            await ctx.send("10 Seconds ought to be enough.")
+            await ctx.reply("10 Seconds ought to be enough.")
             time = 10
-        msg = await ctx.send(content="Get Ready! countdown starts in a few moments!")
+        msg = await ctx.reply(content="Get Ready! countdown starts in a few moments!")
         await asyncio.sleep(2)
         iteration = time
         while iteration:
@@ -2062,12 +2359,12 @@ class Fun(HttpCogBase):
         tipe = dt.data.pasta
         out = dt.data.output
         emb = discord.Embed(title=tipe, description=out)
-        await ctx.send(embed=emb)
+        await ctx.reply(embed=emb)
 
     @commands.command()
     async def sua(self, ctx):
         """sua irma"""
-        await ctx.send("irma")
+        await ctx.reply("irma")
 
 def setup(bot):
     bot.add_cog(Fun(bot))
