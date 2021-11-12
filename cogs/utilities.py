@@ -1,5 +1,4 @@
 import asyncio
-import aiohttp
 import inspect
 import unicodedata
 import time
@@ -30,6 +29,7 @@ from discord.ext import commands
 
 from modules.http import HttpCogBase
 from modules.dictobj import DictObject
+from utils.time import format_seconds
 
 morseAlphabet = {
     "A": ".-",
@@ -339,9 +339,9 @@ class Utilities(HttpCogBase):
 
         if not self.lock.locked():
             async with self.lock:
-                await ctx.reply("Ping Machine Initializing in 3 seconds!")                
+                await ctx.send("Ping Machine Initializing in 3 seconds!")                
                 await asyncio.sleep(3)
-                await ctx.reply("Begin!")
+                await ctx.send("Begin!")
 
                 async def ping_task(self):
                     ping = 0
@@ -353,11 +353,11 @@ class Utilities(HttpCogBase):
                             await ctx.message.add_reaction("❌")
                             break
                         await ctx.trigger_typing()
-                        await ctx.reply(
+                        await ctx.send(
                             f"{user.mention} - {ping + 1}/{amount}"
                         )
                         ping += 1
-                    await ctx.reply("Finished!", delete_after=10.0)
+                    await ctx.send("Finished!", delete_after=10.0)
                     await ctx.message.delete()
 
             ping = ctx.bot.loop.create_task(ping_task(self))
@@ -1491,19 +1491,6 @@ class Utilities(HttpCogBase):
         except KeyError:
             await ctx.reply(embed=discord.Embed(description="⚠ An Error Occured while parsing the data."))
             return
-        except aiohttp.client_exceptions.ClientResponseError:
-            if resp.status == 404:
-                await ctx.reply(embed=discord.Embed(description="⚠ Not Found."))
-                return
-            if resp.status == 403:
-                await ctx.reply(embed=discord.Embed(description="⚠ Forbidden."))
-                return
-            elif resp.status >= 500:
-                await ctx.reply(embed=discord.Embed(description="⚠ Unable to access the REST API, it may be down or inaccessible at the moment."))
-                return
-            else:
-                await ctx.reply(embed=discord.Embed(description="⚠ Undefined Error."))
-                return
 
         colours = ""
 
@@ -1970,6 +1957,354 @@ class Utilities(HttpCogBase):
 
         await msg.edit(embed=emb, content=None)
 
+    @commands.command(aliases=["animesearch", "ani"])
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.max_concurrency(number=1, per=commands.BucketType.guild, wait=False)
+    async def anisearch(self, ctx):
+        """
+        Find animes by screenshot! just send the image and the bot will try to find it for you!
+        API Used: https://soruly.github.io/trace.moe-api/
+        """
+        await ctx.trigger_typing()
+
+        # First we get the image from the attachment
+        try:
+            attachment = ctx.message.attachments[0]
+            fp = BytesIO()
+            await attachment.save(fp)
+        except IndexError:
+            await ctx.reply(embed=discord.Embed(description="⚠ You haven't supplied any image!"))
+            return
+
+        img = Image.open(fp)
+        if not img.mode == 'RGB':
+            img = img.convert('RGB')
+        
+        # Secondly we convert it to jpg to save space
+        image_file = BytesIO()
+        img.save(image_file, format="JPEG",optimize=True,quality=80)
+        image_file.seek(0)
+        
+        # Then we send the image to the API
+        session = self.acquire_session()
+        async with session.post("https://api.trace.moe/search?cutBorders",data=image_file.read(),headers={"Content-Type": "image/jpeg"}) as resp:
+            data = json.loads(await resp.read())
+        
+        # Then we parse the response from the API
+        try:
+            anilist = data["result"][0]["anilist"]
+            filename = data["result"][0]["filename"]
+            episode = data["result"][0]["episode"]
+            start = data["result"][0]["from"]
+            end = data["result"][0]["to"]
+            similarity = data["result"][0]["similarity"]
+            image = data["result"][0]["image"]
+        except:
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+        
+        emb = discord.Embed(title="Anime Finder")
+        emb.add_field(name="AniList ID", value=anilist)
+        emb.add_field(name="File Name", value=filename, inline=False)
+        emb.add_field(name="Episode Number", value=episode or "Unknown")
+        emb.add_field(name="Start", value=format_seconds(start))
+        emb.add_field(name="End", value=format_seconds(end))
+        emb.add_field(name="Similarity Score", value=similarity)
+        emb.set_image(url=image)
+        
+        # Then we send it
+        await ctx.reply(embed=emb)
+
+    @commands.group(aliases=["mal", "anime"], invoke_without_command=True)
+    @commands.cooldown(rate=2, per=5, type=commands.BucketType.guild)
+    async def myanimelist(self, ctx, *, name: str = None):
+        """
+        Find anime information from MyAnimeList!
+        """
+        data = None
+
+        if name is None:
+            await ctx.reply(embed=discord.Embed(description="Please specifiy the anime title to find!"))
+            return
+
+        if len(name) < 3:
+            await ctx.reply(embed=discord.Embed(description="Three or more characters are required for the query!"))
+            return
+
+        await ctx.trigger_typing()
+
+        parameters = {
+            "q": name,
+            "limit": 1
+        }
+        session = self.acquire_session()
+        async with session.get('https://api.jikan.moe/v3/search/anime', params=parameters, timeout=5) as resp:
+            data = json.loads(await resp.read(), object_hook=DictObject)
+
+        try:
+            anime_id = data.results[0].mal_id
+            anime_title = data.results[0].title
+            anime_url = data.results[0].url
+            anime_img = data.results[0].image_url
+            anime_status = data.results[0].airing
+            anime_synopsis = data.results[0].synopsis
+            anime_type = data.results[0].type
+            score = data.results[0].score
+        except IndexError:
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+            return
+
+        emb = discord.Embed(
+            title="MyAnimeList Anime Information", timestamp=datetime.utcnow())
+
+        if score == None or score == 0:
+            score = "N/A"
+
+        start = data.results[0].start_date
+        end = data.results[0].end_date
+        mem = data.results[0].members
+
+        # Time zone converter (a few checks will depends on the presence of time_end value)
+        try:
+            time_start = ciso8601.parse_datetime(start)
+            formatted_start = time_start.strftime("%B %d, %Y")
+        except TypeError:
+            formatted_start = "Unknown"
+        try:
+            time_end = ciso8601.parse_datetime(end)
+            formatted_end = time_end.strftime("%B %d, %Y")
+        except TypeError:
+            formatted_end = "Unknown"
+
+        try:
+            total_episode = data.results[0].episodes
+            if total_episode == 0 or total_episode is None:
+                total_episode = "Not yet determined"
+        except TypeError:
+            total_episode = "Not yet determined."
+
+        if anime_status:
+            anime_status = "Ongoing"
+        elif not anime_status:
+            if start is None:
+                anime_status = "Not yet aired"
+            else:
+                anime_status = "Finished airing"
+
+        # if len(anime_synopsis) > 1024:
+        #    shorten(anime_synopsis,width=1020,placeholder="...")
+
+        emb.set_image(url=anime_img)
+        emb.set_thumbnail(
+            url="https://cdn.myanimelist.net/img/sp/icon/apple-touch-icon-256.png")
+        emb.set_footer(
+            icon_url="https://jikan.moe/assets/images/logo/jikan.logo.png", text="Powered by: Jikan")
+        emb.add_field(name="📝 Title",
+                      value=f"[{anime_title}]({anime_url})", inline=False)
+        if anime_synopsis:
+            emb.add_field(name="ℹ Synopsis",
+                          value=anime_synopsis, inline=False)
+        else:
+            emb.add_field(name="ℹ Synopsis",
+                          value="No Synopsis Found.", inline=False)
+        emb.add_field(name="⌛ Status", value=anime_status, inline=False)
+        emb.add_field(name="📺 Type", value=anime_type, inline=False)
+        emb.add_field(name="📅 First Air Date",
+                      value=formatted_start, inline=False)
+        emb.add_field(name="📅 Last Air Date",
+                      value=formatted_end, inline=False)
+        emb.add_field(name="💿 Episodes", value=total_episode, inline=True)
+        emb.add_field(name="⭐ Score", value=f"{score}", inline=True)
+
+        try:
+            rate = data.results[0].rated
+            if rate is None:
+                rating = "Unknown"
+            else:
+                rating = {
+                    'G': 'All Ages (G)',
+                    'PG': 'Children (PG)',
+                    'PG-13': 'Teens 13 or Older (PG-13)',
+                    'R': '17+ Recommended, (Violence & Profanity) (R)',
+                    'R+': 'Mild Nudity, (May also contain Violence & Profanity) (R+)',
+                    'Rx': 'Hentai, (Extreme sexual content/Nudity) (Rx)'
+                }.get(str(rate))
+            emb.add_field(name="🔞 Rating", value=rating, inline=True)
+        except IndexError:
+            pass
+        except AttributeError:
+            pass
+        except KeyError:
+            pass
+
+        emb.add_field(name="👥 Members", value=mem, inline=True)
+        emb.add_field(name="💳 ID", value=anime_id, inline=True)
+
+        await ctx.reply(embed=emb)
+
+    @myanimelist.command(name="manga", brief="Find Manga information")
+    @commands.cooldown(rate=2, per=3.0, type=commands.BucketType.guild)
+    async def myanimelist_manga(self, ctx, *, name: str = None):
+        """
+        Find manga information from MyAnimeList!
+        """
+        if name is None:
+            await ctx.reply(embed=discord.Embed(description="Please specifiy the manga title to find!"))
+            return
+
+        if len(name) < 3:
+            await ctx.reply(embed=discord.Embed(description="Three or more characters are required for the query!"))
+            return
+
+        await ctx.trigger_typing()
+
+        parameters = {
+            "q": name,
+            "limit": 1
+        }
+        session = self.acquire_session()
+        async with session.get(f'https://api.jikan.moe/v3/search/manga', params=parameters, timeout=5) as resp:
+            data = json.loads(await resp.read(), object_hook=DictObject)
+
+        if not data.results:
+            await ctx.reply(embed=discord.Embed(description="⚠ Not Found."))
+            return
+
+        try:
+            manga_title = data.results[0].title
+            manga_url = data.results[0].url
+            img_url = data.results[0].image_url
+            stat = data.results[0].publishing
+            manga_synopsis = data.results[0].synopsis
+            manga_type = data.results[0].type
+            manga_chapters = data.results[0].chapters
+            manga_volumes = data.results[0].volumes
+            score = data.results[0].score
+            pub_date = data.results[0].start_date
+            memb = data.results[0].members
+            manga_id = data.results[0].mal_id
+            time_start = ciso8601.parse_datetime(pub_date)
+            formatted_start = time_start.strftime("%B %d, %Y")
+        except IndexError:
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+            return
+        except KeyError:
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+            return
+
+        if stat is True:
+            stat = "Ongoing"
+        elif not stat:
+            stat = "Finished"
+
+        if manga_volumes is None or manga_volumes == 0:
+            manga_volumes = "Unknown"
+
+        if manga_chapters is None or manga_chapters == 0:
+            manga_chapters = "Unknown"
+
+        # if len(manga_synopsis) > 768:
+        #    shorten(manga_synopsis,width=756,placeholder="...")
+
+        emb = discord.Embed(
+            title="MyAnimeList Manga Information", timestamp=datetime.utcnow())
+        emb.set_image(url=img_url)
+        emb.set_thumbnail(
+            url="https://cdn.myanimelist.net/img/sp/icon/apple-touch-icon-256.png")
+        emb.set_footer(
+            icon_url="https://jikan.moe/assets/images/logo/jikan.logo.png", text="Powered By: Jikan")
+        emb.add_field(name="📑 Title",value=f"[{manga_title}]({manga_url})", inline=False)
+
+        if manga_synopsis:
+            emb.add_field(name="ℹ Synopsis",value=manga_synopsis, inline=False)
+        else:
+            emb.add_field(name="ℹ Synopsis",value="No Synopsis Found.", inline=False)
+
+        emb.add_field(name="⏳ Status", value=stat, inline=False)
+        emb.add_field(name="📁 Type", value=manga_type, inline=False)
+        emb.add_field(name="📅 Publish Date",value=formatted_start, inline=False)
+        emb.add_field(name="📚 Volumes", value=manga_volumes, inline=True)
+        emb.add_field(name="📰 Chapters", value=manga_chapters, inline=True)
+        emb.add_field(name="⭐ Score", value=f"{score}", inline=True)
+        emb.add_field(name="👥 Members", value=memb, inline=True)
+        emb.add_field(name="💳 ID", value=manga_id, inline=True)
+
+        await ctx.reply(embed=emb)
+
+    @myanimelist.command(name="character", brief="Find character information", aliases=["chara", "char"])
+    @commands.cooldown(rate=2, per=3.0, type=commands.BucketType.guild)
+    async def myanimelist_chara(self, ctx, *, name: str = None):
+        """
+        Find character information from MyAnimeList!
+        """
+        if name is None:
+            await ctx.reply(embed=discord.Embed(description="Please specifiy the character name to find!"))
+            return
+
+        if len(name) < 3:
+            await ctx.reply(embed=discord.Embed(description="Three or more characters are required for the query!"))
+            return
+
+        await ctx.trigger_typing()
+
+        parameters = {
+            "q": name,
+            "limit": 1
+        }
+        session = self.acquire_session()
+        async with session.get(f'https://api.jikan.moe/v3/search/character', params=parameters, timeout=5) as resp:
+            data = json.loads(await resp.read(), object_hook=DictObject)
+
+        try:
+            char_id = data.results[0].mal_id
+            char_url = data.results[0].url
+            char_img = data.results[0].image_url
+            char_name = data.results[0].name
+        except UnboundLocalError:
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+            return
+        except IndexError:
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+            return
+        except KeyError:
+            await ctx.reply(embed=discord.Embed(description="⚠ An Error occured while parsing the data, Please try again later."))
+            return
+
+        emb = discord.Embed(
+            title="MyAnimeList Character Information", timestamp=datetime.utcnow())
+        emb.set_image(url=char_img)
+        emb.set_thumbnail(
+            url="https://cdn.myanimelist.net/img/sp/icon/apple-touch-icon-256.png")
+        emb.set_footer(
+            icon_url="https://jikan.moe/assets/images/logo/jikan.logo.png", text="API used: Jikan")
+        emb.add_field(
+            name="👤 Name", value=f"[{char_name}]({char_url})", inline=False)
+
+        try:
+            alt_name = data.results[0].alternative_names[0]
+            emb.add_field(name="👥 Alternative Name",
+                        value=f"{alt_name}", inline=False)
+        except IndexError:
+            pass
+
+        try:
+            char_anime_name = data.results[0].anime[0].name
+            char_anime_url = data.results[0].anime[0].url
+            emb.add_field(name="📺 Animeography",
+                        value=f"[{char_anime_name}]({char_anime_url})", inline=False)
+        except IndexError:
+            pass
+
+        try:
+            char_manga_name = data.results[0].manga[0].name
+            char_manga_url = data.results[0].manga[0].url
+            emb.add_field(name="📚 Mangaography",
+                        value=f"[{char_manga_name}]({char_manga_url})", inline=False)
+        except IndexError:
+            pass
+
+        emb.add_field(name="💳 ID", value=char_id, inline=True)
+
+        await ctx.reply(embed=emb)
 
 def setup(bot):
     bot.add_cog(Utilities(bot))

@@ -10,11 +10,11 @@ import data.config as config
 import glob
 import re
 import sys
-import subprocess
 import traceback
 import random
 from textwrap import dedent
 from discord.ext import commands
+from modules.http import HttpCogBase
 
 if os.name != "nt":
     import uvloop
@@ -56,7 +56,7 @@ def get_prefix(bot, message):
 
 
 # Bot client initialization
-bot = commands.Bot(command_prefix=get_prefix, description=config.desc, case_insensitive=True, intents=discord.Intents.all(), strip_after_prefix=True)
+bot = commands.AutoShardedBot(command_prefix=get_prefix, description=config.desc, case_insensitive=True, intents=discord.Intents.all(), strip_after_prefix=True)
 
 # Setting up logging
 print("Setting Log files to system.log ...[Success]")
@@ -167,8 +167,8 @@ async def about(ctx):
 
 ###################################
 # DEBUGGING and SYSTEM UTILITIES #
-#################################
-class CogManager(commands.Cog):
+##################################
+class BotUtils(HttpCogBase):
     def __init__(self, bot) -> None:
         self.bot = bot
         self.message = "**⚙️ Extension `{name}` {result}**"
@@ -256,6 +256,31 @@ class CogManager(commands.Cog):
         """Reloads all available extensions/cogs."""
         async with ctx.typing():
             await self.set_extensions(ctx, action="reload")
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def setbotname(ctx, *, name:str):
+        """Renames the bot"""
+        await bot.user.edit(username=name)
+        await ctx.send("k")
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def setabotavatar(self, ctx, *, url:str=None):
+        """Changes the bot's avatar"""
+        if ctx.message.attachments:
+            url = ctx.message.attachments[0].url
+        elif url is None:
+            await ctx.send("Please specify an avatar url if you did not attach a file")
+            return
+        try:
+            session = self.acquire_session()
+            async with session.get(url.strip("<>"), timeout = 10) as image:
+                await bot.user.edit(avatar=await image.read())
+        except Exception as e:
+            await ctx.send("Unable to change avatar: {}".format(e))
+            return
+        await ctx.send(":eyes:")
             
     # This one is for testing error messages only
     @commands.command(aliases=["dummy", "error"])
@@ -288,24 +313,22 @@ class CogManager(commands.Cog):
         print(uid_message)
         print(separator)
         await ctx.send("Console cleared successfully.")
-
-    @commands.command(aliases=["reboot"])
+        
+    @commands.guild_only()
+    @commands.command(aliases=["shard"])
     @commands.is_owner()
-    async def restart(self, ctx):
+    async def shardid(ctx):
+        """Display what shard you're on and count how many total shards exist"""
+        await ctx.send(f"{ctx.guild.shard_id}/{bot.shard_count}")
+
+    @commands.command(aliases=["hardreboot","restart"])
+    @commands.is_owner()
+    async def hardrestart(self, ctx):
         """Restarts the bot for updates"""
-        openerr = None
-        core = "main.py"
-        await ctx.send("Restarting!")
-        try:
-            if sys.platform == "win32":
-                os.startfile(core)
-            else:
-                openerr = "open" if sys.platform == "darwin" else "xdg-open"
-                subprocess.call([openerr, core])
-        except FileNotFoundError:
-            await ctx.send("❌ Unable to open the file!\n Shutting Down.")
+        await ctx.reply("Restarting bot...")
         await ctx.bot.close()
-        sys.exit()
+        os.system("clear")
+        os.execv(sys.executable, ['python3'] + sys.argv)
 
 
     @commands.command(aliases=["poweroff", "shutdown", "kms", "altf4", "fuckmylife", "fml", "fuckoff"])
@@ -313,11 +336,11 @@ class CogManager(commands.Cog):
     async def poweroof(self, ctx):
         """Turn the bot Off"""
         await ctx.send("Shutting Down...")
-        await ctx.bot.logout()
-        exit()
+        await ctx.bot.close()
+        sys.exit()
 
-bot.add_cog(CogManager(bot))
-print("Cogs Manager has been loaded.")
+bot.add_cog(BotUtils(bot))
+print("Bot Toolbox has been loaded.")
 
 ## RUN THE WHOLE THING ##
 bot.run(TOKEN)
