@@ -1907,7 +1907,7 @@ class Utilities(HttpCogBase):
 
         await ctx.trigger_typing()
 
-        msg = await ctx.reply(f"💿 Accessing Database... Please Wait.")
+        msg = await ctx.send(f"💿 Accessing Database... Please Wait.")
 
         params = {
             "q": query,
