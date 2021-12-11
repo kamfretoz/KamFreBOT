@@ -86,7 +86,7 @@ for file in glob.iglob("cogs/*.py"):
     except Exception as e:
         print(f"Failed to load {file} \n{type(e).__name__}: {e}")
         
-bot.load_extension("libneko.extras.help")
+#bot.load_extension("libneko.extras.help")
 bot.load_extension("libneko.extras.superuser")
 
 # Loading message
@@ -317,9 +317,9 @@ class BotUtils(HttpCogBase):
     @commands.guild_only()
     @commands.command(aliases=["shard"])
     @commands.is_owner()
-    async def shardid(ctx):
+    async def shardid(self, ctx):
         """Display what shard you're on and count how many total shards exist"""
-        await ctx.send(f"{ctx.guild.shard_id}/{bot.shard_count}")
+        await ctx.send(f"You are on Shard ID #{ctx.guild.shard_id} out of {bot.shard_count} Shards")
 
     @commands.command(aliases=["hardreboot","restart"])
     @commands.is_owner()
