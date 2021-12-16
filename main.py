@@ -86,7 +86,7 @@ for file in glob.iglob("cogs/*.py"):
     except Exception as e:
         print(f"Failed to load {file} \n{type(e).__name__}: {e}")
         
-#bot.load_extension("libneko.extras.help")
+bot.load_extension("libneko.extras.help")
 bot.load_extension("libneko.extras.superuser")
 
 # Loading message
