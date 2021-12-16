@@ -96,7 +96,6 @@ async def on_connect():
 
 @bot.event
 async def on_ready():
-    bot.loop.create_task(change_activities())
     creator = (await bot.application_info()).owner
     setattr(bot, "creator", creator)
     print(
@@ -257,16 +256,16 @@ class BotUtils(HttpCogBase):
         async with ctx.typing():
             await self.set_extensions(ctx, action="reload")
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.is_owner()
-    async def setbotname(ctx, *, name:str):
+    async def setbotname(self, ctx, *, name:str):
         """Renames the bot"""
         await bot.user.edit(username=name)
-        await ctx.send("k")
+        await ctx.send(f"I now identify as '{name}'")
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.is_owner()
-    async def setabotavatar(self, ctx, *, url:str=None):
+    async def setbotavatar(self, ctx, *, url:str=None):
         """Changes the bot's avatar"""
         if ctx.message.attachments:
             url = ctx.message.attachments[0].url
