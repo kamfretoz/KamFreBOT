@@ -6,12 +6,12 @@ from discord.ext import commands
 import discord
 import libneko
 import json
-import ciso8601
 import io
 import data.topics as topics
 from textwrap import shorten, fill
 from datetime import datetime
-from random import randint, choice
+from random import randint, choice, random
+from math import floor
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from libneko import embeds
@@ -21,6 +21,7 @@ from vaporwavely import vaporipsum, vaporize
 from utils.masks import ellipse
 from modules.http import HttpCogBase
 from modules.dictobj import DictObject
+import data.quotes
 
 with open("cogs/data/ksoft-api_key.json") as json_fp:
     classified = json.load(json_fp)
@@ -2073,6 +2074,30 @@ class Fun(HttpCogBase):
     async def sua(self, ctx):
         """sua irma"""
         await ctx.reply("irma")
+        
+    @commands.command()
+    async def hackerman(self, ctx):
+        h = []
+        def j(b):
+            c = data.quotes.jargonWordPool[b]
+            e = floor(random() * len(c))
+            f = c[e]
+            while f in h:
+                f = c[floor(random() * len(c))]
+            h.append(f)
+            return f
+        rnd = floor(random() * len(data.quotes.jargonConstructs))
+        construct = data.quotes.jargonConstructs[rnd]
+        
+        e = 0
+        while e < len(data.quotes.jargonWordPool):
+            f = "{" + str(e) + "}"
+            while construct.find(f) > -1:
+                construct = construct.replace(f, j(e),1)
+            e+=1
+            construct = construct[0].upper() + construct[1:]
+            
+        await ctx.reply(construct)
 
 def setup(bot):
     bot.add_cog(Fun(bot))
