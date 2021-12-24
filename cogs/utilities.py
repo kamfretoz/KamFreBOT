@@ -272,26 +272,6 @@ class Utilities(HttpCogBase):
 
         await ctx.reply('\n'.join(map(to_string, char)))
 
-    @commands.command(aliases=["servlist"])
-    @commands.is_owner()
-    async def serverlist(self, ctx):
-        """Shows a list of servers that the bot is in along with member count"""
-        @pag.embed_generator(max_chars=2048)
-        def main_embed(paginator, page, page_index):
-            servlist = discord.Embed(
-                title=f"Servers that I am in", description=page, color=0x00FF00)
-            servlist.set_footer(
-                text=f"{len(self.bot.guilds)} Servers in total.")
-            return servlist
-
-        navi = pag.EmbedNavigatorFactory(factory=main_embed)
-        servers = []
-        for guild in self.bot.guilds:
-            servers.append(guild.name)
-
-        navi += "\n".join(servers)
-        navi.start(ctx)
-
     @commands.command(aliases=["source", "rtfc"])
     async def rtfm(self, ctx, *, command):
         """Get the source code for a certain command, cog..."""

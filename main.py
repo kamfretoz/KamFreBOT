@@ -14,6 +14,7 @@ import traceback
 import random
 from textwrap import dedent
 from discord.ext import commands
+from libneko import pag
 from modules.http import HttpCogBase
 
 if os.name != "nt":
@@ -280,7 +281,38 @@ class BotUtils(HttpCogBase):
             await ctx.send("Unable to change avatar: {}".format(e))
             return
         await ctx.send(":eyes:")
-            
+        
+    @commands.command(aliases=["servlist"])
+    @commands.is_owner()
+    async def serverlist(self, ctx):
+        """Shows a list of servers that the bot is in along with member count"""
+        @pag.embed_generator(max_chars=2048)
+        def main_embed(paginator, page, page_index):
+            servlist = discord.Embed(
+                title=f"Servers that I am in", description=page, color=0x00FF00)
+            servlist.set_footer(
+                text=f"{len(self.bot.guilds)} Servers in total.")
+            return servlist
+
+        navi = pag.EmbedNavigatorFactory(factory=main_embed)
+        servers = []
+        for guild in self.bot.guilds:
+            servers.append(f"**{guild.name}** (ID:{guild.id})")
+
+        navi += "\n".join(servers)
+        navi.start(ctx)
+        
+    @commands.command()
+    @commands.is_owner()
+    async def leaveserver(self, ctx, id: int = None):
+        "Leave from a server"
+        if id:
+            guild = self.bot.get_guild(id)
+        else:
+            guild = ctx.guild
+        await ctx.reply(f"Leaving from {guild.name}...")
+        await guild.leave()
+        await ctx.send("👍")
     # This one is for testing error messages only
     @commands.command(aliases=["dummy", "error"])
     @commands.is_owner()
@@ -328,7 +360,6 @@ class BotUtils(HttpCogBase):
         await ctx.bot.close()
         os.system("clear")
         os.execv(sys.executable, ['python3'] + sys.argv)
-
 
     @commands.command(aliases=["poweroff", "shutdown", "kms", "altf4", "fuckmylife", "fml", "fuckoff"])
     @commands.is_owner()
