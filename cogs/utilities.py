@@ -16,6 +16,7 @@ import pytemperature
 import qrcode
 from io import BytesIO
 from collections import deque
+from re import match
 import json
 import base64
 import ciso8601
@@ -1171,21 +1172,17 @@ class Utilities(HttpCogBase):
         API Provided by: https://ipapi.co/
         """
         if ip is None:
-            await ctx.reply(embed=discord.Embed(description="⚠ Please Specify the IP Address!"))
-            return
-
-        if ip == "0.0.0.0" or ip == "127.0.0.1":
-            await ctx.reply(embed=discord.Embed(description="You have played yourself. Wait... You can't!"))
-            return
-
+            return await ctx.reply(embed=discord.Embed(description="⚠ Please Specify the IP Address!"))
+        
         await ctx.trigger_typing()
-
-        try:
+        ip_regex = '^(?!^0\.)(?!^10\.)(?!^100\.6[4-9]\.)(?!^100\.[7-9]\d\.)(?!^100\.1[0-1]\d\.)(?!^100\.12[0-7]\.)(?!^127\.)(?!^169\.254\.)(?!^172\.1[6-9]\.)(?!^172\.2[0-9]\.)(?!^172\.3[0-1]\.)(?!^192\.0\.0\.)(?!^192\.0\.2\.)(?!^192\.88\.99\.)(?!^192\.168\.)(?!^198\.1[8-9]\.)(?!^198\.51\.100\.)(?!^203.0\.113\.)(?!^22[4-9]\.)(?!^23[0-9]\.)(?!^24[0-9]\.)(?!^25[0-5]\.)(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$'
+        
+        ip_result = match(ip_regex, ip)
+        if ip_result:
             session = self.acquire_session()
             async with session.get(f'https://ipapi.co/{ip}/json/') as resp:
                 resp.raise_for_status()
                 data = json.loads(await resp.read(), object_hook=DictObject)
-
             ipaddr = data["ip"]
             city = data["city"]
             region = data["region"]
@@ -1231,9 +1228,7 @@ class Utilities(HttpCogBase):
                 text=f"Requested by: {ctx.message.author}", icon_url=ctx.message.author.avatar_url)
 
             await ctx.reply(embed=embd)
-        except IndexError:
-            await ctx.reply(embed=discord.Embed(description="⚠ An Error Occured! Make sure the IP and the formatting are correct!"))
-        except KeyError:
+        else:
             await ctx.reply(embed=discord.Embed(description="⚠ An Error Occured! Make sure the IP and the formatting are correct!"))
 
     @commands.command(aliases=["m2a"])
