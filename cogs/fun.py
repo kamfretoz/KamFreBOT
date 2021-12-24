@@ -641,7 +641,7 @@ class Fun(HttpCogBase):
         await ctx.trigger_typing()
 
         session = self.acquire_session()
-        async with session.get('https://quote-garden.herokuapp.com/api/v2/quotes/random') as resp:
+        async with session.get('https://quote-garden.herokuapp.com/api/v3/quotes/random') as resp:
             resp.raise_for_status()
             data = await resp.json()
 
