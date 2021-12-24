@@ -645,8 +645,8 @@ class Fun(HttpCogBase):
             resp.raise_for_status()
             data = await resp.json()
 
-        quote = data["quote"]["quoteText"]
-        author = data["quote"]["quoteAuthor"]
+        quote = data["data"][0]["quoteText"]
+        author = data["data"][0]["quoteAuthor"]
 
         emb = discord.Embed(
             description=quote, color=ctx.author.color, timestamp=datetime.utcnow())
