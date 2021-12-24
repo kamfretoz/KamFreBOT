@@ -45,7 +45,7 @@ Also add your own OpenWeather API v3 Key to `/cogs/data/weather_api_key.json`
 Feel free to take any code you like! i don't mind :D
 I've tried to put the credit as much as i can on the code. If i'm missing anyone, let me know!
 
-* [Discord.py](https://github.com/Rapptz/discord.py)
+* [Pycord](https://github.com/Pycord-Development/pycord)
 * [Libneko](https://gitlab.com/Tmpod/libneko)
 Many thanks to Discord Coding Academy (<https://discord.gg/dca>) server for helping with errors and troubleshooting!
   
@@ -63,7 +63,6 @@ Many thanks to Discord Coding Academy (<https://discord.gg/dca>) server for help
 * [icanhazdadjoke](https://icanhazdadjoke.com/)
 * [Chuck Norris API](https://api.chucknorris.io/)
 * [Kanye REST](https://kanye.rest/)
-* [Taylor REST](https://taylor.rest/)
 * [XKCD](https://xkcd.com/)
 * [Jikan (MyAnimeList)](https://jikan.docs.apiary.io/#introduction/information)
 * [Ergast F1 API](https://ergast.com/mrd/)
