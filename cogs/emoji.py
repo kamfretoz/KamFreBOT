@@ -179,12 +179,20 @@ class Emoji(commands.Cog):
 
     @emoji.command(brief="Add a new emoji to the current server")
     @commands.has_permissions(manage_emojis=True)
-    async def add(self, ctx, name, url):
+    async def add(self, ctx, name, url = None):
         """
         Usage:
         [p]emoji add <name> <url>
+        
+        NOTE:
+        You can also attach the image instead
         """
         await ctx.message.delete()
+        if ctx.message.attachments:
+            url = ctx.message.attachments[0].url
+        elif url is None:
+            await ctx.send("Please specify an image url if you did not attach a file")
+            return
         try:
             response = requests.get(url)
         except (
