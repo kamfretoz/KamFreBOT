@@ -17,12 +17,3 @@ streaming_status = "a few thousand bytes"
 about_github_link = "https://github.com/kamfretoz/KamFreBOT"
 about_thumbnail_img="https://i.ibb.co/d0jMw5h/Bobert-Downscaled.png"
 
-extensions = [
-	"cogs.emoji"
-    "cogs.fun",
-    "cogs.utilities",
-    "cogs.info",
-    "cogs.mod",
-    "cogs.Subreddit",
-    "cogs.F1"
-]
