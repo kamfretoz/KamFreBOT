@@ -944,7 +944,11 @@ class Information(commands.Cog):
         """
         if user is None:
             user = ctx.message.author
-        timestamp = user.joined_at.replace(tzinfo=timezone.utc).timestamp()
+            
+        try:
+            timestamp = user.joined_at.replace(tzinfo=timezone.utc).timestamp()
+        except AttributeError:
+            return await ctx.send("Cannot find that user or they are not in this server!")
         since_joined = (ctx.message.created_at - user.joined_at).days
         joined = discord.Embed(
             description=f"{user.mention} joined the server on <t:{int(timestamp)}:F> ({since_joined} days ago!)")
