@@ -327,7 +327,7 @@ class Utilities(HttpCogBase):
                 async def ping_task(self):
                     ping = 0
                     while ping < int(amount):
-                        if amount > 100:
+                        if amount > 200:
                             await ctx.reply(
                                 "**WARNING:** **Maximum allowed amount is 100.**"
                             )
@@ -2012,7 +2012,7 @@ class Utilities(HttpCogBase):
             "limit": 1
         }
         session = self.acquire_session()
-        async with session.get('https://api.jikan.moe/v3/search/anime', params=parameters, timeout=5) as resp:
+        async with session.get('https://api.jikan.moe/v3/search/anime', params=parameters, timeout=10) as resp:
             data = json.loads(await resp.read(), object_hook=DictObject)
 
         try:
