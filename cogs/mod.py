@@ -67,17 +67,15 @@ class Mod(commands.Cog):
     @commands.command()
     async def kick(self, ctx, member: libneko.converters.InsensitiveMemberConverter, *, reason: str = "No reason provided."):
         """Kick someone from the server."""
-        if ctx.author.top_role > member.top_role or ctx.author == ctx.guild.owner:
-            try:
-                await ctx.guild.kick(member, reason = reason)
-            except Exception as e:
-                success = False
-                return await ctx.reply(embed=await self.format_mod_embed(ctx, member, success, "kick", e))
-            else:
-                success = True
-            emb = await self.format_mod_embed(ctx, member, success, "kick")
-
-            await ctx.reply(embed = emb)
+        try:
+            await ctx.guild.kick(member, reason = reason)
+        except Exception as e:
+            success = False
+            return await ctx.reply(embed=await self.format_mod_embed(ctx, member, success, "kick", e))
+        else:
+            success = True
+        emb = await self.format_mod_embed(ctx, member, success, "kick")
+        await ctx.reply(embed = emb)
 
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
