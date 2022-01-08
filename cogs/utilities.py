@@ -578,22 +578,30 @@ class Utilities(HttpCogBase):
     @commands.cooldown(rate=2, per=3, type=commands.BucketType.user)
     @commands.command(aliases=["getcolor", "colour", "getcolour"])
     async def color(self, ctx, *, colour_codes: str):
-        """Posts color of given hex"""
+        """
+        Posts color of given hex code
+        You can add up to 5 hex code
+        """
         colour_codes = colour_codes.split()
         size = (60, 80) if len(colour_codes) > 1 else (200, 200)
         if len(colour_codes) > 5:
-            return await ctx.reply("Sorry, 5 colour codes maximum")
+            return await ctx.send("Sorry, only 5 colour codes at maximum")
         for colour_code in colour_codes:
-            if not colour_code.startswith("#"):
-                colour_code = "#" + colour_code
-            image = Image.new("RGB", size, colour_code)
-            with io.BytesIO() as file:
-                image.save(file, "PNG")
-                file.seek(0)
-                await ctx.reply(
-                    f"Colour with hex code `{colour_code}`:",
-                    file=discord.File(file, "colour_file.png"),
-                )
+            hex_regex = '^#?(([0-9a-fA-F]{2}){3}|([0-9a-fA-F]){3})$'
+            hex_match = match(hex_regex, colour_code)
+            if hex_match:
+                if not colour_code.startswith("#"):
+                    colour_code = "#" + colour_code
+                image = Image.new("RGB", size, colour_code)
+                with io.BytesIO() as file:
+                    image.save(file, "PNG")
+                    file.seek(0)
+                    await ctx.send(
+                        f"Colour with hex code `{colour_code}`:",
+                        file=discord.File(file, "colour_file.png"),
+                    )
+            else:
+                await ctx.send(f"Invalid Color Code: `{colour_code}`")
 
     @commands.cooldown(rate=1, per=600, type=commands.BucketType.guild)
     @commands.command(aliases=["channels", "allchannel"])
@@ -1155,6 +1163,7 @@ class Utilities(HttpCogBase):
             return await ctx.reply(embed=discord.Embed(description="⚠ Please Specify the IP Address!"))
         
         await ctx.trigger_typing()
+        
         ip_regex = '^(?!^0\.)(?!^10\.)(?!^100\.6[4-9]\.)(?!^100\.[7-9]\d\.)(?!^100\.1[0-1]\d\.)(?!^100\.12[0-7]\.)(?!^127\.)(?!^169\.254\.)(?!^172\.1[6-9]\.)(?!^172\.2[0-9]\.)(?!^172\.3[0-1]\.)(?!^192\.0\.0\.)(?!^192\.0\.2\.)(?!^192\.88\.99\.)(?!^192\.168\.)(?!^198\.1[8-9]\.)(?!^198\.51\.100\.)(?!^203.0\.113\.)(?!^22[4-9]\.)(?!^23[0-9]\.)(?!^24[0-9]\.)(?!^25[0-5]\.)(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$'
         
         ip_result = match(ip_regex, ip)
