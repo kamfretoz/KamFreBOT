@@ -27,13 +27,10 @@ class BaseYoutubeAPI:
         """Get credentials api key from os environment.
         Set environment variable named 'DEVELOPER_KEY' and put the credentials api key there.
         """
-        # To retrieve KSoft.Si API KEY
         dotenv.load_dotenv()
         DEVELOPER_KEY = os.environ.get("YOUTUBE_API")
         
         return DEVELOPER_KEY
-
-
 class YoutubeVideo:
     """Represents youtube's videos attributes."""
 
