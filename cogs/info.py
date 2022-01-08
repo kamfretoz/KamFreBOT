@@ -6,6 +6,7 @@ import discord
 import libneko
 import psutil
 import platform
+import typing
 from libneko import pag
 from discord.ext import commands
 class Information(commands.Cog):
@@ -734,7 +735,7 @@ class Information(commands.Cog):
 
     @commands.group(invoke_without_command=True, aliases=["user", "ui", "profile", "uinf"])
     @commands.guild_only()
-    async def userinfo(self, ctx, *, user: libneko.converters.InsensitiveMemberConverter = None):
+    async def userinfo(self, ctx, *, user: typing.Union[libneko.converters.InsensitiveMemberConverter, libneko.converters.InsensitiveUserConverter] = None):
         """Show info about the user. If not specified, the command caller info will be shown instead."""
         await ctx.trigger_typing()
 

@@ -7,6 +7,8 @@ import discord
 import libneko
 import json
 import io
+import dotenv
+import os
 import data.topics as topics
 from textwrap import shorten, fill
 from datetime import datetime
@@ -23,9 +25,9 @@ from modules.http import HttpCogBase
 from modules.dictobj import DictObject
 import data.quotes
 
-with open("cogs/data/ksoft-api_key.json") as json_fp:
-    classified = json.load(json_fp)
-    ksoft_key = classified["key"]
+# To retrieve KSoft.Si API KEY
+dotenv.load_dotenv()
+ksoft_key = os.environ.get("KSOFT_API_KEY")
 
 
 class Fun(HttpCogBase):

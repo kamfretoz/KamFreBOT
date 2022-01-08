@@ -14,6 +14,7 @@ from datetime import datetime
 import safygiphy
 import pytemperature
 import qrcode
+import dotenv
 from io import BytesIO
 from collections import deque
 from re import match
@@ -82,11 +83,8 @@ morseAlphabet = {
 }
 
 # To retrieve KSoft.Si API KEY
-with open("cogs/data/ksoft-api_key.json") as json_fp:
-    classified = json.load(json_fp)
-    ksoft_key = classified["key"]
-
-
+dotenv.load_dotenv()
+ksoft_key = os.environ.get("KSOFT_API_KEY")
 class Utilities(HttpCogBase):
     def __init__(self, bot):
         self.bot = bot
@@ -1352,9 +1350,9 @@ class Utilities(HttpCogBase):
 
         await ctx.trigger_typing()
 
-        with open("cogs/data/weather_api_key.json") as json_fp:
-            classified = json.load(json_fp)
-            key = classified["key"]
+        # To retrieve the API KEY
+        dotenv.load_dotenv()
+        key = os.environ.get("WEATHER_API_KEY")
 
         # https://stackoverflow.com/a/7490772 https://www.windfinder.com/wind/windspeed.htm
         def degToCompass(deg):

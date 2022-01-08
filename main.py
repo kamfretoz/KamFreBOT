@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 
 import time
-import asyncio
 import discord
-import json
 import os
 import logging
-import data.config as config
+import dotenv
 import glob
 import re
 import sys
 import traceback
-import random
 from textwrap import dedent
 from discord.ext import commands
 from libneko import pag
@@ -23,10 +20,17 @@ if os.name != "nt":
 
 print("Importing Modules....[Success]")
 
-# bootup logo, use the bootup_logo.txt to modify it
+# Firing up the envs
+dotenv.load_dotenv()
+TOKEN = os.environ.get("BOT_TOKEN")
+prefix = os.environ.get("BOT_PREFIX")
+desc = os.environ.get("BOT_DESC")
+ver = os.environ.get("BOT_VERSION")
+splash = os.environ.get("BOT_SPLASH")
 
+# bootup logo, use the bootup_logo.txt to modify it
 def bootsplash():
-    if config.bootsplash is True:
+    if splash is True:
         try:
             bootlogo = open("bootup_logo.txt", "r")
             while True:
@@ -43,30 +47,23 @@ def bootsplash():
             bootlogo.close()
 
 
-print(f"Starting {config.botname}!")
+print(f"Starting Bot!")
 bootsplash()
 
 # setting up prefix
-print("Retrieving the prefix from config.py ....[OK]")
+print("Retrieving the prefix from .env ....[OK]")
 
-
-def get_prefix(bot, message):
-    """A callable Prefix for my bot."""
-    prefix = config.prefix
-    return commands.when_mentioned_or(*prefix)(bot, message)
 
 
 # Bot client initialization
-bot = commands.AutoShardedBot(command_prefix=get_prefix, description=config.desc, case_insensitive=True, intents=discord.Intents.all(), strip_after_prefix=True)
+bot = commands.AutoShardedBot(command_prefix=prefix, description=desc, case_insensitive=True, intents=discord.Intents.all(), strip_after_prefix=True)
 
 # Setting up logging
 print("Setting Log files to system.log ...[Success]")
-logger = logging.getLogger()
-logger.setLevel(logging.ERROR)
-handler = logging.FileHandler(
-    filename="system.log", encoding="utf-8", mode="a+")
-handler.setFormatter(logging.Formatter(
-    "{asctime}:{levelname}:{name}:{message}", style="{"))
+logger = logging.getLogger('discord')
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
 # more logging stuff
@@ -74,10 +71,6 @@ setattr(bot, "logger", logging.getLogger("main.py"))
 
 # Getting the bot basic data from an external file so that it can be shared easily without having to always
 # black it out
-print("Loading the TOKEN...[Success]")
-with open("data/coin.json") as json_fp:
-    classified = json.load(json_fp)  # Loading data from the json file
-    TOKEN = classified["token"]  # Getting the token
 
 # Load up cogs
 print("Loading all Cogs and Extensions...")
@@ -106,64 +99,17 @@ async def on_ready():
         ===========================
         ID: {bot.user.id}
         Creator: {creator}
-        Current prefix: {config.prefix}
+        Current prefix: {prefix}
         Python Version: {sys.version[:6]}
         Discord.py Version: {discord.__version__}
-        {bot.user.name} Version: {config.version}
+        {bot.user.name} Version: {ver}
         Watching {len(bot.users)} users across {len(bot.guilds)} servers.
         Logged in at {time.ctime()}
         ===========================
         """
         )
     )
-    # print(
-    #     f"List of servers i'm in ({len(bot.guilds)} Servers in total):\n===========================")
-    # for x in bot.guilds:
-    #     print(f"{x.name} (ID: {x.id}) (Membert Count: {x.member_count})")
-    # print("===========================")
 
-
-async def change_activities():
-    """Quite self-explanatory. It changes the bot activities"""
-    statuses = (discord.Status.online, discord.Status.idle, discord.Status.dnd)
-    while True:  # Infinite loop
-        # Pick a choice from 'playopt'.
-        game = discord.Game(name=config.playing_status)
-        # Watch out for how you import 'random.choice', as that might affect how this line needs to be written.
-        # For more help refer to the Python Docs.
-        watch = discord.Activity(
-            type=discord.ActivityType.watching,
-            name=config.watching_status
-        )  # Pick a choice from 'watchopt'
-        # Pick a choice from 'streamopt'
-        stream = discord.Streaming(
-            url=config.streaming_url, name=config.streaming_status)
-        listen = discord.Activity(
-            type=discord.ActivityType.listening, name=config.listening_status
-        )  # Pick a choice from 'listenopt'
-        kind = random.choice(
-            [game, watch, listen, stream]
-        )  # Pick a choice from all the possibilities: "Playing", "Watching", "Streaming", "Listening"
-        # actually changes the status of the bots every (n) of a second
-        for s in statuses:
-            await bot.change_presence(activity=kind, status=s)
-            await asyncio.sleep(config.status_timeout)
-
-# About command
-
-
-@bot.command()
-async def about(ctx):
-    """Information about this bot."""
-    creator = (await bot.application_info()).owner
-    about = discord.Embed(
-        title=f"{config.botname}", description=f"{config.desc}", color=0xFFFFFF
-    )
-    about.add_field(name="GitHub Link.",
-                    value=f"[Click Here!]({config.about_github_link})")
-    about.set_thumbnail(url=config.about_thumbnail_img)
-    about.set_footer(text=f"Made by {creator}")
-    await ctx.send(embed=about)
 
 ###################################
 # DEBUGGING and SYSTEM UTILITIES #

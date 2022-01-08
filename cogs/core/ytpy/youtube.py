@@ -1,15 +1,12 @@
 import asyncio
 from subprocess import call
 
+import os
+import dotenv
 import aiohttp
 import requests
 import youtube_dl as ytdl
 from apiclient.discovery import build
-
-if __name__ == "__main__":
-    from exceptions import DevKeyNotFoundError
-else:
-    from .exceptions import DevKeyNotFoundError
 
 __BASE_URL__ = "https://www.googleapis.com/youtube/v3"
 
@@ -30,15 +27,11 @@ class BaseYoutubeAPI:
         """Get credentials api key from os environment.
         Set environment variable named 'DEVELOPER_KEY' and put the credentials api key there.
         """
-
-        try:
-            if __name__ == "__main__":
-                import config
-            else:
-                from . import config
-            return config.DEVELOPER_KEY
-        except DevKeyNotFoundError as e:
-            raise DevKeyNotFoundError("Required 'developer_key' or credentials API key")
+        # To retrieve KSoft.Si API KEY
+        dotenv.load_dotenv()
+        DEVELOPER_KEY = os.environ.get("YOUTUBE_API")
+        
+        return DEVELOPER_KEY
 
 
 class YoutubeVideo:

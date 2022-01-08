@@ -1,10 +1,14 @@
 import traceback
 import discord
 import random
+import dotenv
+import os
 from datetime import datetime
 import data.quotes as quotes
-import data.config as config
 from discord.ext import commands
+
+dotenv.load_dotenv()
+log = os.environ.get("BOT_LOG_CHANNEL")
 
 class ErrorHandler(commands.Cog):
     def __init__(self, bot):
@@ -112,8 +116,8 @@ class ErrorHandler(commands.Cog):
                 await ctx.send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```")
                 
                 # This is for personal logging of the error message for further debugging
-                await self.bot.get_channel(config.home).send(content=f"{random.choice(quotes.errors)}", embed=errormsg) 
-                await self.bot.get_channel(config.home).send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```")
+                await self.bot.get_channel(log).send(content=f"{random.choice(quotes.errors)}", embed=errormsg) 
+                await self.bot.get_channel(log).send("📜 **__Full Traceback__**:\n```py\n" + "".join(trace) + "\n```")
                 
             except discord.HTTPException:
                 trace = traceback.format_exception(type(error), error, error.__traceback__)

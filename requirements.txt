@@ -1,5 +1,6 @@
-py-cord[voice]
 wheel
+py-cord[voice]
+python-dotenv
 git+https://gitlab.com/Tmpod/libneko
 aiohttp[speedups]
 psutil
