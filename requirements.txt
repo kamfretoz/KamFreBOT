@@ -1,4 +1,5 @@
-py-cord[voice]
+git+https://github.com/Pycord-Development/pycord[speed]
+#py-cord[voice]
 wheel
 git+https://gitlab.com/Tmpod/libneko
 aiohttp[speedups]
