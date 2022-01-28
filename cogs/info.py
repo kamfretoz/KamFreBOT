@@ -64,11 +64,6 @@ class Information(commands.Cog):
                 inline=False,
             )
             em.add_field(
-                name=":gear: CPU Frequency",
-                value=f"{psutil.cpu_freq().current} MHz",
-                inline=False,
-            )
-            em.add_field(
                 name=":dna: Kernel Version",
                 value=f"{platform.platform()} {platform.version()}",
                 inline=False,
